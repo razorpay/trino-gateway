@@ -1,0 +1,14 @@
+title = "Default config file for testing."
+
+[db]
+    dialect               = "mysql"
+    protocol              = "tcp"
+    host                  = "localhost"
+    port                  = 3306
+    username              = "trino-gateway"
+    password              = "trino-gateway"
+    sslMode               = "require"
+    name                  = "trino-gateway"
+    maxOpenConnections    = 5
+    maxIdleConnections    = 5
+    connectionMaxLifetime = 0
