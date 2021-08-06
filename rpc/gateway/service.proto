@@ -4,13 +4,15 @@ package razorpay.gateway;
 
 option go_package = "./rpc/gateway;gatewayv1";
 
+message Empty {}
+
 service BackendsApi {
     rpc UpsertBackend (BackendCreateRequest) returns (BackendCreateResponse);
     rpc GetBackend (BackendGetRequest) returns (BackendResponse);
-    rpc ListBackends (BackendListRequest) returns (BackendListResponse);
-    rpc DeleteBackend (BackendDeleteRequest) returns (BackendDeleteResponse);
-    rpc EnableBackend (BackendEnableRequest) returns (BackendEnableResponse);
-    rpc DisableBackend (BackendEnableRequest) returns (BackendEnableResponse);
+    rpc ListBackends (Empty) returns (BackendListResponse);
+    rpc DeleteBackend (BackendDeleteRequest) returns (Empty);
+    rpc EnableBackend (BackendEnableRequest) returns (Empty);
+    rpc DisableBackend (BackendEnableRequest) returns (Empty);
 }
 
 message BackendCreateRequest {
@@ -34,10 +36,6 @@ message BackendResponse {
     bool is_enabled = 4;
 }
 
-message BackendListRequest {
-
-}
-
 message BackendListResponse {
     repeated BackendResponse items = 1;
 }
@@ -45,31 +43,22 @@ message BackendListResponse {
 message BackendDeleteRequest {
     int32 id = 1; // required
 }
-message BackendDeleteResponse {
-
-}
 
 message BackendEnableRequest {
     int32 id = 1; // required
-}
-message BackendEnableResponse {
-
 }
 
 message BackendDisableRequest {
     int32 id = 1; // required
 }
-message BackendDisableResponse {
-
-}
 
 service RoutingGroupsAPI {
-    rpc Upsert (RoutingGroupCreateRequest) returns (RoutingGroupCreateResponse);
+    rpc Upsert (RoutingGroupCreateRequest) returns (Empty);
     rpc Get (RoutingGroupGetRequest) returns (RoutingGroupResponse);
-    rpc List (RoutingGroupListRequest) returns (RoutingGroupListResponse);
-    rpc Delete (RoutingGroupDeleteRequest) returns (RoutingGroupDeleteResponse);
-    rpc Enable (RoutingGroupEnableRequest) returns (RoutingGroupEnableResponse);
-    rpc Disable (RoutingGroupEnableRequest) returns (RoutingGroupEnableResponse);
+    rpc List (Empty) returns (RoutingGroupListResponse);
+    rpc Delete (RoutingGroupDeleteRequest) returns (Empty);
+    rpc Enable (RoutingGroupEnableRequest) returns (Empty);
+    rpc Disable (RoutingGroupEnableRequest) returns (Empty);
 }
 
 enum RoutingStrategy {
@@ -84,9 +73,6 @@ message RoutingGroupCreateRequest {
     bool is_enabled = 4;
 }
 
-message RoutingGroupCreateResponse {
-}
-
 message RoutingGroupGetRequest {
     string key = 1; // required
 }
@@ -98,10 +84,6 @@ message RoutingGroupResponse {
     bool is_enabled = 4;
 }
 
-message RoutingGroupListRequest {
-
-}
-
 message RoutingGroupListResponse {
     repeated RoutingGroupResponse items = 1;
 }
@@ -109,31 +91,22 @@ message RoutingGroupListResponse {
 message RoutingGroupDeleteRequest {
     string key = 1; // required
 }
-message RoutingGroupDeleteResponse {
-
-}
 
 message RoutingGroupEnableRequest {
     string key = 1; // required
-}
-message RoutingGroupEnableResponse {
-
 }
 
 message RoutingGroupDisableRequest {
     string key = 1; // required
 }
-message RoutingGroupDisableResponse {
-
-}
 
 service RulesAPI {
-    rpc Upsert (RulesCreateRequest) returns (RulesCreateResponse);
+    rpc Upsert (RulesCreateRequest) returns (Empty);
     rpc Get (RulesGetRequest) returns (RulesResponse);
-    rpc List (RulesListRequest) returns (RulesListResponse);
-    rpc Delete (RulesDeleteRequest) returns (RulesDeleteResponse);
-    rpc Enable (RulesEnableRequest) returns (RulesEnableResponse);
-    rpc Disable (RulesEnableRequest) returns (RulesEnableResponse);
+    rpc List (Empty) returns (RulesListResponse);
+    rpc Delete (RulesDeleteRequest) returns (Empty);
+    rpc Enable (RulesEnableRequest) returns (Empty);
+    rpc Disable (RulesEnableRequest) returns (Empty);
 }
 
 message RulesCreateRequest {
@@ -141,9 +114,6 @@ message RulesCreateRequest {
     RulesResponse.Rule rule = 2; // required
     string routing_group = 3; // required
     string fallback = 4;
-}
-
-message RulesCreateResponse {
 }
 
 message RulesGetRequest {
@@ -165,10 +135,6 @@ message RulesResponse {
     string fallback = 4;
 }
 
-message RulesListRequest {
-
-}
-
 message RulesListResponse {
     repeated RulesResponse items = 1;
 }
@@ -176,26 +142,17 @@ message RulesListResponse {
 message RulesDeleteRequest {
     string name = 1; // required
 }
-message RulesDeleteResponse {
-
-}
 
 message RulesEnableRequest {
     string name = 1; // required
-}
-message RulesEnableResponse {
-
 }
 
 message RulesDisableRequest {
     string name = 1; // required
 }
-message RulesDisableResponse {
-
-}
 
 service QueriesAPI {
-    rpc Append (Query) returns (QueryAppendResponse);
+    rpc Append (Query) returns (Empty);
     rpc Get (QueryGetRequest) returns (Query);
     rpc List (QueriesListRequest) returns (QueriesListResponse);
 }
@@ -209,10 +166,6 @@ message Query {
     int32 backend_id = 6; // required
     string username = 7;
     string submitted_at = 8;
-}
-
-message QueryAppendResponse {
-
 }
 
 message QueryGetRequest {
