@@ -2,11 +2,6 @@ package spine
 
 import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
-	"github.com/gobuffalo/nulls"
-	"github.com/jinzhu/gorm"
-	id "github.com/razorpay/goutils/uniqueid"
-
-	"github.com/razorpay/trino-gateway/pkg/errors"
 	"github.com/razorpay/trino-gateway/pkg/spine/datatype"
 )
 
@@ -27,12 +22,12 @@ type IModel interface {
 	TableName() string
 	EntityName() string
 	GetID() string
-	Validate() errors.IError
-	SetDefaults() errors.IError
+	Validate() error
+	SetDefaults() error
 }
 
 // Validate validates base Model.
-func (m *Model) Validate() errors.IError {
+func (m *Model) Validate() error {
 	return GetValidationError(
 		validation.ValidateStruct(
 			m,
@@ -48,46 +43,12 @@ func (m *Model) GetID() string {
 	return m.ID
 }
 
-// GetCreatedAt gets created time of entity
+// GetCreatedAt gets created time of entity.
 func (m *Model) GetCreatedAt() int64 {
 	return m.CreatedAt
 }
 
-// GetUpdatedAt gets last updated time of entity
+// GetUpdatedAt gets last updated time of entity.
 func (m *Model) GetUpdatedAt() int64 {
 	return m.UpdatedAt
-}
-
-// BeforeCreate sets new Razorpay id for the settlement.
-func (m *Model) BeforeCreate(scope *gorm.Scope) {
-	idField, _ := scope.FieldByName("ID")
-	if idField.IsBlank {
-		v, _ := id.New()
-		_ = idField.Set(v)
-	}
-}
-
-// SoftDeletableModel struct is base for entity models
-// it extends the capability of having basic attributes
-// with soft delete option
-type SoftDeletableModel struct {
-	Model
-	DeletedAt nulls.Int64 `sql:"DEFAULT:null" json:"deleted_at"`
-}
-
-// Validate validates SoftDeletableOwnedModel.
-func (sm *SoftDeletableModel) Validate() errors.IError {
-	err := GetValidationError(
-		validation.ValidateStruct(
-			sm,
-			validation.Field(&sm.DeletedAt,
-				validation.By(datatype.ValidateNullableInt64(sm.DeletedAt, datatype.IsTimestamp))),
-		),
-	)
-
-	if err == nil {
-		return sm.Model.Validate()
-	}
-
-	return err
 }

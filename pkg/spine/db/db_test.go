@@ -4,12 +4,44 @@ import (
 	"context"
 	"regexp"
 	"testing"
+	"time"
+
+	"gorm.io/plugin/dbresolver"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
 
-	"github.com/razorpay/trino-gateway/pkg/spine/db"
+	"github.com/razorpay/goutils/errors"
+	"github.com/razorpay/goutils/spine"
+	"github.com/razorpay/goutils/spine/db"
 )
+
+type TestModel struct {
+	spine.Model
+	Name string `json:"name"`
+}
+
+func (t *TestModel) EntityName() string {
+	return "model"
+}
+
+func (t *TestModel) TableName() string {
+	return "model"
+}
+
+func (t *TestModel) GetID() string {
+	return t.ID
+}
+
+func (t *TestModel) Validate() errors.IError {
+	return nil
+}
+
+func (t *TestModel) SetDefaults() errors.IError {
+	return nil
+}
 
 func TestGetConnectionPath(t *testing.T) {
 	c := getDefaultConfig()
@@ -26,67 +58,46 @@ func TestGetConnectionPath(t *testing.T) {
 
 func TestNewDb(t *testing.T) {
 	tests := []struct {
-		name string
-		err  string
-		args func() ([]interface{}, func())
+		name    string
+		err     string
+		config  db.IConfigReader
+		options func() ([]func(*db.DB) error, func())
 	}{
 		{
-			name: "success",
-			args: func() ([]interface{}, func()) {
-				dbdriver, _, err := sqlmock.New()
+			name:   "success",
+			config: getDefaultConfig(),
+			options: func() ([]func(*db.DB) error, func()) {
+				conn, _, err := sqlmock.New()
 				assert.Nil(t, err)
-
-				return []interface{}{dbdriver},
-					func() {
-						dbdriver.Close()
-					}
+				return []func(*db.DB) error{
+					db.Dialector(getGormDialectorForMock(conn)),
+				}, func() { _ = conn.Close() }
 			},
 		},
 		{
-			name: "more than 1 arg",
-			args: func() ([]interface{}, func()) {
-				dbdriver, _, err := sqlmock.New()
-				assert.Nil(t, err)
-
-				return []interface{}{dbdriver, 123},
-					func() {
-						dbdriver.Close()
-					}
+			name:   "invalid dialect",
+			err:    db.ErrorUndefinedDialect.Error(),
+			config: &db.Config{ConnectionConfig: db.ConnectionConfig{Dialect: "invalid dialect"}},
+			options: func() ([]func(*db.DB) error, func()) {
+				return []func(*db.DB) error{}, func() {}
 			},
-			err: db.ErrorInvalidArguments.Error(),
 		},
 		{
-			name: "more than 1 arg",
-			args: func() ([]interface{}, func()) {
-				return []interface{}{123, 123},
-					func() {}
+			name:   "connect error: no mock",
+			err:    "dial tcp .+:3307: connect: connection refused",
+			config: getDefaultConfig(),
+			options: func() ([]func(*db.DB) error, func()) {
+				return []func(*db.DB) error{}, func() {}
 			},
-			err: db.ErrorInvalidArguments.Error(),
-		},
-		{
-			name: "invalid driver",
-			args: func() ([]interface{}, func()) {
-
-				return []interface{}{123},
-					func() {}
-			},
-			err: db.ErrorInvalidArguments.Error(),
-		},
-		{
-			name: "nil driver",
-			args: func() ([]interface{}, func()) {
-				return []interface{}{}, func() {}
-			},
-			err: `dial tcp .+:3307: connect: connection refused`,
 		},
 	}
 
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {
-			args, finish := testCase.args()
+			options, finish := testCase.options()
 			defer finish()
 
-			gdb, err := db.NewDb(getDefaultConfig(), args...)
+			gdb, err := db.NewDb(testCase.config, options...)
 
 			if testCase.err == "" {
 				assert.Nil(t, err)
@@ -94,58 +105,133 @@ func TestNewDb(t *testing.T) {
 			} else {
 				expr, e := regexp.Compile(testCase.err)
 				assert.Nil(t, e)
-				assert.Regexp(t, expr, err.Error())
+				assert.NotNil(t, err)
 				assert.Nil(t, gdb)
+				assert.Regexp(t, expr, err.Error())
 			}
 		})
 	}
 }
 
-func TestDb_Alive(t *testing.T) {
-	mockdriver, mockdb, err := sqlmock.New()
+func TestDB_Replica(t *testing.T) {
+	defConn, _, err := sqlmock.New()
 	assert.Nil(t, err)
-	defer mockdriver.Close()
+	defer defConn.Close()
 
-	gdb, err := db.NewDb(getDefaultConfig(), mockdriver)
+	replicaConn, replicaMock, err := sqlmock.New()
+	assert.Nil(t, err)
+	defer replicaConn.Close()
+
+	sdb, err := db.NewDb(getDefaultConfig(), db.Dialector(getGormDialectorForMock(defConn)), db.GormConfig(&gorm.Config{}))
+	assert.Nil(t, err)
+
+	err = sdb.Replicas([]gorm.Dialector{getGormDialectorForMock(replicaConn)}, &db.ConnectionPoolConfig{
+		MaxOpenConnections:    5,
+		MaxIdleConnections:    5,
+		ConnectionMaxLifetime: 5 * time.Minute,
+	})
+	assert.Nil(t, err)
+
+	model := TestModel{}
+
+	// 1. Test that with replica select query goes to replica
+	replicaMock.
+		ExpectQuery(regexp.QuoteMeta("SELECT * FROM `model` WHERE id = ? ORDER BY `model`.`id` LIMIT 1")).
+		WithArgs("1").WillReturnRows(sqlmock.NewRows([]string{"id", "name"}).AddRow(1, "name1"))
+
+	tx := sdb.Instance(context.TODO()).Where("id = ?", "1").First(&model)
+	assert.Nil(t, tx.Error)
+	assert.Equal(t, model.ID, "1")
+}
+
+func TestDB_WarmStorageDB(t *testing.T) {
+	defConn, _, err := sqlmock.New()
+	assert.Nil(t, err)
+	defer defConn.Close()
+
+	warmStorageConn, warmStorageMock, err := sqlmock.New()
+	assert.Nil(t, err)
+	defer warmStorageConn.Close()
+
+	newDB, err := db.NewDb(getDefaultConfig(), db.Dialector(getGormDialectorForMock(defConn)), db.GormConfig(&gorm.Config{}))
+	assert.Nil(t, err)
+
+	err = newDB.WarmStorageDB([]gorm.Dialector{getGormDialectorForMock(warmStorageConn)}, &db.ConnectionPoolConfig{
+		MaxOpenConnections:    5,
+		MaxIdleConnections:    5,
+		ConnectionMaxLifetime: 5 * time.Minute,
+	})
+	assert.Nil(t, err)
+
+	model := TestModel{}
+
+	// 1. Test that with warm storage select query goes to warm storage
+	warmStorageMock.
+		ExpectQuery(regexp.QuoteMeta("SELECT * FROM `model` WHERE id = ? ORDER BY `model`.`id` LIMIT 1")).
+		WithArgs("1").WillReturnRows(sqlmock.NewRows([]string{"id", "name"}).AddRow(1, "name1"))
+
+	tx := newDB.Instance(context.TODO()).Clauses(dbresolver.Use(db.WarmStorageDBResolverName)).Where("id = ?", "1").First(&model)
+	assert.Nil(t, tx.Error)
+	assert.Equal(t, model.ID, "1")
+}
+
+func TestDb_Alive(t *testing.T) {
+	conn, _, err := sqlmock.New()
+	assert.Nil(t, err)
+	defer conn.Close()
+
+	gdb, err := db.NewDb(getDefaultConfig(), db.Dialector(getGormDialectorForMock(conn)))
 	assert.Nil(t, err)
 	assert.NotNil(t, gdb)
 
 	err = gdb.Alive()
 	assert.Nil(t, err)
-
-	err = mockdb.ExpectationsWereMet()
-	assert.Nil(t, err)
 }
 
 func TestDB_Instance(t *testing.T) {
-	mockdriver, _, err := sqlmock.New()
+	conn, _, err := sqlmock.New()
 	assert.Nil(t, err)
-	defer mockdriver.Close()
+	defer conn.Close()
 
-	gdb, err := db.NewDb(getDefaultConfig(), mockdriver)
+	gdb1, err := db.NewDb(getDefaultConfig(), db.Dialector(getGormDialectorForMock(conn)))
 	assert.Nil(t, err)
-	assert.NotNil(t, gdb)
+	assert.NotNil(t, gdb1)
 
-	instance := gdb.Instance(context.TODO())
-	assert.NotNil(t, instance)
+	gdb2, err := db.NewDb(getDefaultConfig(), db.Dialector(getGormDialectorForMock(conn)))
+	assert.Nil(t, err)
+	assert.NotNil(t, gdb2)
 
-	ctx := context.WithValue(context.TODO(), db.ContextKeyDatabase, instance)
-	tgdb := gdb.Instance(ctx)
-	assert.Equal(t, instance, tgdb)
+	instance1 := gdb1.Instance(context.TODO())
+	assert.NotNil(t, instance1)
+
+	instance2 := gdb2.Instance(context.TODO())
+	assert.NotNil(t, instance2)
+
+	ctx := context.WithValue(context.TODO(), db.ContextKeyDatabase, instance2)
+	tgdb := gdb1.Instance(ctx)
+	assert.Equal(t, instance2, tgdb)
 }
 
 func getDefaultConfig() *db.Config {
 	return &db.Config{
-		Dialect:               "mysql",
-		Protocol:              "tcp",
-		URL:                   "localhost",
-		Port:                  3307,
-		Username:              "user",
-		Password:              "pass",
-		SslMode:               "require",
-		Name:                  "database",
-		MaxOpenConnections:    5,
-		MaxIdleConnections:    5,
-		ConnectionMaxLifetime: 0,
+		ConnectionPoolConfig: db.ConnectionPoolConfig{
+			MaxOpenConnections:    5,
+			MaxIdleConnections:    5,
+			ConnectionMaxLifetime: 5 * time.Minute,
+		},
+		ConnectionConfig: db.ConnectionConfig{
+			Dialect:  "mysql",
+			Protocol: "tcp",
+			URL:      "localhost",
+			Port:     3307,
+			Username: "user",
+			Password: "pass",
+			SslMode:  "require",
+			Name:     "database",
+		},
 	}
+}
+
+func getGormDialectorForMock(conn gorm.ConnPool) gorm.Dialector {
+	return mysql.New(mysql.Config{Conn: conn, SkipInitializeWithVersion: true})
 }

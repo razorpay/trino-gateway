@@ -7,14 +7,14 @@ import (
 	"log"
 	"os"
 
-	"github.com/pressly/goose"
+	"github.com/pressly/goose/v3"
 	"github.com/razorpay/trino-gateway/internal/boot"
-	_ "github.com/razorpay/trino-gateway/internal/database/migrations"
+	_ "github.com/razorpay/trino-gateway/internal/gatewayserver/database/migrations"
 )
 
 var (
 	flags   = flag.NewFlagSet("goose", flag.ExitOnError)
-	dir     = flags.String("dir", "internal/database/migrations", "Directory with migration files")
+	dir     = flags.String("dir", "internal/gatewayserver/database/migrations", "Directory with migration files")
 	verbose = flags.Bool("v", false, "Enable verbose mode")
 )
 
@@ -23,8 +23,8 @@ func main() {
 
 	flags.Usage = usage
 	if err := flags.Parse(os.Args[1:]); err != nil {
-        log.Fatalf("error parsing flags: %v", err)
-    }
+		log.Fatalf("error parsing flags: %v", err)
+	}
 	args := flags.Args()
 	if *verbose {
 		goose.SetVerbose(true)
@@ -68,7 +68,10 @@ func main() {
 	if err := goose.SetDialect(dialect); err != nil {
 		log.Fatalf("failed to run command: %v", err)
 	}
-	sqldb := boot.DB.Instance(context.Background()).DB()
+	sqldb, err := boot.DB.Instance(context.Background()).DB()
+	if err != nil {
+		log.Fatalf("failed to run command: %v", err)
+	}
 
 	// Finally, executes the goose's command.
 	if err := goose.Run(command, sqldb, *dir, arguments...); err != nil {

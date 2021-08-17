@@ -1,42 +1,65 @@
-# trino-gateway
+----------------------------------------------------<!-- markdownlint-capture -->
+##### Observations
+Direct connectivity
 
-go-foundation is the boilerplate for go microservices. Anyone trying to build a microservice from scratch,
-can use this boilerplate to get started with codebase.
-Go-foundation handles all the configuration of dependency, docker, other config in toml and is ready to be deployed with
-basic structure.
-
-## Documentation
-* 1
-* 2
-* godoc link
-
-[![Dependabot Status](https://api.dependabot.com/badges/status?host=github&repo=razorpay/$app_name&identifier=157173150)](https://dependabot.com)
-![build status](https://drone.razorpay.com/api/badges/razorpay/$app_name/status.svg "Drone Build Status")
-
-## Components
--  bin folder contains the build project file. This folder should be git ignore.
--  docker folder contains the Dockerfile for different services. It contains the commands that needs to be executed while building the project.
--  build folder also contain the entrypoint file which get executed on start of application.
--  cmd folder contains the main application file for api , worker and migration.
--  config file contains the all the toml configuration thats required to define the config which gets parsed in Config struct.
-- deployment folder contains the dev docker compose file if you want to run the application using docker for dev.
-- internal folder is the place where your code goes for you application.
-- pkg contains the required dependencies for boilerplate and utilities like goutils, prometheus.
+NOTE: for curl the syntax is `query` instead of `"query"`  or `{query}` or `{"query"}`
 
 
-## Changes Required
+python - y
+go - busted -- throws a semantic error on trino side
+curl - works
 
-- 1 Need to change the appName in MakeFile, Dockerfile.api, Dockerfile.migration, Dockerfile.worker and Dockerfile.base.
-- 2 Change toml file based on the requirement of your service.
+Via gateway
+python - works
+go - busted
+curl - works
+trino go client sends full queries as prepared statement
+i.e.
+for running `Select 1`
+it will send `EXECUTE _trino_go USING 1`
+with header `X-Trino-Prepared-Statement: _trino_go=SELECT+1`
 
-#### ENV vars expected
-1. APP_ENV
 
-## Auxillary Components
+-----
+????? need to verify, trino doesnt start executing query unless the nextUri is hit first time
 
-## Building locally
-Change the docker_dev toml file for hostname , service name and run command
-docker-compose build
-## Running locally
-docker-compose -f docker-compose.yml up -d --build
-### In docker environment
+------------------ 
+Swagger
+swaggerui/index.html - contains location of loading swagger json file
+to generate swagger to proto mapping
+go run github.com/go-bridget/twirp-swagger-gen -in rpc/gateway/service.proto -out swaggerui/service.swagger.json -host "localhost:8000"
+
+protoc --go_out=. --twirp_out=. ./rpc/gateway/service.proto
+
+##### Reasonings for reverse proxy flow
+
+elazarl/goproxy
+is a forward proxy
+
+coreos/goproxy
+is fork of previous one with reverse proxy support BUT 
+
+requests sent by all trino clients + normal curl requests
+have
+`http.Request.URL.Host` & `http.Request.URL.Scheme` set as nil
+so goproxy cant work 
+https://github.com/coreos/goproxy/blob/f8dc2d7ba04e38fa53c1a09be5fa92c62db6af62/proxy.go#L113
+
+
+
+solution:
+inherit its type & override request URL
+
+-- not sure how to do it in go
+
+OR 
+
+fork it and remove this restriction
+
+-- need to check how its built
+
+OR 
+implement own basic reverse Proxy handler
+
+-- lot of handling around request parsing, json marshaling unmarshaling etc.
+
