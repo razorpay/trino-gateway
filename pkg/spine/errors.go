@@ -1,14 +1,17 @@
 package spine
 
 import (
-	"github.com/jinzhu/gorm"
-	"github.com/lib/pq"
+	"errors"
 
-	"github.com/razorpay/trino-gateway/pkg/errors"
+	"github.com/go-sql-driver/mysql"
+
+	"github.com/lib/pq"
+	"gorm.io/gorm"
 )
 
 const (
-	PQCodeUniqueViolation = "unique_violation"
+	PQCodeUniqueViolation    = "unique_violation"
+	MySqlCodeUniqueViolation = 1062
 
 	errDBError                   = "db_error"
 	errNoRowAffected             = "no_row_affected"
@@ -18,23 +21,23 @@ const (
 )
 
 var (
-	DBError                   = errors.NewClass(errDBError, errDBError)
-	NoRowAffected             = errors.NewClass(errNoRowAffected, errNoRowAffected)
-	RecordNotFound            = errors.NewClass(errRecordNotFound, errRecordNotFound)
-	ValidationFailure         = errors.NewClass(errValidationFailure, errValidationFailure)
-	UniqueConstraintViolation = errors.NewClass(errUniqueConstraintViolation, errUniqueConstraintViolation)
+	DBError                   = errors.New(errDBError)
+	NoRowAffected             = errors.New(errNoRowAffected)
+	RecordNotFound            = errors.New(errRecordNotFound)
+	ValidationFailure         = errors.New(errValidationFailure)
+	UniqueConstraintViolation = errors.New(errUniqueConstraintViolation)
 )
 
 // GetDBError accepts db instance and the details
 // creates appropriate error based on the type of query result
 // if there is no error then returns nil
-func GetDBError(d *gorm.DB) errors.IError {
-	if d.Error == nil {
+func GetDBError(db *gorm.DB) error {
+	if db.Error == nil {
 		return nil
 	}
 
 	// check of error is specific to dialect
-	if de, ok := DialectError(d); ok {
+	if de, ok := DialectError(db); ok {
 		// is the specific error is captured then return it
 		// else try construct further errors
 		if err := de.ConstructError(); err != nil {
@@ -43,27 +46,25 @@ func GetDBError(d *gorm.DB) errors.IError {
 	}
 
 	// Construct error based on type of db operation
-	err := func() errors.IError {
+	err := func() error {
 		switch true {
-		case d.RecordNotFound():
-			return RecordNotFound.New(errRecordNotFound)
+		case errors.Is(db.Error, gorm.ErrRecordNotFound):
+			return RecordNotFound
 
 		default:
-			return DBError.New(errDBError)
+			return DBError
 		}
 	}()
 
 	// add specific details of error
-	return err.Wrap(d.Error)
+	return err
 }
 
 // GetValidationError wraps the error and returns instance of ValidationError
 // if the provided error is nil then it just returns nil
-func GetValidationError(err error) errors.IError {
+func GetValidationError(err error) error {
 	if err != nil {
-		return ValidationFailure.
-			New(errValidationFailure).
-			Wrap(err)
+		return err
 	}
 
 	return nil
@@ -74,6 +75,8 @@ func DialectError(d *gorm.DB) (IDialectError, bool) {
 	switch d.Error.(type) {
 	case *pq.Error:
 		return pqError{d.Error.(*pq.Error)}, true
+	case *mysql.MySQLError:
+		return mysqlError{d.Error.(*mysql.MySQLError)}, true
 	default:
 		return nil, false
 	}
@@ -81,7 +84,7 @@ func DialectError(d *gorm.DB) (IDialectError, bool) {
 
 // IDialectError interface to handler dialect related errors
 type IDialectError interface {
-	ConstructError() errors.IError
+	ConstructError() error
 }
 
 // pqError holds the error occurred by postgres
@@ -90,12 +93,24 @@ type pqError struct {
 }
 
 // ConstructError will create appropriate error based on dialect
-func (pqe pqError) ConstructError() errors.IError {
+func (pqe pqError) ConstructError() error {
 	switch pqe.err.Code.Name() {
 	case PQCodeUniqueViolation:
-		return UniqueConstraintViolation.
-			New(errUniqueConstraintViolation).
-			Wrap(pqe.err)
+		return pqe.err
+	default:
+		return nil
+	}
+}
+
+type mysqlError struct {
+	err *mysql.MySQLError
+}
+
+// ConstructError will create appropriate error based on dialect
+func (msqle mysqlError) ConstructError() error {
+	switch msqle.err.Number {
+	case MySqlCodeUniqueViolation:
+		return msqle.err
 
 	default:
 		return nil

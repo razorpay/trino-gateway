@@ -29,7 +29,8 @@ mock/
 proto
 
 # Generated protobuf files.
-rpc
+rpc/*/*.pb.go
+rpc/*/*.twirp.go
 
 # Generated or local configuration files.
 config/dev.*

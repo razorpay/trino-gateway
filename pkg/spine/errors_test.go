@@ -2,46 +2,42 @@ package spine_test
 
 import (
 	"context"
-	defaultError "errors"
+	goerr "errors"
 	"reflect"
 	"regexp"
 	"testing"
 
+	error_module "github.com/razorpay/error-mapping-module"
+
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/jinzhu/gorm"
 	"github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
 
-	"github.com/razorpay/trino-gateway/pkg/spine"
-	"github.com/razorpay/trino-gateway/pkg/spine/db"
+	"github.com/razorpay/goutils/errors"
+	"github.com/razorpay/goutils/spine"
+	"github.com/razorpay/goutils/spine/db"
 )
 
+func init() {
+	errors.InitMapping(error_module.Mapper{}, []string{"pkg/spine"})
+}
+
 func TestQueryFailure(t *testing.T) {
-	mockdriver, mockdb, err := sqlmock.New()
-
-	if err != nil {
-		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
-	}
-
-	dbInstance, err := db.NewDb(getDefaultConfig(), mockdriver)
-	if err != nil {
-		t.Errorf("error expected")
-	}
-	assert.Nil(t, err)
-
-	repo := spine.Repo{Db: dbInstance}
+	repo, mockdb := createRepo(t)
 
 	mockdb.
 		ExpectQuery(regexp.QuoteMeta("SELECT * FROM `model`")).
-		WillReturnError(defaultError.New("failed to execute db query"))
+		WillReturnError(goerr.New("failed to execute db query"))
 
 	var models []TestModel
 
 	dberr := repo.FindMany(context.TODO(), &models, map[string]interface{}{})
 	assert.NotNil(t, dberr)
 	assert.Equal(t, spine.DBError, dberr.Class())
-	assert.Equal(t, defaultError.New("failed to execute db query"), dberr.Unwrap())
-	assert.Equal(t, spine.DBError.Name(), dberr.Internal().Code())
+	assert.Equal(t, goerr.New("failed to execute db query"), dberr.Unwrap())
+	assert.Equal(t, errors.ErrorCode("DB_ERROR"), dberr.Internal().Code())
 }
 
 func TestNoRecordError(t *testing.T) {
@@ -51,7 +47,7 @@ func TestNoRecordError(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
 
-	dbInstance, err := db.NewDb(getDefaultConfig(), mockdriver)
+	dbInstance, err := db.NewDb(getDefaultConfig(), db.Dialector(mysql.New(mysql.Config{Conn: mockdriver, SkipInitializeWithVersion: true})))
 	if err != nil {
 		t.Errorf("error expected")
 	}
@@ -75,13 +71,13 @@ func TestNewValidationError(t *testing.T) {
 
 	assert.Nil(t, verr)
 
-	err := defaultError.New("validation failure")
+	err := goerr.New("validation failure")
 
 	verr = spine.GetValidationError(err)
 
 	assert.Equal(t, spine.ValidationFailure, verr.Class())
 	assert.Equal(t, err, verr.Unwrap())
-	assert.Equal(t, spine.ValidationFailure.Name(), verr.Internal().Code())
+	assert.Equal(t, errors.ErrorCode("VALIDATION_FAILURE"), verr.Internal().Code())
 }
 
 func TestDialectErrorDefault(t *testing.T) {
@@ -91,7 +87,7 @@ func TestDialectErrorDefault(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
 
-	dbInstance, err := db.NewDb(getDefaultConfig(), mockdriver)
+	dbInstance, err := db.NewDb(getDefaultConfig(), db.Dialector(mysql.New(mysql.Config{Conn: mockdriver, SkipInitializeWithVersion: true})))
 	if err != nil {
 		t.Errorf("error expected")
 	}
@@ -115,7 +111,7 @@ func TestDialectError(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
 
-	dbInstance, err := db.NewDb(getDefaultConfig(), mockdriver)
+	dbInstance, err := db.NewDb(getDefaultConfig(), db.Dialector(mysql.New(mysql.Config{Conn: mockdriver, SkipInitializeWithVersion: true})))
 	if err != nil {
 		t.Errorf("error expected")
 	}
@@ -136,5 +132,5 @@ func TestDialectError(t *testing.T) {
 
 	ierr = spine.GetDBError(di)
 	assert.NotNil(t, ierr)
-	assert.Equal(t, spine.UniqueConstraintViolation.Name(), ierr.Class().Name())
+	assert.Equal(t, spine.UniqueConstraintViolation, ierr.Class())
 }

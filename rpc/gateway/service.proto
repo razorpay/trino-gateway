@@ -2,174 +2,187 @@ syntax = "proto3";
 
 package razorpay.gateway;
 
+// import "google/protobuf/struct.proto";
+
 option go_package = "./rpc/gateway;gatewayv1";
+
+service BackendApi {
+    rpc CreateOrUpdateBackend (Backend) returns (Empty);
+    rpc GetBackend (BackendGetRequest) returns (BackendGetResponse);
+    rpc ListAllBackends (Empty) returns (BackendListAllResponse);
+    rpc DeleteBackend (BackendDeleteRequest) returns (Empty);
+    rpc EnableBackend (BackendEnableRequest) returns (Empty);
+    rpc DisableBackend (BackendDisableRequest) returns (Empty);
+}
+
+service GroupApi {
+    rpc CreateOrUpdateGroup (Group) returns (Empty);
+    rpc GetGroup (GroupGetRequest) returns (GroupGetResponse);
+    rpc ListAllGroups (Empty) returns (GroupListAllResponse);
+    rpc DeleteGroup (GroupDeleteRequest) returns (Empty);
+    rpc EnableGroup (GroupEnableRequest) returns (Empty);
+    rpc DisableGroup (GroupDisableRequest) returns (Empty);
+
+    rpc EvaluateBackendForGroup(EvaluateBackendRequest) returns (Backend);
+}
+
+service PolicyApi {
+    rpc CreateOrUpdatePolicy (Policy) returns (Empty);
+    rpc GetPolicy (PolicyGetRequest) returns (PolicyGetResponse);
+    rpc ListAllPolicies (Empty) returns (PolicyListAllResponse);
+    rpc DeletePolicy (PolicyDeleteRequest) returns (Empty);
+    rpc EnablePolicy (PolicyEnableRequest) returns (Empty);
+    rpc DisablePolicy (PolicyDisableRequest) returns (Empty);
+
+    rpc EvaluateGroupForClient(EvaluateGroupRequest) returns (Group);
+}
+
+service QueryApi {
+    rpc CreateQuery (Query) returns (Empty);
+    rpc GetQuery (QueryGetRequest) returns (QueryGetResponse);
+    rpc ListQueries (QueriesListRequest) returns (QueriesListResponse);
+
+    rpc FindBackendForQuery(FindBackendForQueryRequest) returns (Backend);
+}
 
 message Empty {}
 
-service BackendsApi {
-    rpc UpsertBackend (BackendCreateRequest) returns (BackendCreateResponse);
-    rpc GetBackend (BackendGetRequest) returns (BackendResponse);
-    rpc ListBackends (Empty) returns (BackendListResponse);
-    rpc DeleteBackend (BackendDeleteRequest) returns (Empty);
-    rpc EnableBackend (BackendEnableRequest) returns (Empty);
-    rpc DisableBackend (BackendEnableRequest) returns (Empty);
-}
-
-message BackendCreateRequest {
-    string url = 1; // required
-    string external_url = 2;
-    bool is_enabled = 3;
+message Backend {
+    enum Scheme {
+        http = 0;
+        https = 1;
+    }
+    string hostname = 1; // required
+    Scheme scheme = 2; // required
+    string id = 3;
+    string external_url = 4;
+    bool is_enabled = 5;
+    string uptime_schedule = 6;
 }
 
 message BackendCreateResponse {
-    int32 id = 1;
+    string id = 1; // required
 }
 
 message BackendGetRequest {
-    int32 id = 1; // required
+    string id = 1; // required
 }
 
-message BackendResponse {
-    int32 id = 1;
-    string url = 2;
-    string external_url = 3;
-    bool is_enabled = 4;
+message BackendGetResponse {
+    Backend backend = 1; //required
 }
 
-message BackendListResponse {
-    repeated BackendResponse items = 1;
+message BackendListAllResponse {
+    repeated Backend items = 1;
 }
 
 message BackendDeleteRequest {
-    int32 id = 1; // required
+    string id = 1; // required
 }
 
 message BackendEnableRequest {
-    int32 id = 1; // required
+    string id = 1; // required
 }
 
 message BackendDisableRequest {
-    int32 id = 1; // required
+    string id = 1; // required
 }
 
-service RoutingGroupsAPI {
-    rpc Upsert (RoutingGroupCreateRequest) returns (Empty);
-    rpc Get (RoutingGroupGetRequest) returns (RoutingGroupResponse);
-    rpc List (Empty) returns (RoutingGroupListResponse);
-    rpc Delete (RoutingGroupDeleteRequest) returns (Empty);
-    rpc Enable (RoutingGroupEnableRequest) returns (Empty);
-    rpc Disable (RoutingGroupEnableRequest) returns (Empty);
-}
-
-enum RoutingStrategy {
-    ROUND_ROBIN = 0;
-    RANDOM = 1;
-}
-
-message RoutingGroupCreateRequest {
-    string key = 1; // required
-    repeated int32 backends = 2 [packed=true]; // required
-    RoutingStrategy strategy = 3;
-    bool is_enabled = 4;
-}
-
-message RoutingGroupGetRequest {
-    string key = 1; // required
-}
-
-message RoutingGroupResponse {
-    string key = 1;
-    repeated int32 backends = 2 [packed=true];
-    RoutingStrategy strategy = 3;
-    bool is_enabled = 4;
-}
-
-message RoutingGroupListResponse {
-    repeated RoutingGroupResponse items = 1;
-}
-
-message RoutingGroupDeleteRequest {
-    string key = 1; // required
-}
-
-message RoutingGroupEnableRequest {
-    string key = 1; // required
-}
-
-message RoutingGroupDisableRequest {
-    string key = 1; // required
-}
-
-service RulesAPI {
-    rpc Upsert (RulesCreateRequest) returns (Empty);
-    rpc Get (RulesGetRequest) returns (RulesResponse);
-    rpc List (Empty) returns (RulesListResponse);
-    rpc Delete (RulesDeleteRequest) returns (Empty);
-    rpc Enable (RulesEnableRequest) returns (Empty);
-    rpc Disable (RulesEnableRequest) returns (Empty);
-}
-
-message RulesCreateRequest {
-    string name = 1; // required
-    RulesResponse.Rule rule = 2; // required
-    string routing_group = 3; // required
-    string fallback = 4;
-}
-
-message RulesGetRequest {
-    string name = 1; // required
-}
-
-message RulesResponse {
-    message Rule {
-        enum type {
-            clientParams = 0;
-            listening_port = 1;
-            cron = 2;
-        }
-        string value = 1;
+message Group {
+    enum RoutingStrategy {
+        ROUND_ROBIN = 0;
+        RANDOM = 1;
     }
-    string name = 1;
-    Rule rule = 2;
-    string routing_group = 3;
-    string fallback = 4;
+    string id = 1; // required
+    repeated string backends = 2; // required
+    RoutingStrategy strategy = 3;
+    bool is_enabled = 4;
 }
 
-message RulesListResponse {
-    repeated RulesResponse items = 1;
+message GroupGetRequest {
+    string id = 1; // required
 }
 
-message RulesDeleteRequest {
-    string name = 1; // required
+message GroupGetResponse {
+    Group group = 2;
 }
 
-message RulesEnableRequest {
-    string name = 1; // required
+message GroupListAllResponse {
+    repeated Group items = 1;
 }
 
-message RulesDisableRequest {
-    string name = 1; // required
+message GroupDeleteRequest {
+    string id = 1; // required
 }
 
-service QueriesAPI {
-    rpc Append (Query) returns (Empty);
-    rpc Get (QueryGetRequest) returns (Query);
-    rpc List (QueriesListRequest) returns (QueriesListResponse);
+message GroupEnableRequest {
+    string id = 1; // required
+}
+
+message GroupDisableRequest {
+    string id = 1; // required
+}
+
+message Policy {
+    message Rule {
+        enum RuleType {
+            header_connection_properties = 0;
+            header_client_tags = 1;
+            header_host = 2;
+            listening_port = 3;
+            // cron = 4;
+        }
+        RuleType type = 1; // required
+        string value = 2; // required
+    }
+    string id = 1; // required
+    Rule rule = 2; // required
+    string group = 3; // required
+    string fallback_group = 4;
+    bool is_enabled = 5;
+}
+
+message PolicyGetRequest {
+    string id = 1; // required
+}
+
+message PolicyGetResponse {
+    Policy policy = 1; // required
+}
+
+message PolicyListAllResponse {
+    repeated Policy items = 1;
+}
+
+message PolicyDeleteRequest {
+    string id = 1; // required
+}
+
+message PolicyEnableRequest {
+    string id = 1; // required
+}
+
+message PolicyDisableRequest {
+    string id = 1; // required
 }
 
 message Query {
     string id = 1; // required
     string text = 2; // required
-    string received_at = 3; // required
+    int64 received_at = 3; // required
     string client_ip = 4;
-    string routing_group = 5; // required
-    int32 backend_id = 6; // required
+    string group_id = 5; // required
+    string backend_id = 6; // required
     string username = 7;
-    string submitted_at = 8;
+    int64 submitted_at = 8;
 }
 
 message QueryGetRequest {
     string id = 1; // required
+}
+
+message QueryGetResponse {
+    Query query = 1; // required
 }
 
 message QueriesListRequest {
@@ -179,18 +192,38 @@ message QueriesListRequest {
         ASC = 0;
         DESC = 1;
     }
-    Order order = 2;
+    Order order_by = 2;
     int32 from = 3;
     int32 to = 4;
-    reserved 5 to 10;
+    int32 skip = 5;
+    reserved 6 to 10;
 
     // custom fields to filter on
     string username = 11;
     string backend_id = 12;
-    string routing_group = 13;
+    string group_id = 13;
     bool successful_submission = 14;
 }
 
 message QueriesListResponse {
     repeated Query items = 1;
+}
+
+message EvaluateGroupRequest {
+    int32 incoming_port = 1;
+    string host = 2;
+    string header_connection_properties = 3;
+    string header_client_tags = 4;
+}
+
+message EvaluateGroupResponse {
+    string group_id = 1; // required
+}
+
+message EvaluateBackendRequest  {
+    string group_id = 1; // required
+}
+
+message FindBackendForQueryRequest {
+    string query_id = 1; // required
 }

@@ -2,44 +2,40 @@ package config
 
 import (
 	"github.com/razorpay/trino-gateway/pkg/spine/db"
-	"github.com/razorpay/trino-gateway/pkg/tracing"
-	"github.com/razorpay/trino-gateway/pkg/worker"
-	"github.com/razorpay/trino-gateway/pkg/worker/queue"
 )
 
 type Config struct {
 	App     App
-	Db      db.Config
-	Sentry  Sentry
 	Auth    Auth
-	Tracing tracing.Config
-	Job     Job
-	Queue   queue.Config
-	Worker  worker.Config
+	Db      db.Config
+	Gateway Gateway
 }
 
 // App contains application-specific config values
 type App struct {
-	Env             string
-	ServiceName     string
-	Hostname        string
-	Port            string
-	ShutdownTimeout int
-	ShutdownDelay   int
-	GitCommitHash   string
-}
-
-type Sentry struct {
-	DNS      string
-	Enabled  bool
-	LogLevel string
+	Env                     string
+	GitCommitHash           string
+	LogLevel                string
+	MetricsPort             int
+	Port                    int
+	ServiceExternalHostname string
+	ServiceHostname         string
+	ServiceName             string
+	ShutdownDelay           int
+	ShutdownTimeout         int
 }
 
 type Auth struct {
-	Username string
 	Password string
+	Username string
 }
 
-type Job struct {
-	UserApprove string `mapstructure:"user_approve"`
+type Gateway struct {
+	DefaultRoutingGroup string
+	Ports               []int
+}
+
+type Monitor struct {
+	IntervalSecs int
+	Threshold    int
 }

@@ -4,47 +4,31 @@ go 1.16
 
 require (
 	bou.ke/monkey v1.0.2
-	github.com/DATA-DOG/go-sqlmock v1.4.1
-	github.com/alicebob/miniredis/v2 v2.13.0
-	github.com/aws/aws-sdk-go v1.32.8
-	github.com/codahale/hdrhistogram v0.0.0-20161010025455-3a0bb77429bd // indirect
-	github.com/dlmiddlecote/sqlstats v1.0.1
+	github.com/DATA-DOG/go-sqlmock v1.5.0
+	github.com/dlmiddlecote/sqlstats v1.0.2
 	github.com/fatih/structs v1.1.0
-	github.com/go-ozzo/ozzo-validation/v4 v4.2.1
-	github.com/go-redis/redis v6.15.8+incompatible
+	github.com/go-bridget/twirp-swagger-gen v0.0.0-20210506064607-c78a231b1dd7 // indirect
+	github.com/go-ozzo/ozzo-validation v3.6.0+incompatible
+	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
+	github.com/go-sql-driver/mysql v1.6.0
 	github.com/gobuffalo/nulls v0.4.0
-	github.com/golang/mock v1.4.3
-	github.com/golang/protobuf v1.4.1
-	github.com/jinzhu/gorm v1.9.14
-	github.com/jmoiron/sqlx v1.2.1-0.20190826204134-d7d95172beb5 // indirect
-	github.com/lib/pq v1.7.0
-	github.com/magiconair/properties v1.8.1
-	github.com/onsi/ginkgo v1.12.1 // indirect
-	github.com/onsi/gomega v1.10.0 // indirect
-	github.com/opentracing/opentracing-go v1.1.0
-	github.com/patrickmn/go-cache v2.1.0+incompatible
-	github.com/pelletier/go-toml v1.6.0 // indirect
-	github.com/pressly/goose v2.6.0+incompatible
-	github.com/prometheus/client_golang v1.3.0
-	github.com/razorpay/goutils/logger v1.1.0
-	github.com/razorpay/goutils/uniqueid v1.0.1
-	github.com/rs/xid v1.2.1
-	github.com/smacker/opentracing-gorm v0.0.0-20181207094635-cd4974441042
-	github.com/spf13/afero v1.2.2 // indirect
-	github.com/spf13/cast v1.3.1 // indirect
-	github.com/spf13/jwalterweatherman v1.1.0 // indirect
-	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/spf13/viper v1.7.0
-	github.com/stretchr/testify v1.6.1
-	github.com/twirp-ecosystem/twirp-opentracing v0.3.0
-	github.com/twitchtv/twirp v5.10.1+incompatible
-	github.com/uber/jaeger-client-go v2.24.0+incompatible
-	github.com/uber/jaeger-lib v2.2.0+incompatible
-	golang.org/x/lint v0.0.0-20200302205851-738671d3881b // indirect
-	golang.org/x/net v0.0.0-20200520004742-59133d7f0dd7
-	golang.org/x/sys v0.0.0-20200615200032-f1bc736245b1 // indirect
-	google.golang.org/protobuf v1.25.0 // indirect
-	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
-	gopkg.in/ini.v1 v1.51.1 // indirect
-	gopkg.in/yaml.v2 v2.3.0 // indirect
+	github.com/lib/pq v1.10.2
+	github.com/pressly/goose/v3 v3.0.1
+	github.com/prometheus/client_golang v1.11.0
+	github.com/razorpay/error-mapping-module v1.0.26
+	github.com/razorpay/goutils/errors v0.3.0
+	github.com/razorpay/goutils/logger v1.3.0
+	github.com/razorpay/goutils/spine v0.2.4
+	github.com/rs/xid v1.3.0
+	github.com/smartystreets/assertions v1.0.0 // indirect
+	github.com/spf13/viper v1.8.1
+	github.com/stretchr/testify v1.7.0
+	github.com/trinodb/trino-go-client v0.300.0
+	github.com/twitchtv/twirp v8.1.0+incompatible
+	golang.org/x/crypto v0.0.0-20210711020723-a769d52b0f97 // indirect
+	google.golang.org/protobuf v1.26.0
+	gorm.io/driver/mysql v1.1.1
+	gorm.io/driver/postgres v1.1.0
+	gorm.io/gorm v1.21.12
+	gorm.io/plugin/dbresolver v1.1.0
 )

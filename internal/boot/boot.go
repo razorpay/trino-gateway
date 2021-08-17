@@ -2,23 +2,17 @@ package boot
 
 import (
 	"context"
-	"io"
 	"log"
 	"os"
 
 	"github.com/dlmiddlecote/sqlstats"
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/razorpay/goutils/logger"
 	"github.com/razorpay/trino-gateway/internal/config"
 	"github.com/razorpay/trino-gateway/internal/constants/contextkeys"
 	config_reader "github.com/razorpay/trino-gateway/pkg/config"
 	"github.com/razorpay/trino-gateway/pkg/spine/db"
-	"github.com/razorpay/trino-gateway/pkg/tracing"
-	"github.com/razorpay/trino-gateway/pkg/worker"
-	"github.com/razorpay/trino-gateway/pkg/worker/queue"
-	"github.com/razorpay/goutils/logger"
 	"github.com/rs/xid"
-	otgorm "github.com/smacker/opentracing-gorm"
 )
 
 const (
@@ -32,9 +26,6 @@ var (
 
 	// DB holds the application db connection.
 	DB *db.DB
-
-	Tracer opentracing.Tracer
-	Worker worker.IManager
 )
 
 func init() {
@@ -51,13 +42,6 @@ func init() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-
-	queues, err := queue.New(&Config.Queue)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-
-	Worker = worker.NewManager(&Config.Worker, queues, Logger(context.Background()))
 }
 
 func GetEnv() string {
@@ -95,16 +79,18 @@ func WithRequestID(ctx context.Context, requestID string) context.Context {
 func initialize(ctx context.Context, env string) error {
 	log := InitLogger(ctx)
 
-	context.WithValue(ctx, logger.LoggerCtxKey, log)
+	ctx = context.WithValue(ctx, logger.LoggerCtxKey, log)
 
 	// Puts git commit hash into config.
 	// This is not read automatically because env variable is not in expected format.
 	Config.App.GitCommitHash = os.Getenv("GIT_COMMIT_HASH")
 
-	otgorm.AddGormCallbacks(DB.Instance(ctx))
-
 	// Register DB stats prometheus collector
-	collector := sqlstats.NewStatsCollector(Config.Db.URL+"-"+Config.Db.Name, DB.Instance(ctx).DB())
+	dbInstance, err := DB.Instance(ctx).DB()
+	if err != nil {
+		return err
+	}
+	collector := sqlstats.NewStatsCollector(Config.Db.URL+"-"+Config.Db.Name, dbInstance)
 	prometheus.MustRegister(collector)
 
 	return nil
@@ -128,18 +114,14 @@ func InitMigration(ctx context.Context, env string) error {
 	return nil
 }
 
-// InitTracing initialises opentracing exporter
-func InitTracing(ctx context.Context) (io.Closer, error) {
-	t, closer, err := tracing.Init(Config.Tracing, Logger(ctx))
+// // InitTracing initialises opentracing exporter
+// func InitTracing(ctx context.Context) (io.Closer, error) {
+// 	t, closer, err := tracing.Init(Config.Tracing, Logger(ctx))
 
-	Tracer = t
+// 	Tracer = t
 
-	return closer, err
-}
-
-func InitWorker(ctx context.Context) error {
-	return Worker.Start(ctx)
-}
+// 	return closer, err
+// }
 
 // NewContext adds core key-value e.g. service name, git hash etc to
 // existing context or to a new background context and returns.
@@ -166,11 +148,8 @@ func Logger(ctx context.Context) *logger.Entry {
 
 func InitLogger(ctx context.Context) *logger.ZapLogger {
 	lgrConfig := logger.Config{
-		LogLevel:       logger.Debug,
-		SentryDSN:      Config.Sentry.DNS,
-		SentryEnabled:  Config.Sentry.Enabled,
-		SentryLogLevel: Config.Sentry.LogLevel,
-		ContextString:  "trino-gateway",
+		LogLevel:      Config.App.LogLevel,
+		ContextString: "trino-gateway",
 	}
 
 	Logger, err := logger.NewLogger(lgrConfig)

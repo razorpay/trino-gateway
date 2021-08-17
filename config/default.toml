@@ -1,49 +1,38 @@
 [app]
-    appEnv                = "default"
-    serviceName           = "trino-gateway"
-    hostname              = "trino-gateway.razorpay.com"
-    port                  = "127.0.0.1:9400"
-    shutdownTimeout       = 2
-    shutdownDelay         = 2
-    gitCommitHash         = "nil"
+    env                          = "default"
+    gitCommitHash                = "nil"
+    logLevel                     = "debug"
+    metricsPort                  = 8001
+    port                         = 8000
+    serviceExternalHostname      = "localhost:8080"
+    serviceHostname              = "$$internalHost"
+    serviceName                  = "trino-gateway"
+    shutdownDelay                = 2
+    shutdownTimeout              = 5
 
 [db]
-    dialect               = "mysql"
-    protocol              = "tcp"
-    url                   = "127.0.0.1"
-    port                  = "3306"
-    username              = "trino-gateway"
-    password              = "trino-gateway"
-    sslMode               = "require"
-    name                  = "trino-gateway"
-    maxOpenConnections    = 5
-    maxIdleConnections    = 5
-    connectionMaxLifetime = 0
-
-[tracing]
-    serviceName           = "trino-gateway"
-    logSpans              = false
-    localAgentHostPort    = "localhost:6831"
-    disabled              = true
-
-[queue]
-    driver                = "redis"
-    [queue.redis]
-        driver            = "redis"
-        host              = "127.0.0.1"
-        port              = 6379
-        database          = 0
-        password          = ""
-
-[job]
-    user_approve          = "user_approve"
-
-[worker]
-    name                  = "user_approve"
-    max_concurrency       = 1
-    wait_time             = "10s"
-    retry_delay           = "30s"
+    [db.ConnectionConfig]
+        dialect               = "mysql"
+        protocol              = "tcp"
+        url                   = "localhost"
+        port                  = 33306
+        username              = "root"
+        password              = "root123"
+        sslMode               = "require"
+        name                  = "trino-gateway"
+    [db.ConnectionPoolConfig]
+        maxOpenConnections    = 5
+        maxIdleConnections    = 5
+        connectionMaxLifetime = 0
 
 [auth]
-    username              = "key"
-    password              = "secret"
+    username              = "test"
+    password              = "test123"
+
+[gateway]
+    ports                 = [8080, 8081]
+    defaultRoutingGroup   = "adhoc"
+
+[monitor]
+    intervalSecs          = 60
+    threshold             = 1
