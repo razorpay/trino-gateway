@@ -6,6 +6,8 @@ package razorpay.gateway;
 
 option go_package = "./rpc/gateway;gatewayv1";
 
+message Empty {}
+
 service BackendApi {
     rpc CreateOrUpdateBackend (Backend) returns (Empty);
     rpc GetBackend (BackendGetRequest) returns (BackendGetResponse);
@@ -14,38 +16,6 @@ service BackendApi {
     rpc EnableBackend (BackendEnableRequest) returns (Empty);
     rpc DisableBackend (BackendDisableRequest) returns (Empty);
 }
-
-service GroupApi {
-    rpc CreateOrUpdateGroup (Group) returns (Empty);
-    rpc GetGroup (GroupGetRequest) returns (GroupGetResponse);
-    rpc ListAllGroups (Empty) returns (GroupListAllResponse);
-    rpc DeleteGroup (GroupDeleteRequest) returns (Empty);
-    rpc EnableGroup (GroupEnableRequest) returns (Empty);
-    rpc DisableGroup (GroupDisableRequest) returns (Empty);
-
-    rpc EvaluateBackendForGroup(EvaluateBackendRequest) returns (Backend);
-}
-
-service PolicyApi {
-    rpc CreateOrUpdatePolicy (Policy) returns (Empty);
-    rpc GetPolicy (PolicyGetRequest) returns (PolicyGetResponse);
-    rpc ListAllPolicies (Empty) returns (PolicyListAllResponse);
-    rpc DeletePolicy (PolicyDeleteRequest) returns (Empty);
-    rpc EnablePolicy (PolicyEnableRequest) returns (Empty);
-    rpc DisablePolicy (PolicyDisableRequest) returns (Empty);
-
-    rpc EvaluateGroupForClient(EvaluateGroupRequest) returns (Group);
-}
-
-service QueryApi {
-    rpc CreateQuery (Query) returns (Empty);
-    rpc GetQuery (QueryGetRequest) returns (QueryGetResponse);
-    rpc ListQueries (QueriesListRequest) returns (QueriesListResponse);
-
-    rpc FindBackendForQuery(FindBackendForQueryRequest) returns (Backend);
-}
-
-message Empty {}
 
 message Backend {
     enum Scheme {
@@ -88,6 +58,17 @@ message BackendDisableRequest {
     string id = 1; // required
 }
 
+service GroupApi {
+    rpc CreateOrUpdateGroup (Group) returns (Empty);
+    rpc GetGroup (GroupGetRequest) returns (GroupGetResponse);
+    rpc ListAllGroups (Empty) returns (GroupListAllResponse);
+    rpc DeleteGroup (GroupDeleteRequest) returns (Empty);
+    rpc EnableGroup (GroupEnableRequest) returns (Empty);
+    rpc DisableGroup (GroupDisableRequest) returns (Empty);
+
+    rpc EvaluateBackendForGroup(EvaluateBackendRequest) returns (Backend);
+}
+
 message Group {
     enum RoutingStrategy {
         ROUND_ROBIN = 0;
@@ -121,6 +102,17 @@ message GroupEnableRequest {
 
 message GroupDisableRequest {
     string id = 1; // required
+}
+
+service PolicyApi {
+    rpc CreateOrUpdatePolicy (Policy) returns (Empty);
+    rpc GetPolicy (PolicyGetRequest) returns (PolicyGetResponse);
+    rpc ListAllPolicies (Empty) returns (PolicyListAllResponse);
+    rpc DeletePolicy (PolicyDeleteRequest) returns (Empty);
+    rpc EnablePolicy (PolicyEnableRequest) returns (Empty);
+    rpc DisablePolicy (PolicyDisableRequest) returns (Empty);
+
+    rpc EvaluateGroupForClient(EvaluateGroupRequest) returns (Group);
 }
 
 message Policy {
@@ -164,6 +156,14 @@ message PolicyEnableRequest {
 
 message PolicyDisableRequest {
     string id = 1; // required
+}
+
+service QueryApi {
+    rpc CreateQuery (Query) returns (Empty);
+    rpc GetQuery (QueryGetRequest) returns (QueryGetResponse);
+    rpc ListQueries (QueriesListRequest) returns (QueriesListResponse);
+
+    rpc FindBackendForQuery(FindBackendForQueryRequest) returns (Backend);
 }
 
 message Query {

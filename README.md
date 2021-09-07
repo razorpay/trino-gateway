@@ -63,3 +63,10 @@ implement own basic reverse Proxy handler
 
 -- lot of handling around request parsing, json marshaling unmarshaling etc.
 
+
+
+
+## Build
+go mod tidy
+protoc --go_out=. --twirp_out=. ./rpc/gateway/service.proto
+protoc --go_out=. --twirp_swagger_out=./swaggerui/ ./rpc/gateway/service.proto

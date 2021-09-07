@@ -17,6 +17,7 @@ type App struct {
 	GitCommitHash           string
 	LogLevel                string
 	MetricsPort             int
+	GuiPort                 int
 	Port                    int
 	ServiceExternalHostname string
 	ServiceHostname         string
