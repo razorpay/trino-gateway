@@ -22,6 +22,7 @@ import (
 	policyapi "github.com/razorpay/trino-gateway/internal/gatewayserver/policyApi"
 	queryapi "github.com/razorpay/trino-gateway/internal/gatewayserver/queryApi"
 	"github.com/razorpay/trino-gateway/internal/gatewayserver/repo"
+	"github.com/razorpay/trino-gateway/internal/gatewayui"
 	"github.com/razorpay/trino-gateway/internal/router"
 	gatewayv1 "github.com/razorpay/trino-gateway/rpc/gateway"
 	// "github.com/razorpay/trino-gateway/twirpql"
@@ -61,6 +62,9 @@ func main() {
 	// Start ReverseProxy Server
 	gatewayServers := startGatewayServers(&ctx)
 
+	// Start GUI Server
+	guiServer := startGuiServer(&ctx)
+
 	// App metrics server
 	metricServer := startMetricsServer(&ctx)
 
@@ -76,7 +80,7 @@ func main() {
 	// Block until signal is received.
 	<-c
 	// shutDown(ctx, httpServers, healthCore)
-	shutDown(ctx, append(append(gatewayServers, apiServer), metricServer)...)
+	shutDown(ctx, append(append(append(gatewayServers, apiServer), guiServer), metricServer)...)
 
 }
 
@@ -109,6 +113,14 @@ func listenHttp(ctx *context.Context, server *http.Server, port int) {
 func startMonitor() {
 	// Start backend health check monitors
 
+}
+
+func startGuiServer(ctx *context.Context) *http.Server {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", gatewayui.HttpHandler)
+	httpServer := http.Server{Handler: mux}
+	go listenHttp(ctx, &httpServer, boot.Config.App.GuiPort)
+	return &httpServer
 }
 
 func startApiServer(ctx *context.Context) *http.Server {
@@ -153,7 +165,7 @@ func startApiServer(ctx *context.Context) *http.Server {
 		_, _ = fmt.Fprintf(w, boot.Config.App.GitCommitHash)
 	})
 
-	fs := http.FileServer(http.Dir("./swaggerui"))
+	fs := http.FileServer(http.Dir("./third_party/swaggerui"))
 	mux.Handle(appSwaggerUiPath, http.StripPrefix(appSwaggerUiPath, fs))
 
 	// mux.Handle("/twirpql", twirpql.Handler(gatewayServer, nil))

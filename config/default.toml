@@ -2,7 +2,8 @@
     env                          = "default"
     gitCommitHash                = "nil"
     logLevel                     = "debug"
-    metricsPort                  = 8001
+    metricsPort                  = 8002
+    guiPort                      = 8001
     port                         = 8000
     serviceExternalHostname      = "localhost:8080"
     serviceHostname              = "$$internalHost"
