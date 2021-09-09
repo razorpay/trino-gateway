@@ -3,7 +3,7 @@ package hooks
 import (
 	"context"
 
-	"github.com/razorpay/goutils/logger"
+	"github.com/razorpay/trino-gateway/pkg/logger"
 	"github.com/twitchtv/twirp"
 
 	"github.com/razorpay/trino-gateway/internal/boot"

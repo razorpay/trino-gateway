@@ -7,10 +7,10 @@ import (
 
 	"github.com/dlmiddlecote/sqlstats"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/razorpay/goutils/logger"
 	"github.com/razorpay/trino-gateway/internal/config"
 	"github.com/razorpay/trino-gateway/internal/constants/contextkeys"
 	config_reader "github.com/razorpay/trino-gateway/pkg/config"
+	"github.com/razorpay/trino-gateway/pkg/logger"
 	"github.com/razorpay/trino-gateway/pkg/spine/db"
 	"github.com/rs/xid"
 )

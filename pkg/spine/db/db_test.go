@@ -13,9 +13,9 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 
-	"github.com/razorpay/goutils/errors"
-	"github.com/razorpay/goutils/spine"
-	"github.com/razorpay/goutils/spine/db"
+	"github.com/razorpay/trino-gateway/pkg/errors"
+	"github.com/razorpay/trino-gateway/pkg/spine"
+	"github.com/razorpay/trino-gateway/pkg/spine/db"
 )
 
 type TestModel struct {

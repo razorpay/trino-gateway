@@ -17,15 +17,15 @@ func HttpHandler(w http.ResponseWriter, r *http.Request) {
 
 	data := todoPageData{
 		PageTitle: "Trino Gateway",
-		Todos: []todo{
-			{Title: "Task 1", Done: false},
-			{Title: "Task 2", Done: true},
-			{Title: "Task 3", Done: true},
+		Queries: []models.Query{
+			{Text: "Task 1"},
+			{Text: "Task 2"},
+			{Text: "Task 3"},
 		},
 	}
 	tmpl.Execute(w, data)
 }
 
-func listAllQueries() []models.Query {
+// func listAllQueries() []models.Query {
 
-}
+// }

@@ -5,8 +5,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/razorpay/goutils/errors"
-	"github.com/razorpay/goutils/spine"
+	"github.com/razorpay/trino-gateway/pkg/errors"
+	"github.com/razorpay/trino-gateway/pkg/spine"
 )
 
 type Test struct {
