@@ -14,12 +14,11 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 
-	"github.com/razorpay/goutils/errors"
-	"github.com/razorpay/goutils/spine"
-	"github.com/razorpay/goutils/spine/datatype"
-	"github.com/razorpay/goutils/spine/db"
-
 	error_module "github.com/razorpay/error-mapping-module"
+	"github.com/razorpay/trino-gateway/pkg/errors"
+	"github.com/razorpay/trino-gateway/pkg/spine"
+	"github.com/razorpay/trino-gateway/pkg/spine/datatype"
+	"github.com/razorpay/trino-gateway/pkg/spine/db"
 )
 
 func init() {
