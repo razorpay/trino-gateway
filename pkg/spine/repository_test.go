@@ -14,7 +14,7 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 
-	error_module "github.com/razorpay/error-mapping-module"
+	// error_module "github.com/razorpay/error-mapping-module"
 	"github.com/razorpay/trino-gateway/pkg/errors"
 	"github.com/razorpay/trino-gateway/pkg/spine"
 	"github.com/razorpay/trino-gateway/pkg/spine/datatype"
