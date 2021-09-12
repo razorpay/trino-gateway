@@ -66,6 +66,17 @@ implement own basic reverse Proxy handler
 
 
 
+## Setup ENV
+Golang
+Twirp
+https://twitchtv.github.io/twirp/docs/install.html
+
+gopherJs
+
+
+Setup a MySQL DB instance
+
+
 ## Build
 go mod tidy
 protoc --go_out=. --twirp_out=. ./rpc/gateway/service.proto
