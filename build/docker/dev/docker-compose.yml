@@ -1,0 +1,50 @@
+version: '3'
+services:
+  # trino_gateway:
+  #   build:
+  #     context: .
+  #     dockerfile: build/docker/dev/Dockerfile
+  #   image: trino_gateway
+  #   # image: utkarshsaxena/utk_trino_gateway:v6
+  #   container_name: trino_gateway
+  #   volumes:
+  #     - .:/app
+  #   environment:
+  #     APP_MODE: dev
+  #     DB_HOST: trino_gateway_mysql
+  #     DB_PORT: 3306
+  #     DB_USER: root
+  #     DB_NAME: trino_gateway
+  #     DB_PASS: root123
+  #     ADMIN_PORT: 8091
+  #     APP_PORT: 8090
+  #     ROUTER_PORT: 8083
+  #   entrypoint: /app/dockerconf/entrypoint.sh
+  #   # entrypoint: ["tail", "-f", "/dev/null"]
+  #   expose:
+  #     - "8091"
+  #     - "8090"
+  #     - "8083"
+  #   ports:
+  #     - 28090:8090
+  #     - 28091:8091
+  #     - 8083:8083
+  #   networks:
+  #     - default
+  #   links:
+  #     - trino_gateway_mysql
+  trino_gateway_mysql:
+    image: mysql:8.0.18
+    container_name: trino_gateway_mysql
+    ports:
+    - 33306:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: trino-gateway
+    # volumes:
+    # - ./dockerconf/mysqlconf:/etc/mysql/conf.d
+    networks:
+      - default
+# networks:
+#   trino:
+#     external: true

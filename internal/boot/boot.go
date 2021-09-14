@@ -48,8 +48,11 @@ func GetEnv() string {
 	// Fetch env for bootstrapping
 	environment := os.Getenv("APP_ENV")
 	if environment == "" {
+		log.Print("APP_ENV not set defaulting to dev env.", environment)
 		environment = "dev"
 	}
+
+	log.Print("Setting app env to ", environment)
 
 	return environment
 }
