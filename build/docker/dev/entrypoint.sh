@@ -2,7 +2,8 @@
 
 initialize() {
     # Init app secrets + envvars
-    echo "GG"
+    echo "Syncing app deps, if this takes time, update deps in the built image"
+    go mod download
 }
 
 check_db_connection() {
@@ -20,3 +21,6 @@ check_db_connection
 db_migrations
 
 # run app
+
+
+tail -f /dev/null

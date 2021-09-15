@@ -81,3 +81,12 @@ Setup a MySQL DB instance
 go mod download
 protoc --go_out=. --twirp_out=. ./rpc/gateway/service.proto
 protoc --go_out=. --twirp_swagger_out=./swaggerui/ ./rpc/gateway/service.proto
+
+
+
+### Notes for gopherjs
+Not everything can be compiled
+https://github.com/gopherjs/gopherjs/issues/889
+gopherjs build ./cmd/frontend -o ./web/frontend/frontend.js
+
+It is necessary to hav a main package
