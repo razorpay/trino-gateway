@@ -3,7 +3,7 @@
 initialize() {
     # Init app secrets + envvars
     echo "Syncing app deps, if this takes time, update deps in the built image"
-    go mod download
+    make build
 }
 
 check_db_connection() {
@@ -12,7 +12,7 @@ check_db_connection() {
 }
 
 db_migrations() {
-    echo "GG"
+    go run ./cmd/migration/main.go up
 }
 
 initialize
@@ -22,5 +22,5 @@ db_migrations
 
 # run app
 
-
-tail -f /dev/null
+go run ./cmd/gateway/main.go
+# tail -f /dev/null

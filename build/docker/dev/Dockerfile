@@ -16,4 +16,6 @@ RUN go mod download
 
 RUN go get github.com/gopherjs/gopherjs
 
+RUN apk add make
+
 ENTRYPOINT CompileDaemon --build="go build cmd/gateway/main.go -o gateway" --command=./gateway
