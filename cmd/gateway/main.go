@@ -22,7 +22,6 @@ import (
 	policyapi "github.com/razorpay/trino-gateway/internal/gatewayserver/policyApi"
 	queryapi "github.com/razorpay/trino-gateway/internal/gatewayserver/queryApi"
 	"github.com/razorpay/trino-gateway/internal/gatewayserver/repo"
-	"github.com/razorpay/trino-gateway/internal/gatewayui"
 	"github.com/razorpay/trino-gateway/internal/router"
 	gatewayv1 "github.com/razorpay/trino-gateway/rpc/gateway"
 	// "github.com/razorpay/trino-gateway/twirpql"
@@ -117,7 +116,10 @@ func startMonitor() {
 
 func startGuiServer(ctx *context.Context) *http.Server {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", gatewayui.HttpHandler)
+	// mux.HandleFunc("/", gatewayui.HttpHandler)
+	fs := http.FileServer(http.Dir("./web/frontend"))
+	appFrontendPath := "/"
+	mux.Handle(appFrontendPath, http.StripPrefix(appFrontendPath, fs))
 	httpServer := http.Server{Handler: mux}
 	go listenHttp(ctx, &httpServer, boot.Config.App.GuiPort)
 	return &httpServer

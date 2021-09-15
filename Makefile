@@ -17,15 +17,19 @@ config/dev.toml:
 
 .PHONY: build
 build:
-	$(SCRIPT_DIR)/setup.sh
+	$(SCRIPT_DIR)/compile.sh
 
-.PHONY: dev-build
-dev-build:
-	$(SCRIPT_DIR)/dev.sh
+# .PHONY: dev-build
+# dev-build:
+# 	$(SCRIPT_DIR)/dev.sh
 
 .PHONY: dev-docker
 dev-docker-up:
-	$(SCRIPT_DIR)/dev.sh
+	$(SCRIPT_DIR)/docker.sh up
+
+.PHONY: dev-docker
+dev-docker-down:
+	$(SCRIPT_DIR)/docker.sh down
 
 
 .PHONY: dev-migration

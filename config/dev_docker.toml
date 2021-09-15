@@ -1,29 +1,5 @@
-[app]
-    appEnv                = "default"
-    serviceName           = "$app_name"
-    hostname              = "$app_name.razorpay.com"
-    port                  = "0.0.0.0:9400"
-    shutdownTimeout       = 5
-    shutdownDelay         = 5
-    gitCommitHash         = "nil"
 
 [db]
-    dialect               = "mysql"
-    protocol              = "tcp"
-    url                   = "db"
-    port                  = "3306"
-    username              = "go-foundation"
-    password              = "go-foundation"
-    sslMode               = "require"
-    name                  = "go-foundation"
-    maxOpenConnections    = 5
-    maxIdleConnections    = 5
-    connectionMaxLifetime = 0
-
-[tracing]
-    disabled              = true
-    localAgentHostPort    = "jaeger:6831"
-
-[auth]
-    username = "key"
-    password = "secret"
+    [db.ConnectionConfig]
+        url                   = "trino_gateway_mysql"
+        port                  = 3306

@@ -37,3 +37,7 @@ config/dev.*
 
 # docker-compose .dev file in deployments.
 # deployments/docker-compose.dev.yml
+
+
+# Gopherjs compiled files
+web/frontend/js/*
