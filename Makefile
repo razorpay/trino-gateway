@@ -23,11 +23,11 @@ build:
 # dev-build:
 # 	$(SCRIPT_DIR)/dev.sh
 
-.PHONY: dev-docker
+.PHONY: dev-docker-up
 dev-docker-up:
 	$(SCRIPT_DIR)/docker.sh up
 
-.PHONY: dev-docker
+.PHONY: dev-docker-down
 dev-docker-down:
 	$(SCRIPT_DIR)/docker.sh down
 
