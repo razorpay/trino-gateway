@@ -14,7 +14,7 @@ COPY ./go.sum /app/go.sum
 
 RUN go mod download
 
-RUN go get github.com/gopherjs/gopherjs
+RUN go get github.com/gopherjs/gopherjs@1.16.4+go1.16.7
 
 RUN apk add make
 
