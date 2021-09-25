@@ -1,672 +1,716 @@
 {
+  "swagger": "2.0",
+  "info": {
+    "title": "rpc/gateway/service.proto",
+    "version": "version not set"
+  },
+  "schemes": [
+    "http",
+    "https"
+  ],
   "consumes": [
     "application/json"
   ],
   "produces": [
     "application/json"
   ],
-  "schemes": [
-    "http",
-    "https"
-  ],
-  "swagger": "2.0",
-  "info": {
-    "title": "service.proto",
-    "version": "version not set"
-  },
-  "host": "localhost:8000",
   "paths": {
     "/twirp/razorpay.gateway.BackendApi/CreateOrUpdateBackend": {
       "post": {
-        "tags": [
-          "BackendApi"
-        ],
         "operationId": "CreateOrUpdateBackend",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/gatewayEmpty"
+            }
+          }
+        },
         "parameters": [
           {
             "name": "body",
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/razorpay.gatewayBackend"
+              "$ref": "#/definitions/gatewayBackend"
             }
           }
         ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/razorpay.gatewayEmpty"
-            }
-          }
-        }
+        "tags": [
+          "BackendApi"
+        ]
       }
     },
     "/twirp/razorpay.gateway.BackendApi/DeleteBackend": {
       "post": {
-        "tags": [
-          "BackendApi"
-        ],
         "operationId": "DeleteBackend",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/gatewayEmpty"
+            }
+          }
+        },
         "parameters": [
           {
             "name": "body",
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/razorpay.gatewayBackendDeleteRequest"
+              "$ref": "#/definitions/gatewayBackendDeleteRequest"
             }
           }
         ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/razorpay.gatewayEmpty"
-            }
-          }
-        }
+        "tags": [
+          "BackendApi"
+        ]
       }
     },
     "/twirp/razorpay.gateway.BackendApi/DisableBackend": {
       "post": {
-        "tags": [
-          "BackendApi"
-        ],
         "operationId": "DisableBackend",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/gatewayEmpty"
+            }
+          }
+        },
         "parameters": [
           {
             "name": "body",
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/razorpay.gatewayBackendDisableRequest"
+              "$ref": "#/definitions/gatewayBackendDisableRequest"
             }
           }
         ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/razorpay.gatewayEmpty"
-            }
-          }
-        }
+        "tags": [
+          "BackendApi"
+        ]
       }
     },
     "/twirp/razorpay.gateway.BackendApi/EnableBackend": {
       "post": {
-        "tags": [
-          "BackendApi"
-        ],
         "operationId": "EnableBackend",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/gatewayEmpty"
+            }
+          }
+        },
         "parameters": [
           {
             "name": "body",
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/razorpay.gatewayBackendEnableRequest"
+              "$ref": "#/definitions/gatewayBackendEnableRequest"
             }
           }
         ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/razorpay.gatewayEmpty"
-            }
-          }
-        }
+        "tags": [
+          "BackendApi"
+        ]
       }
     },
     "/twirp/razorpay.gateway.BackendApi/GetBackend": {
       "post": {
-        "tags": [
-          "BackendApi"
-        ],
         "operationId": "GetBackend",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/gatewayBackendGetResponse"
+            }
+          }
+        },
         "parameters": [
           {
             "name": "body",
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/razorpay.gatewayBackendGetRequest"
+              "$ref": "#/definitions/gatewayBackendGetRequest"
             }
           }
         ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/razorpay.gatewayBackendGetResponse"
-            }
-          }
-        }
+        "tags": [
+          "BackendApi"
+        ]
       }
     },
     "/twirp/razorpay.gateway.BackendApi/ListAllBackends": {
       "post": {
-        "tags": [
-          "BackendApi"
-        ],
         "operationId": "ListAllBackends",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/gatewayBackendListAllResponse"
+            }
+          }
+        },
         "parameters": [
           {
             "name": "body",
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/razorpay.gatewayEmpty"
+              "$ref": "#/definitions/gatewayEmpty"
             }
           }
         ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/razorpay.gatewayBackendListAllResponse"
-            }
-          }
-        }
+        "tags": [
+          "BackendApi"
+        ]
       }
     },
     "/twirp/razorpay.gateway.GroupApi/CreateOrUpdateGroup": {
       "post": {
-        "tags": [
-          "GroupApi"
-        ],
         "operationId": "CreateOrUpdateGroup",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/gatewayEmpty"
+            }
+          }
+        },
         "parameters": [
           {
             "name": "body",
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/razorpay.gatewayGroup"
+              "$ref": "#/definitions/gatewayGroup"
             }
           }
         ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/razorpay.gatewayEmpty"
-            }
-          }
-        }
+        "tags": [
+          "GroupApi"
+        ]
       }
     },
     "/twirp/razorpay.gateway.GroupApi/DeleteGroup": {
       "post": {
-        "tags": [
-          "GroupApi"
-        ],
         "operationId": "DeleteGroup",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/gatewayEmpty"
+            }
+          }
+        },
         "parameters": [
           {
             "name": "body",
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/razorpay.gatewayGroupDeleteRequest"
+              "$ref": "#/definitions/gatewayGroupDeleteRequest"
             }
           }
         ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/razorpay.gatewayEmpty"
-            }
-          }
-        }
+        "tags": [
+          "GroupApi"
+        ]
       }
     },
     "/twirp/razorpay.gateway.GroupApi/DisableGroup": {
       "post": {
-        "tags": [
-          "GroupApi"
-        ],
         "operationId": "DisableGroup",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/gatewayEmpty"
+            }
+          }
+        },
         "parameters": [
           {
             "name": "body",
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/razorpay.gatewayGroupDisableRequest"
+              "$ref": "#/definitions/gatewayGroupDisableRequest"
             }
           }
         ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/razorpay.gatewayEmpty"
-            }
-          }
-        }
+        "tags": [
+          "GroupApi"
+        ]
       }
     },
     "/twirp/razorpay.gateway.GroupApi/EnableGroup": {
       "post": {
-        "tags": [
-          "GroupApi"
-        ],
         "operationId": "EnableGroup",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/gatewayEmpty"
+            }
+          }
+        },
         "parameters": [
           {
             "name": "body",
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/razorpay.gatewayGroupEnableRequest"
+              "$ref": "#/definitions/gatewayGroupEnableRequest"
             }
           }
         ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/razorpay.gatewayEmpty"
-            }
-          }
-        }
+        "tags": [
+          "GroupApi"
+        ]
       }
     },
     "/twirp/razorpay.gateway.GroupApi/EvaluateBackendForGroup": {
       "post": {
-        "tags": [
-          "GroupApi"
-        ],
         "operationId": "EvaluateBackendForGroup",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/gatewayBackend"
+            }
+          }
+        },
         "parameters": [
           {
             "name": "body",
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/razorpay.gatewayEvaluateBackendRequest"
+              "$ref": "#/definitions/gatewayEvaluateBackendRequest"
             }
           }
         ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/razorpay.gatewayBackend"
-            }
-          }
-        }
+        "tags": [
+          "GroupApi"
+        ]
       }
     },
     "/twirp/razorpay.gateway.GroupApi/GetGroup": {
       "post": {
-        "tags": [
-          "GroupApi"
-        ],
         "operationId": "GetGroup",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/gatewayGroupGetResponse"
+            }
+          }
+        },
         "parameters": [
           {
             "name": "body",
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/razorpay.gatewayGroupGetRequest"
+              "$ref": "#/definitions/gatewayGroupGetRequest"
             }
           }
         ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/razorpay.gatewayGroupGetResponse"
-            }
-          }
-        }
+        "tags": [
+          "GroupApi"
+        ]
       }
     },
     "/twirp/razorpay.gateway.GroupApi/ListAllGroups": {
       "post": {
-        "tags": [
-          "GroupApi"
-        ],
         "operationId": "ListAllGroups",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/gatewayGroupListAllResponse"
+            }
+          }
+        },
         "parameters": [
           {
             "name": "body",
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/razorpay.gatewayEmpty"
+              "$ref": "#/definitions/gatewayEmpty"
             }
           }
         ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/razorpay.gatewayGroupListAllResponse"
-            }
-          }
-        }
+        "tags": [
+          "GroupApi"
+        ]
       }
     },
     "/twirp/razorpay.gateway.PolicyApi/CreateOrUpdatePolicy": {
       "post": {
-        "tags": [
-          "PolicyApi"
-        ],
         "operationId": "CreateOrUpdatePolicy",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/gatewayEmpty"
+            }
+          }
+        },
         "parameters": [
           {
             "name": "body",
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/razorpay.gatewayPolicy"
+              "$ref": "#/definitions/gatewayPolicy"
             }
           }
         ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/razorpay.gatewayEmpty"
-            }
-          }
-        }
+        "tags": [
+          "PolicyApi"
+        ]
       }
     },
     "/twirp/razorpay.gateway.PolicyApi/DeletePolicy": {
       "post": {
-        "tags": [
-          "PolicyApi"
-        ],
         "operationId": "DeletePolicy",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/gatewayEmpty"
+            }
+          }
+        },
         "parameters": [
           {
             "name": "body",
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/razorpay.gatewayPolicyDeleteRequest"
+              "$ref": "#/definitions/gatewayPolicyDeleteRequest"
             }
           }
         ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/razorpay.gatewayEmpty"
-            }
-          }
-        }
+        "tags": [
+          "PolicyApi"
+        ]
       }
     },
     "/twirp/razorpay.gateway.PolicyApi/DisablePolicy": {
       "post": {
-        "tags": [
-          "PolicyApi"
-        ],
         "operationId": "DisablePolicy",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/gatewayEmpty"
+            }
+          }
+        },
         "parameters": [
           {
             "name": "body",
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/razorpay.gatewayPolicyDisableRequest"
+              "$ref": "#/definitions/gatewayPolicyDisableRequest"
             }
           }
         ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/razorpay.gatewayEmpty"
-            }
-          }
-        }
+        "tags": [
+          "PolicyApi"
+        ]
       }
     },
     "/twirp/razorpay.gateway.PolicyApi/EnablePolicy": {
       "post": {
-        "tags": [
-          "PolicyApi"
-        ],
         "operationId": "EnablePolicy",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/gatewayEmpty"
+            }
+          }
+        },
         "parameters": [
           {
             "name": "body",
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/razorpay.gatewayPolicyEnableRequest"
+              "$ref": "#/definitions/gatewayPolicyEnableRequest"
             }
           }
         ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/razorpay.gatewayEmpty"
-            }
-          }
-        }
+        "tags": [
+          "PolicyApi"
+        ]
       }
     },
     "/twirp/razorpay.gateway.PolicyApi/EvaluateGroupForClient": {
       "post": {
-        "tags": [
-          "PolicyApi"
-        ],
         "operationId": "EvaluateGroupForClient",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/gatewayGroup"
+            }
+          }
+        },
         "parameters": [
           {
             "name": "body",
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/razorpay.gatewayEvaluateGroupRequest"
+              "$ref": "#/definitions/gatewayEvaluateGroupRequest"
             }
           }
         ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/razorpay.gatewayGroup"
-            }
-          }
-        }
+        "tags": [
+          "PolicyApi"
+        ]
       }
     },
     "/twirp/razorpay.gateway.PolicyApi/GetPolicy": {
       "post": {
-        "tags": [
-          "PolicyApi"
-        ],
         "operationId": "GetPolicy",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/gatewayPolicyGetResponse"
+            }
+          }
+        },
         "parameters": [
           {
             "name": "body",
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/razorpay.gatewayPolicyGetRequest"
+              "$ref": "#/definitions/gatewayPolicyGetRequest"
             }
           }
         ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/razorpay.gatewayPolicyGetResponse"
-            }
-          }
-        }
+        "tags": [
+          "PolicyApi"
+        ]
       }
     },
     "/twirp/razorpay.gateway.PolicyApi/ListAllPolicies": {
       "post": {
+        "operationId": "ListAllPolicies",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/gatewayPolicyListAllResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/gatewayEmpty"
+            }
+          }
+        ],
         "tags": [
           "PolicyApi"
-        ],
-        "operationId": "ListAllPolicies",
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/razorpay.gatewayEmpty"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/razorpay.gatewayPolicyListAllResponse"
-            }
-          }
-        }
+        ]
       }
     },
-    "/twirp/razorpay.gateway.QueryApi/CreateQuery": {
+    "/twirp/razorpay.gateway.QueryApi/CreateOrUpdateQuery": {
       "post": {
-        "tags": [
-          "QueryApi"
-        ],
-        "operationId": "CreateQuery",
+        "operationId": "CreateOrUpdateQuery",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/gatewayEmpty"
+            }
+          }
+        },
         "parameters": [
           {
             "name": "body",
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/razorpay.gatewayQuery"
+              "$ref": "#/definitions/gatewayQuery"
             }
           }
         ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/razorpay.gatewayEmpty"
-            }
-          }
-        }
+        "tags": [
+          "QueryApi"
+        ]
       }
     },
     "/twirp/razorpay.gateway.QueryApi/FindBackendForQuery": {
       "post": {
-        "tags": [
-          "QueryApi"
-        ],
         "operationId": "FindBackendForQuery",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/gatewayBackend"
+            }
+          }
+        },
         "parameters": [
           {
             "name": "body",
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/razorpay.gatewayFindBackendForQueryRequest"
+              "$ref": "#/definitions/gatewayFindBackendForQueryRequest"
             }
           }
         ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/razorpay.gatewayBackend"
-            }
-          }
-        }
+        "tags": [
+          "QueryApi"
+        ]
       }
     },
     "/twirp/razorpay.gateway.QueryApi/GetQuery": {
       "post": {
-        "tags": [
-          "QueryApi"
-        ],
         "operationId": "GetQuery",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/gatewayQueryGetResponse"
+            }
+          }
+        },
         "parameters": [
           {
             "name": "body",
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/razorpay.gatewayQueryGetRequest"
+              "$ref": "#/definitions/gatewayQueryGetRequest"
             }
           }
         ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/razorpay.gatewayQueryGetResponse"
-            }
-          }
-        }
+        "tags": [
+          "QueryApi"
+        ]
       }
     },
     "/twirp/razorpay.gateway.QueryApi/ListQueries": {
       "post": {
-        "tags": [
-          "QueryApi"
-        ],
         "operationId": "ListQueries",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/gatewayQueriesListResponse"
+            }
+          }
+        },
         "parameters": [
           {
             "name": "body",
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/razorpay.gatewayQueriesListRequest"
+              "$ref": "#/definitions/gatewayQueriesListRequest"
             }
           }
         ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/razorpay.gatewayQueriesListResponse"
-            }
-          }
-        }
+        "tags": [
+          "QueryApi"
+        ]
       }
     }
   },
   "definitions": {
-    "razorpay.gatewayBackend": {
+    "BackendScheme": {
+      "type": "string",
+      "enum": [
+        "http",
+        "https"
+      ],
+      "default": "http"
+    },
+    "GroupRoutingStrategy": {
+      "type": "string",
+      "enum": [
+        "ROUND_ROBIN",
+        "RANDOM"
+      ],
+      "default": "ROUND_ROBIN"
+    },
+    "PolicyRule": {
       "type": "object",
       "properties": {
-        "external_url": {
-          "type": "string"
+        "type": {
+          "$ref": "#/definitions/RuleRuleType"
         },
+        "value": {
+          "type": "string"
+        }
+      }
+    },
+    "QueriesListRequestOrder": {
+      "type": "string",
+      "enum": [
+        "ASC",
+        "DESC"
+      ],
+      "default": "ASC"
+    },
+    "RuleRuleType": {
+      "type": "string",
+      "enum": [
+        "header_connection_properties",
+        "header_client_tags",
+        "header_host",
+        "listening_port"
+      ],
+      "default": "header_connection_properties"
+    },
+    "gatewayBackend": {
+      "type": "object",
+      "properties": {
         "hostname": {
           "type": "string"
         },
+        "scheme": {
+          "$ref": "#/definitions/BackendScheme"
+        },
         "id": {
+          "type": "string"
+        },
+        "external_url": {
           "type": "string"
         },
         "is_enabled": {
           "type": "boolean",
           "format": "boolean"
         },
-        "protocol": {
-          "$ref": "#/definitions/razorpaygatewayProtocol"
-        },
         "uptime_schedule": {
           "type": "string"
         }
       }
     },
-    "razorpay.gatewayBackendCreateResponse": {
+    "gatewayBackendDeleteRequest": {
       "type": "object",
       "properties": {
         "id": {
@@ -674,7 +718,7 @@
         }
       }
     },
-    "razorpay.gatewayBackendDeleteRequest": {
+    "gatewayBackendDisableRequest": {
       "type": "object",
       "properties": {
         "id": {
@@ -682,7 +726,7 @@
         }
       }
     },
-    "razorpay.gatewayBackendDisableRequest": {
+    "gatewayBackendEnableRequest": {
       "type": "object",
       "properties": {
         "id": {
@@ -690,7 +734,7 @@
         }
       }
     },
-    "razorpay.gatewayBackendEnableRequest": {
+    "gatewayBackendGetRequest": {
       "type": "object",
       "properties": {
         "id": {
@@ -698,37 +742,29 @@
         }
       }
     },
-    "razorpay.gatewayBackendGetRequest": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string"
-        }
-      }
-    },
-    "razorpay.gatewayBackendGetResponse": {
+    "gatewayBackendGetResponse": {
       "type": "object",
       "properties": {
         "backend": {
-          "$ref": "#/definitions/razorpaygatewayBackend"
+          "$ref": "#/definitions/gatewayBackend"
         }
       }
     },
-    "razorpay.gatewayBackendListAllResponse": {
+    "gatewayBackendListAllResponse": {
       "type": "object",
       "properties": {
         "items": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/razorpaygatewayBackend"
+            "$ref": "#/definitions/gatewayBackend"
           }
         }
       }
     },
-    "razorpay.gatewayEmpty": {
+    "gatewayEmpty": {
       "type": "object"
     },
-    "razorpay.gatewayEvaluateBackendRequest": {
+    "gatewayEvaluateBackendRequest": {
       "type": "object",
       "properties": {
         "group_id": {
@@ -736,33 +772,25 @@
         }
       }
     },
-    "razorpay.gatewayEvaluateGroupRequest": {
+    "gatewayEvaluateGroupRequest": {
       "type": "object",
       "properties": {
-        "header_client_tags": {
+        "incoming_port": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "host": {
           "type": "string"
         },
         "header_connection_properties": {
           "type": "string"
         },
-        "host": {
-          "type": "string"
-        },
-        "incoming_port": {
-          "type": "integer",
-          "format": "int32"
-        }
-      }
-    },
-    "razorpay.gatewayEvaluateGroupResponse": {
-      "type": "object",
-      "properties": {
-        "group_id": {
+        "header_client_tags": {
           "type": "string"
         }
       }
     },
-    "razorpay.gatewayFindBackendForQueryRequest": {
+    "gatewayFindBackendForQueryRequest": {
       "type": "object",
       "properties": {
         "query_id": {
@@ -770,28 +798,28 @@
         }
       }
     },
-    "razorpay.gatewayGroup": {
+    "gatewayGroup": {
       "type": "object",
       "properties": {
+        "id": {
+          "type": "string"
+        },
         "backends": {
           "type": "array",
           "items": {
             "type": "string"
           }
         },
-        "id": {
-          "type": "string"
+        "strategy": {
+          "$ref": "#/definitions/GroupRoutingStrategy"
         },
         "is_enabled": {
           "type": "boolean",
           "format": "boolean"
-        },
-        "strategy": {
-          "$ref": "#/definitions/razorpaygatewayRoutingStrategy"
         }
       }
     },
-    "razorpay.gatewayGroupDeleteRequest": {
+    "gatewayGroupDeleteRequest": {
       "type": "object",
       "properties": {
         "id": {
@@ -799,7 +827,7 @@
         }
       }
     },
-    "razorpay.gatewayGroupDisableRequest": {
+    "gatewayGroupDisableRequest": {
       "type": "object",
       "properties": {
         "id": {
@@ -807,7 +835,7 @@
         }
       }
     },
-    "razorpay.gatewayGroupEnableRequest": {
+    "gatewayGroupEnableRequest": {
       "type": "object",
       "properties": {
         "id": {
@@ -815,7 +843,7 @@
         }
       }
     },
-    "razorpay.gatewayGroupGetRequest": {
+    "gatewayGroupGetRequest": {
       "type": "object",
       "properties": {
         "id": {
@@ -823,47 +851,47 @@
         }
       }
     },
-    "razorpay.gatewayGroupGetResponse": {
+    "gatewayGroupGetResponse": {
       "type": "object",
       "properties": {
         "group": {
-          "$ref": "#/definitions/razorpaygatewayGroup"
+          "$ref": "#/definitions/gatewayGroup"
         }
       }
     },
-    "razorpay.gatewayGroupListAllResponse": {
+    "gatewayGroupListAllResponse": {
       "type": "object",
       "properties": {
         "items": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/razorpaygatewayGroup"
+            "$ref": "#/definitions/gatewayGroup"
           }
         }
       }
     },
-    "razorpay.gatewayPolicy": {
+    "gatewayPolicy": {
       "type": "object",
       "properties": {
+        "id": {
+          "type": "string"
+        },
+        "rule": {
+          "$ref": "#/definitions/PolicyRule"
+        },
+        "group": {
+          "type": "string"
+        },
         "fallback_group": {
           "type": "string"
         },
-        "group": {
-          "type": "string"
-        },
-        "id": {
-          "type": "string"
-        },
         "is_enabled": {
           "type": "boolean",
           "format": "boolean"
-        },
-        "rule": {
-          "$ref": "#/definitions/razorpaygatewayRule"
         }
       }
     },
-    "razorpay.gatewayPolicyDeleteRequest": {
+    "gatewayPolicyDeleteRequest": {
       "type": "object",
       "properties": {
         "id": {
@@ -871,7 +899,7 @@
         }
       }
     },
-    "razorpay.gatewayPolicyDisableRequest": {
+    "gatewayPolicyDisableRequest": {
       "type": "object",
       "properties": {
         "id": {
@@ -879,7 +907,7 @@
         }
       }
     },
-    "razorpay.gatewayPolicyEnableRequest": {
+    "gatewayPolicyEnableRequest": {
       "type": "object",
       "properties": {
         "id": {
@@ -887,7 +915,7 @@
         }
       }
     },
-    "razorpay.gatewayPolicyGetRequest": {
+    "gatewayPolicyGetRequest": {
       "type": "object",
       "properties": {
         "id": {
@@ -895,80 +923,87 @@
         }
       }
     },
-    "razorpay.gatewayPolicyGetResponse": {
+    "gatewayPolicyGetResponse": {
       "type": "object",
       "properties": {
         "policy": {
-          "$ref": "#/definitions/razorpaygatewayPolicy"
+          "$ref": "#/definitions/gatewayPolicy"
         }
       }
     },
-    "razorpay.gatewayPolicyListAllResponse": {
+    "gatewayPolicyListAllResponse": {
       "type": "object",
       "properties": {
         "items": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/razorpaygatewayPolicy"
+            "$ref": "#/definitions/gatewayPolicy"
           }
         }
       }
     },
-    "razorpay.gatewayQueriesListRequest": {
+    "gatewayQueriesListRequest": {
       "type": "object",
       "properties": {
-        "backend_id": {
-          "type": "string"
-        },
         "count": {
           "type": "integer",
           "format": "int32",
           "title": "standard"
         },
+        "order_by": {
+          "$ref": "#/definitions/QueriesListRequestOrder"
+        },
         "from": {
           "type": "integer",
           "format": "int32"
         },
-        "group_id": {
-          "type": "string"
-        },
-        "order_by": {
-          "$ref": "#/definitions/razorpaygatewayOrder"
-        },
-        "skip": {
+        "to": {
           "type": "integer",
           "format": "int32"
         },
-        "successful_submission": {
-          "type": "boolean",
-          "format": "boolean"
-        },
-        "to": {
+        "skip": {
           "type": "integer",
           "format": "int32"
         },
         "username": {
           "type": "string",
           "title": "custom fields to filter on"
+        },
+        "backend_id": {
+          "type": "string"
+        },
+        "group_id": {
+          "type": "string"
+        },
+        "successful_submission": {
+          "type": "boolean",
+          "format": "boolean"
         }
       }
     },
-    "razorpay.gatewayQueriesListResponse": {
+    "gatewayQueriesListResponse": {
       "type": "object",
       "properties": {
         "items": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/razorpaygatewayQuery"
+            "$ref": "#/definitions/gatewayQuery"
           }
         }
       }
     },
-    "razorpay.gatewayQuery": {
+    "gatewayQuery": {
       "type": "object",
       "properties": {
-        "backend_id": {
+        "id": {
           "type": "string"
+        },
+        "text": {
+          "type": "string"
+        },
+        "received_at": {
+          "type": "string",
+          "format": "int64"
         },
         "client_ip": {
           "type": "string"
@@ -976,26 +1011,19 @@
         "group_id": {
           "type": "string"
         },
-        "id": {
-          "type": "string"
-        },
-        "received_at": {
-          "type": "string",
-          "format": "int64"
-        },
-        "submitted_at": {
-          "type": "string",
-          "format": "int64"
-        },
-        "text": {
+        "backend_id": {
           "type": "string"
         },
         "username": {
           "type": "string"
+        },
+        "submitted_at": {
+          "type": "string",
+          "format": "int64"
         }
       }
     },
-    "razorpay.gatewayQueryGetRequest": {
+    "gatewayQueryGetRequest": {
       "type": "object",
       "properties": {
         "id": {
@@ -1003,22 +1031,11 @@
         }
       }
     },
-    "razorpay.gatewayQueryGetResponse": {
+    "gatewayQueryGetResponse": {
       "type": "object",
       "properties": {
         "query": {
-          "$ref": "#/definitions/razorpaygatewayQuery"
-        }
-      }
-    },
-    "razorpay.gatewayRule": {
-      "type": "object",
-      "properties": {
-        "type": {
-          "$ref": "#/definitions/razorpaygatewayRuleType"
-        },
-        "value": {
-          "type": "string"
+          "$ref": "#/definitions/gatewayQuery"
         }
       }
     }

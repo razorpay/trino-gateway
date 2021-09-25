@@ -108,12 +108,12 @@ func (r *BackendRepo) Enable(ctx context.Context, id string) error {
 		return err
 	}
 
-	if backend.IsEnabled {
+	if *backend.IsEnabled {
 		boot.Logger(ctx).Error("backend activation failed. Already active")
 		return errors.New("Already active")
 	}
 
-	backend.IsEnabled = true
+	*backend.IsEnabled = true
 
 	if err := r.repo.Update(ctx, backend); err != nil {
 		return err
@@ -131,12 +131,12 @@ func (r *BackendRepo) Disable(ctx context.Context, id string) error {
 		return err
 	}
 
-	if !backend.IsEnabled {
+	if !*backend.IsEnabled {
 		boot.Logger(ctx).Error("backend activation failed. Already active")
 		return errors.New("Already active")
 	}
 
-	backend.IsEnabled = false
+	*backend.IsEnabled = false
 
 	if err := r.repo.Update(ctx, backend); err != nil {
 		return err

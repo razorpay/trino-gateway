@@ -8,11 +8,15 @@ import (
 // backend model struct definition
 type Backend struct {
 	spine.Model
-	Hostname       string `json:"hostname"`
-	Scheme         string `json:"scheme"`
-	ExternalUrl    string `json:"external_url"`
-	IsEnabled      bool   `json:"is_enabled"`
-	UptimeSchedule string `json:"uptime_schedule"`
+	Hostname                string  `json:"hostname"`
+	Scheme                  string  `json:"scheme"`
+	ExternalUrl             *string `json:"external_url"`
+	IsEnabled               *bool   `json:"is_enabled"`
+	UptimeSchedule          *string `json:"uptime_schedule"`
+	RunningQueries          *int32  `json:"running_queries"`
+	QueuedQueries           *int32  `json:"queued_queries"`
+	ThresholdRunningQueries *int32  `json:"threshold_running_queries"`
+	ThresholdQueuedQueries  *int32  `json:"threshold_queued_queries"`
 }
 
 func (u *Backend) TableName() string {

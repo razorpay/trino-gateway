@@ -127,9 +127,9 @@ func toBackendResponseProto(backend *models.Backend) (*gatewayv1.Backend, error)
 		Id:             backend.ID,
 		Hostname:       backend.Hostname,
 		Scheme:         *gatewayv1.Backend_Scheme(scheme).Enum(),
-		ExternalUrl:    backend.ExternalUrl,
-		IsEnabled:      backend.IsEnabled,
-		UptimeSchedule: backend.UptimeSchedule,
+		ExternalUrl:    *backend.ExternalUrl,
+		IsEnabled:      *backend.IsEnabled,
+		UptimeSchedule: *backend.UptimeSchedule,
 	}
 
 	return &response, nil
