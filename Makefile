@@ -19,6 +19,13 @@ config/dev.toml:
 build:
 	$(SCRIPT_DIR)/compile.sh
 
+.PHONY: build-frontend
+build-frontend: web/frontend/js/frontend.js
+
+web/frontend/js/frontend.js:
+	echo "Compiling frontend"
+	gopherjs build ./internal/frontend/main --output "./web/frontend/js/frontend.js" --verbose
+
 # .PHONY: dev-build
 # dev-build:
 # 	$(SCRIPT_DIR)/dev.sh

@@ -84,6 +84,9 @@ protoc --go_out=. --twirp_swagger_out=./swaggerui/ ./rpc/gateway/service.proto
 
 
 
+<!-- go run github.com/go-bridget/twirp-swagger-gen -in ./rpc/gateway/service.proto -out ./third_party/swaggerui/service.swagger.json -host localhost:8000 -->
+
+
 ### Notes for gopherjs
 Not everything can be compiled
 https://github.com/gopherjs/gopherjs/issues/889
