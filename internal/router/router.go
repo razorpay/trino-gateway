@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/http/httputil"
 	"regexp"
@@ -17,7 +16,7 @@ import (
 	gatewayv1 "github.com/razorpay/trino-gateway/rpc/gateway"
 )
 
-const LOG_TAG string = "GATEWAY_ROUTER"
+const LOG_TAG string = "GATEWAY_ROUTER: "
 
 type gatewayRouter struct {
 	policyClient  gatewayv1.PolicyApi
@@ -52,19 +51,33 @@ func StartRoutingServer(ctx *context.Context, port int) *http.Server {
 		Director: func(req *http.Request) {
 			_, err := router.processRequest(req, port)
 			if err != nil {
-				log.Println(err.Error())
+				boot.Logger(*router.ctx).Errorw(
+					fmt.Sprint(LOG_TAG, "Request Processing failed"),
+					map[string]interface{}{
+						"error": err.Error(),
+					})
 				req.URL.Host = "http://invalid:8080"
 			}
 
 		},
 		Transport: nil,
 		ErrorHandler: func(resp http.ResponseWriter, req *http.Request, err error) {
-			resp.Write([]byte("Backend unavailable"))
+			msg := "Backend unavailable Or Invalid request"
+			resp.Write([]byte(msg))
+			boot.Logger(*ctx).Errorw(
+				fmt.Sprint(LOG_TAG, msg),
+				map[string]interface{}{
+					"request": router.stringifyHttpRequest(req),
+				})
 		},
 		ModifyResponse: func(resp *http.Response) error {
 			err := router.processResponse(resp)
 			if err != nil {
-				log.Println(err.Error())
+				boot.Logger(*router.ctx).Errorw(
+					fmt.Sprint(LOG_TAG, "Unable to process server response"),
+					map[string]interface{}{
+						"error": err.Error(),
+					})
 			}
 			return err
 		},
@@ -104,16 +117,22 @@ func parseClientRequest(r *http.Request, listeningPort int) *clientRequest {
 
 func (b *gatewayRouter) processRequest(r *http.Request, listeningPort int) (*http.Request, error) {
 	var err error = nil
-	debugPrintReq(r)
-	println("processing Request")
-	println(listeningPort)
+	boot.Logger(*b.ctx).Infow(
+		fmt.Sprint(LOG_TAG, "Request received"),
+		map[string]interface{}{
+			"request":       b.stringifyHttpRequest(r),
+			"listeningPort": listeningPort,
+		})
 
-	clientRequest := parseClientRequest(r, listeningPort)
+	clientReq := parseClientRequest(r, listeningPort)
+	if !isValidRequest(clientReq) {
+		return r, errors.New("invalid request")
+	}
 	querySaveReq := gatewayv1.Query{
-		Id:         clientRequest.queryId,
-		Text:       clientRequest.queryText,
-		Username:   clientRequest.username,
-		ClientIp:   clientRequest.clientIp,
+		Id:         clientReq.queryId,
+		Text:       clientReq.queryText,
+		Username:   clientReq.username,
+		ClientIp:   clientReq.clientIp,
 		ReceivedAt: time.Now().Unix(),
 	}
 
@@ -122,17 +141,21 @@ func (b *gatewayRouter) processRequest(r *http.Request, listeningPort int) (*htt
 		r.URL.Host = backend.Hostname
 		r.URL.Scheme = backend.Scheme.Enum().String()
 		r.Host = backend.Hostname
-		debugPrintReq(r)
+		boot.Logger(*b.ctx).Infow(
+			fmt.Sprint(LOG_TAG, "Request modified, ready to be forwarded"),
+			map[string]interface{}{
+				"request": b.stringifyHttpRequest(r),
+			})
 
 		querySaveReq.BackendId = backend.Id
 	}
-	if clientRequest.queryId == "" {
+	if clientReq.queryId == "" {
 
 		req := gatewayv1.EvaluateGroupRequest{
-			IncomingPort:               clientRequest.incomingPort,
-			Host:                       clientRequest.host,
-			HeaderConnectionProperties: clientRequest.headerConnectionProperties,
-			HeaderClientTags:           clientRequest.headerClientTags,
+			IncomingPort:               clientReq.incomingPort,
+			Host:                       clientReq.host,
+			HeaderConnectionProperties: clientReq.headerConnectionProperties,
+			HeaderClientTags:           clientReq.headerClientTags,
 		}
 		group, err := b.policyClient.EvaluateGroupForClient(*b.ctx, &req)
 		if err != nil {
@@ -143,18 +166,18 @@ func (b *gatewayRouter) processRequest(r *http.Request, listeningPort int) (*htt
 				GroupId: group.Id,
 			})
 			if err != nil {
-				err = errors.New(fmt.Sprint("Backend Unresolvable for query id:", clientRequest.queryId, err.Error()))
+				err = errors.New(fmt.Sprint("Backend Unresolvable for query id:", clientReq.queryId, err.Error()))
 			}
 			backendFound()
 		}
 	} else {
 		client := gatewayv1.NewQueryApiProtobufClient(fmt.Sprint("http://localhost:", boot.Config.App.Port), &http.Client{})
 
-		req := gatewayv1.FindBackendForQueryRequest{QueryId: clientRequest.queryId}
+		req := gatewayv1.FindBackendForQueryRequest{QueryId: clientReq.queryId}
 
 		backend, err = client.FindBackendForQuery(*b.ctx, &req)
 		if err != nil {
-			err = errors.New(fmt.Sprint("Backend Unresolvable for query id:", clientRequest.queryId, err.Error()))
+			err = errors.New(fmt.Sprint("Backend Unresolvable for query id:", clientReq.queryId, err.Error()))
 		} else {
 			backendFound()
 		}
@@ -162,7 +185,12 @@ func (b *gatewayRouter) processRequest(r *http.Request, listeningPort int) (*htt
 
 	_, err2 := b.queryClient.CreateOrUpdateQuery(*b.ctx, &querySaveReq)
 	if err2 != nil {
-		boot.Logger(*b.ctx).Errorw(LOG_TAG, map[string]interface{}{"msg": "Unable to save query", "query_id": querySaveReq.Id, "error": err.Error()})
+		boot.Logger(
+			*b.ctx).Errorw(
+			fmt.Sprint(LOG_TAG, "Unable to save query"),
+			map[string]interface{}{
+				"query_id": querySaveReq.Id,
+				"error":    err2.Error()})
 	}
 
 	return r, err
@@ -202,12 +230,16 @@ func extractQueryIdFromServerResponse(body string) string {
 	return ""
 }
 
-func debugPrintReq(r *http.Request) {
+func (b *gatewayRouter) stringifyHttpRequest(r *http.Request) string {
 	requestDump, err := httputil.DumpRequest(r, true)
 	if err != nil {
-		log.Println(err)
+		boot.Logger(*b.ctx).Errorw(
+			fmt.Sprint(LOG_TAG, "Unable to stringify http request"),
+			map[string]interface{}{
+				"error": err.Error(),
+			})
 	}
-	log.Println(string(requestDump))
+	return string(requestDump)
 }
 
 func parseBody(body io.ReadCloser) string {
@@ -222,4 +254,11 @@ func parseBody(body io.ReadCloser) string {
 func extractQueryId(body string) string {
 	// TODO
 	return ""
+}
+
+func isValidRequest(req *clientRequest) bool {
+	if req.username == "" || req.queryText == "" {
+		return false
+	}
+	return true
 }
