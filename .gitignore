@@ -41,3 +41,6 @@ config/dev.*
 
 # Gopherjs compiled files
 web/frontend/js/*
+
+# Generated swagger defs
+third_party/swaggerui/rpc/gateway/service.swagger.json
