@@ -10,6 +10,7 @@ import (
 
 type IQueryRepo interface {
 	Create(ctx context.Context, query *models.Query) error
+	Update(ctx context.Context, query *models.Query) error
 	Find(ctx context.Context, id string) (*models.Query, error)
 	FindMany(ctx context.Context, conditions map[string]interface{}) (*[]models.Query, error)
 	// Find(ctx context.Context, id string) (*Query, error)
@@ -34,6 +35,18 @@ func (r *QueryRepo) Create(ctx context.Context, query *models.Query) error {
 	}
 
 	boot.Logger(ctx).Infow("query created", map[string]interface{}{"user_id": query.ID})
+
+	return nil
+}
+
+func (r *QueryRepo) Update(ctx context.Context, query *models.Query) error {
+	err := r.repo.Update(ctx, query)
+	if err != nil {
+		boot.Logger(ctx).WithError(err).Errorw("user update failed", map[string]interface{}{"query_id": query.ID})
+		return err
+	}
+
+	boot.Logger(ctx).Infow("query updated", map[string]interface{}{"query_id": query.ID})
 
 	return nil
 }

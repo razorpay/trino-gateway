@@ -159,7 +159,7 @@ message PolicyDisableRequest {
 }
 
 service QueryApi {
-    rpc CreateQuery (Query) returns (Empty);
+    rpc CreateOrUpdateQuery (Query) returns (Empty);
     rpc GetQuery (QueryGetRequest) returns (QueryGetResponse);
     rpc ListQueries (QueriesListRequest) returns (QueriesListResponse);
 

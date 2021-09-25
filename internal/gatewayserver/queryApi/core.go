@@ -2,7 +2,6 @@ package queryapi
 
 import (
 	"context"
-	"errors"
 
 	"github.com/fatih/structs"
 	"github.com/razorpay/trino-gateway/internal/gatewayserver/models"
@@ -14,7 +13,7 @@ type Core struct {
 }
 
 type ICore interface {
-	CreateQuery(ctx context.Context, params *QueryCreateParams) error
+	CreateOrUpdateQuery(ctx context.Context, params *QueryCreateParams) error
 	GetQuery(ctx context.Context, id string) (*models.Query, error)
 	FindMany(ctx context.Context, params IFindManyParams) (*[]models.Query, error)
 
@@ -38,7 +37,7 @@ type QueryCreateParams struct {
 	SubmittedAt int64
 }
 
-func (c *Core) CreateQuery(ctx context.Context, params *QueryCreateParams) error {
+func (c *Core) CreateOrUpdateQuery(ctx context.Context, params *QueryCreateParams) error {
 	query := models.Query{
 		Text:        params.Text,
 		ClientIp:    params.ClientIp,
@@ -51,7 +50,7 @@ func (c *Core) CreateQuery(ctx context.Context, params *QueryCreateParams) error
 	query.ID = params.ID
 	_, exists := c.queryRepo.Find(ctx, params.ID)
 	if exists == nil { // update
-		return errors.New("Query Already exists")
+		return c.queryRepo.Update(ctx, &query)
 	} else { // create
 		return c.queryRepo.Create(ctx, &query)
 	}

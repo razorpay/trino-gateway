@@ -21,7 +21,7 @@ func NewServer(core ICore) *Server {
 	}
 }
 
-func (s *Server) CreateQuery(ctx context.Context, req *gatewayv1.Query) (*gatewayv1.Empty, error) {
+func (s *Server) CreateOrUpdateQuery(ctx context.Context, req *gatewayv1.Query) (*gatewayv1.Empty, error) {
 	boot.Logger(ctx).Infow("UpsertQueryRequest", map[string]interface{}{
 		"id":           req.GetId(),
 		"text":         req.GetText(),
@@ -44,7 +44,7 @@ func (s *Server) CreateQuery(ctx context.Context, req *gatewayv1.Query) (*gatewa
 		SubmittedAt: req.GetSubmittedAt(),
 	}
 
-	err := s.core.CreateQuery(ctx, &createParams)
+	err := s.core.CreateOrUpdateQuery(ctx, &createParams)
 	if err != nil {
 		return nil, err
 	}
