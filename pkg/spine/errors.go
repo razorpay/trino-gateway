@@ -52,7 +52,7 @@ func GetDBError(db *gorm.DB) error {
 			return RecordNotFound
 
 		default:
-			return DBError
+			return db.Error
 		}
 	}()
 

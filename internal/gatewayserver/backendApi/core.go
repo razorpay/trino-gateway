@@ -2,7 +2,6 @@ package backendapi
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/fatih/structs"
 	"github.com/razorpay/trino-gateway/internal/gatewayserver/models"
@@ -60,7 +59,6 @@ func (c *Core) CreateOrUpdateBackend(ctx context.Context, params *BackendCreateP
 	}
 	backend.ID = params.ID
 
-	fmt.Println(backend.IsEnabled)
 	_, exists := c.backendRepo.Find(ctx, params.ID)
 	if exists == nil { // update
 		return c.backendRepo.Update(ctx, &backend)

@@ -34,7 +34,7 @@ func NewBackendRepo(ctx context.Context, repo dbRepo.IDbRepo) *BackendRepo {
 func (r *BackendRepo) Create(ctx context.Context, backend *models.Backend) error {
 	err := r.repo.Create(ctx, backend)
 	if err != nil {
-		boot.Logger(ctx).WithError(err).Errorw("user create failed", map[string]interface{}{"user_id": backend.ID})
+		boot.Logger(ctx).WithError(err).Error("backend create failed")
 		return err
 	}
 
