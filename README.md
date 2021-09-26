@@ -87,6 +87,12 @@ protoc --go_out=. --twirp_swagger_out=./swaggerui/ ./rpc/gateway/service.proto
 <!-- go run github.com/go-bridget/twirp-swagger-gen -in ./rpc/gateway/service.proto -out ./third_party/swaggerui/service.swagger.json -host localhost:8000 -->
 
 
+## Dev
+make build
+go run ./cmd/migration up
+App uses uber/zap for logging with everything in single line json, use `jq` or similar cli json parsers to prettify the logs.
+go run ./cmd/gateway | jq
+
 ### Notes for gopherjs
 Not everything can be compiled
 https://github.com/gopherjs/gopherjs/issues/889
