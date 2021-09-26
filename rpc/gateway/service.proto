@@ -28,6 +28,10 @@ message Backend {
     string external_url = 4;
     bool is_enabled = 5;
     string uptime_schedule = 6;
+    int32 running_queries = 7;
+    int32 queued_queries = 8;
+    int32 threshold_running_queries = 9;
+    int32 threshold_queued_queries = 10;
 }
 
 message BackendCreateResponse {
