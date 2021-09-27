@@ -5,9 +5,9 @@ import "github.com/razorpay/trino-gateway/pkg/spine"
 // group model struct definition
 type Group struct {
 	spine.Model
-	Strategy              string `json:"strategy"`
-	IsEnabled             bool   `json:"is_enabled" sql:"DEFAULT:true"`
-	GroupBackendsMappings []GroupBackendsMapping
+	Strategy              *string `json:"strategy"`
+	IsEnabled             *bool   `json:"is_enabled" sql:"DEFAULT:true"`
+	GroupBackendsMappings *[]GroupBackendsMapping
 }
 
 func (u *Group) TableName() string {

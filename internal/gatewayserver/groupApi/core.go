@@ -48,11 +48,11 @@ func (c *Core) CreateOrUpdateGroup(ctx context.Context, params *GroupCreateParam
 	}
 
 	group := models.Group{
-		Strategy:  params.Strategy,
-		IsEnabled: params.IsEnabled,
+		Strategy:  &params.Strategy,
+		IsEnabled: &params.IsEnabled,
 	}
 	group.ID = params.ID
-	group.GroupBackendsMappings = backendMappings
+	group.GroupBackendsMappings = &backendMappings
 	_, exists := c.groupRepo.Find(ctx, params.ID)
 	if exists == nil { // update
 		return c.groupRepo.Update(ctx, &group)

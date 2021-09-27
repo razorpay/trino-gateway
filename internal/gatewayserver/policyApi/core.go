@@ -47,8 +47,8 @@ func (c *Core) CreateOrUpdatePolicy(ctx context.Context, params *PolicyCreatePar
 		RuleType:        params.RuleType,
 		RuleValue:       params.RuleValue,
 		GroupId:         params.Group,
-		FallbackGroupId: params.FallbackGroup,
-		IsEnabled:       params.IsEnabled,
+		FallbackGroupId: &params.FallbackGroup,
+		IsEnabled:       &params.IsEnabled,
 	}
 	policy.ID = params.ID
 

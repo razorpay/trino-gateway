@@ -116,19 +116,19 @@ func (s *Server) DeleteGroup(ctx context.Context, req *gatewayv1.GroupDeleteRequ
 }
 
 func toGroupResponseProto(group *models.Group) (*gatewayv1.Group, error) {
-	strategy, ok := gatewayv1.Group_RoutingStrategy_value[group.Strategy]
+	strategy, ok := gatewayv1.Group_RoutingStrategy_value[*group.Strategy]
 	if !ok {
 		return nil, errors.New(fmt.Sprint("error encoding response: invalid strategy ", group.Strategy))
 	}
 	var backends []string
-	for _, backend := range group.GroupBackendsMappings {
+	for _, backend := range *group.GroupBackendsMappings {
 		backends = append(backends, backend.BackendId)
 	}
 	response := gatewayv1.Group{
 		Id:        group.ID,
 		Strategy:  *gatewayv1.Group_RoutingStrategy(strategy).Enum(),
 		Backends:  backends,
-		IsEnabled: group.IsEnabled,
+		IsEnabled: *group.IsEnabled,
 	}
 
 	return &response, nil
