@@ -3,9 +3,9 @@ package repo
 import (
 	"context"
 
-	"github.com/razorpay/trino-gateway/internal/boot"
 	"github.com/razorpay/trino-gateway/internal/gatewayserver/database/dbRepo"
 	"github.com/razorpay/trino-gateway/internal/gatewayserver/models"
+	"github.com/razorpay/trino-gateway/internal/provider"
 )
 
 type IQueryRepo interface {
@@ -30,11 +30,11 @@ func NewQueryRepo(ctx context.Context, repo dbRepo.IDbRepo) *QueryRepo {
 func (r *QueryRepo) Create(ctx context.Context, query *models.Query) error {
 	err := r.repo.Create(ctx, query)
 	if err != nil {
-		boot.Logger(ctx).WithError(err).Errorw("user create failed", map[string]interface{}{"user_id": query.ID})
+		provider.Logger(ctx).WithError(err).Errorw("user create failed", map[string]interface{}{"user_id": query.ID})
 		return err
 	}
 
-	boot.Logger(ctx).Infow("query created", map[string]interface{}{"user_id": query.ID})
+	provider.Logger(ctx).Infow("query created", map[string]interface{}{"user_id": query.ID})
 
 	return nil
 }
@@ -42,11 +42,11 @@ func (r *QueryRepo) Create(ctx context.Context, query *models.Query) error {
 func (r *QueryRepo) Update(ctx context.Context, query *models.Query) error {
 	err := r.repo.Update(ctx, query)
 	if err != nil {
-		boot.Logger(ctx).WithError(err).Errorw("user update failed", map[string]interface{}{"query_id": query.ID})
+		provider.Logger(ctx).WithError(err).Errorw("user update failed", map[string]interface{}{"query_id": query.ID})
 		return err
 	}
 
-	boot.Logger(ctx).Infow("query updated", map[string]interface{}{"query_id": query.ID})
+	provider.Logger(ctx).Infow("query updated", map[string]interface{}{"query_id": query.ID})
 
 	return nil
 }

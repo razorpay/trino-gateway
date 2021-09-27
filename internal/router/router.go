@@ -12,7 +12,7 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/razorpay/trino-gateway/internal/boot"
+	"github.com/razorpay/trino-gateway/internal/provider"
 	gatewayv1 "github.com/razorpay/trino-gateway/rpc/gateway"
 )
 
@@ -29,6 +29,7 @@ type routerServer struct {
 	gatewayApiClient *GatewayApiClient
 	ctx              *context.Context
 	port             int
+	routerHostname   string
 }
 
 type clientRequest struct {
@@ -42,18 +43,19 @@ type clientRequest struct {
 	clientIp                   string
 }
 
-func Server(ctx *context.Context, port int, apiClient *GatewayApiClient) *http.Server {
+func Server(ctx *context.Context, port int, apiClient *GatewayApiClient, routerHostname string) *http.Server {
 
 	routerServer := routerServer{
 		ctx:              ctx,
 		port:             port,
 		gatewayApiClient: apiClient,
+		routerHostname:   routerHostname,
 	}
 	reverseProxy := httputil.ReverseProxy{
 		Director: func(req *http.Request) {
 			_, err := routerServer.processRequest(req)
 			if err != nil {
-				boot.Logger(*routerServer.ctx).Errorw(
+				provider.Logger(*routerServer.ctx).Errorw(
 					fmt.Sprint(LOG_TAG, "Request Processing failed"),
 					map[string]interface{}{
 						"error": err.Error(),
@@ -66,7 +68,7 @@ func Server(ctx *context.Context, port int, apiClient *GatewayApiClient) *http.S
 		ErrorHandler: func(resp http.ResponseWriter, req *http.Request, err error) {
 			msg := "Backend unavailable Or Invalid request"
 			resp.Write([]byte(msg))
-			boot.Logger(*ctx).Errorw(
+			provider.Logger(*ctx).Errorw(
 				fmt.Sprint(LOG_TAG, msg),
 				map[string]interface{}{
 					"request": routerServer.stringifyHttpRequest(req),
@@ -75,7 +77,7 @@ func Server(ctx *context.Context, port int, apiClient *GatewayApiClient) *http.S
 		ModifyResponse: func(resp *http.Response) error {
 			err := routerServer.processResponse(resp)
 			if err != nil {
-				boot.Logger(*routerServer.ctx).Errorw(
+				provider.Logger(*routerServer.ctx).Errorw(
 					fmt.Sprint(LOG_TAG, "Unable to process server response"),
 					map[string]interface{}{
 						"error": err.Error(),
@@ -119,7 +121,7 @@ func (r *routerServer) parseClientRequest(req *http.Request) *clientRequest {
 
 func (r *routerServer) processRequest(req *http.Request) (*http.Request, error) {
 	var err error = nil
-	boot.Logger(*r.ctx).Infow(
+	provider.Logger(*r.ctx).Infow(
 		fmt.Sprint(LOG_TAG, "Request received"),
 		map[string]interface{}{
 			"request":       r.stringifyHttpRequest(req),
@@ -143,7 +145,7 @@ func (r *routerServer) processRequest(req *http.Request) (*http.Request, error) 
 		req.URL.Host = backend.Hostname
 		req.URL.Scheme = backend.Scheme.Enum().String()
 		req.Host = backend.Hostname
-		boot.Logger(*r.ctx).Infow(
+		provider.Logger(*r.ctx).Infow(
 			fmt.Sprint(LOG_TAG, "Request modified, ready to be forwarded"),
 			map[string]interface{}{
 				"request": r.stringifyHttpRequest(req),
@@ -190,7 +192,7 @@ func (r *routerServer) processRequest(req *http.Request) (*http.Request, error) 
 
 	_, err2 := r.gatewayApiClient.Query.CreateOrUpdateQuery(*r.ctx, &querySaveReq)
 	if err2 != nil {
-		boot.Logger(
+		provider.Logger(
 			*r.ctx).Errorw(
 			fmt.Sprint(LOG_TAG, "Unable to save query"),
 			map[string]interface{}{
@@ -207,7 +209,7 @@ func (r *routerServer) processResponse(resp *http.Response) error {
 	regex := regexp.MustCompile(`\w+\:\/\/[^\/]*(.*)`)
 	if resp.Header.Get("Location") != ("") {
 		oldLoc := resp.Header.Get("Location")
-		newLoc := fmt.Sprint("http://", boot.Config.App.ServiceExternalHostname, regex.ReplaceAllString(oldLoc, "$1"))
+		newLoc := fmt.Sprint("http://", r.routerHostname, regex.ReplaceAllString(oldLoc, "$1"))
 		resp.Header.Set("Location", newLoc)
 	}
 
@@ -223,7 +225,7 @@ func (r *routerServer) processResponse(resp *http.Response) error {
 
 			_, err := r.gatewayApiClient.Query.CreateOrUpdateQuery(*r.ctx, &req)
 			if err != nil {
-				boot.Logger(*r.ctx).Errorw(LOG_TAG, map[string]interface{}{"msg": "Unable to save successfully submitted query", "query_id": req.Id, "error": err.Error()})
+				provider.Logger(*r.ctx).Errorw(LOG_TAG, map[string]interface{}{"msg": "Unable to save successfully submitted query", "query_id": req.Id, "error": err.Error()})
 			}
 		}
 	}()
@@ -238,7 +240,7 @@ func extractQueryIdFromServerResponse(body string) string {
 func (r *routerServer) stringifyHttpRequest(req *http.Request) string {
 	requestDump, err := httputil.DumpRequest(req, true)
 	if err != nil {
-		boot.Logger(*r.ctx).Errorw(
+		provider.Logger(*r.ctx).Errorw(
 			fmt.Sprint(LOG_TAG, "Unable to stringify http request"),
 			map[string]interface{}{
 				"error": err.Error(),

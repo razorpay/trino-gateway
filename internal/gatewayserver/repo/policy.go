@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 
-	"github.com/razorpay/trino-gateway/internal/boot"
 	"github.com/razorpay/trino-gateway/internal/gatewayserver/database/dbRepo"
 	"github.com/razorpay/trino-gateway/internal/gatewayserver/models"
+	"github.com/razorpay/trino-gateway/internal/provider"
 )
 
 type IPolicyRepo interface {
@@ -34,11 +34,11 @@ func NewPolicyRepo(ctx context.Context, repo dbRepo.IDbRepo) *PolicyRepo {
 func (r *PolicyRepo) Create(ctx context.Context, policy *models.Policy) error {
 	err := r.repo.Create(ctx, policy)
 	if err != nil {
-		boot.Logger(ctx).WithError(err).Errorw("user create failed", map[string]interface{}{"user_id": policy.ID})
+		provider.Logger(ctx).WithError(err).Errorw("user create failed", map[string]interface{}{"user_id": policy.ID})
 		return err
 	}
 
-	boot.Logger(ctx).Infow("policy created", map[string]interface{}{"user_id": policy.ID})
+	provider.Logger(ctx).Infow("policy created", map[string]interface{}{"user_id": policy.ID})
 
 	return nil
 }
@@ -46,11 +46,11 @@ func (r *PolicyRepo) Create(ctx context.Context, policy *models.Policy) error {
 func (r *PolicyRepo) Update(ctx context.Context, policy *models.Policy) error {
 	err := r.repo.Update(ctx, policy)
 	if err != nil {
-		boot.Logger(ctx).WithError(err).Errorw("user update failed", map[string]interface{}{"user_id": policy.ID})
+		provider.Logger(ctx).WithError(err).Errorw("user update failed", map[string]interface{}{"user_id": policy.ID})
 		return err
 	}
 
-	boot.Logger(ctx).Infow("policy updated", map[string]interface{}{"user_id": policy.ID})
+	provider.Logger(ctx).Infow("policy updated", map[string]interface{}{"user_id": policy.ID})
 
 	return nil
 }
@@ -100,16 +100,16 @@ func (r *PolicyRepo) FindMany(ctx context.Context, conditions map[string]interfa
 // }
 
 func (r *PolicyRepo) Enable(ctx context.Context, id string) error {
-	boot.Logger(ctx).Infow("policy activation triggered", map[string]interface{}{"policy_id": id})
+	provider.Logger(ctx).Infow("policy activation triggered", map[string]interface{}{"policy_id": id})
 
 	policy, err := r.Find(ctx, id)
 	if err != nil {
-		boot.Logger(ctx).Error("policy activation failed: " + err.Error())
+		provider.Logger(ctx).Error("policy activation failed: " + err.Error())
 		return err
 	}
 
 	if policy.IsEnabled {
-		boot.Logger(ctx).Error("policy activation failed. Already active")
+		provider.Logger(ctx).Error("policy activation failed. Already active")
 		return errors.New("Already active")
 	}
 
@@ -123,16 +123,16 @@ func (r *PolicyRepo) Enable(ctx context.Context, id string) error {
 }
 
 func (r *PolicyRepo) Disable(ctx context.Context, id string) error {
-	boot.Logger(ctx).Infow("policy activation triggered", map[string]interface{}{"policy_id": id})
+	provider.Logger(ctx).Infow("policy activation triggered", map[string]interface{}{"policy_id": id})
 
 	policy, err := r.Find(ctx, id)
 	if err != nil {
-		boot.Logger(ctx).Error("policy activation failed: " + err.Error())
+		provider.Logger(ctx).Error("policy activation failed: " + err.Error())
 		return err
 	}
 
 	if !policy.IsEnabled {
-		boot.Logger(ctx).Error("policy activation failed. Already active")
+		provider.Logger(ctx).Error("policy activation failed. Already active")
 		return errors.New("Already active")
 	}
 
@@ -146,11 +146,11 @@ func (r *PolicyRepo) Disable(ctx context.Context, id string) error {
 }
 
 func (r *PolicyRepo) Delete(ctx context.Context, id string) error {
-	boot.Logger(ctx).Infow("policy delete request", map[string]interface{}{"policy_id": id})
+	provider.Logger(ctx).Infow("policy delete request", map[string]interface{}{"policy_id": id})
 
 	policy, err := r.Find(ctx, id)
 	if err != nil {
-		boot.Logger(ctx).Error("policy delete failed: " + err.Error())
+		provider.Logger(ctx).Error("policy delete failed: " + err.Error())
 		return err
 	}
 

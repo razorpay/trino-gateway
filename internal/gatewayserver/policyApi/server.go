@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/razorpay/trino-gateway/internal/boot"
 	"github.com/razorpay/trino-gateway/internal/gatewayserver/models"
+	"github.com/razorpay/trino-gateway/internal/provider"
 	gatewayv1 "github.com/razorpay/trino-gateway/rpc/gateway"
 	_ "github.com/twitchtv/twirp"
 )
@@ -27,7 +27,7 @@ func NewServer(core ICore) *Server {
 func (s *Server) CreateOrUpdatePolicy(ctx context.Context, req *gatewayv1.Policy) (*gatewayv1.Empty, error) {
 	// defer span.Finish()
 
-	boot.Logger(ctx).Infow("UpsertPolicyRequest", map[string]interface{}{
+	provider.Logger(ctx).Infow("UpsertPolicyRequest", map[string]interface{}{
 		"id":         req.GetId(),
 		"rule_type":  req.GetRule().Type.Enum().String(),
 		"rule_value": req.GetRule().Value,

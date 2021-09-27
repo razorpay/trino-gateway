@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 
-	"github.com/razorpay/trino-gateway/internal/boot"
 	"github.com/razorpay/trino-gateway/internal/gatewayserver/database/dbRepo"
 	"github.com/razorpay/trino-gateway/internal/gatewayserver/models"
+	"github.com/razorpay/trino-gateway/internal/provider"
 )
 
 type IBackendRepo interface {
@@ -34,11 +34,11 @@ func NewBackendRepo(ctx context.Context, repo dbRepo.IDbRepo) *BackendRepo {
 func (r *BackendRepo) Create(ctx context.Context, backend *models.Backend) error {
 	err := r.repo.Create(ctx, backend)
 	if err != nil {
-		boot.Logger(ctx).WithError(err).Error("backend create failed")
+		provider.Logger(ctx).WithError(err).Error("backend create failed")
 		return err
 	}
 
-	boot.Logger(ctx).Infow("backend created", map[string]interface{}{"user_id": backend.ID})
+	provider.Logger(ctx).Infow("backend created", map[string]interface{}{"user_id": backend.ID})
 
 	return nil
 }
@@ -46,11 +46,11 @@ func (r *BackendRepo) Create(ctx context.Context, backend *models.Backend) error
 func (r *BackendRepo) Update(ctx context.Context, backend *models.Backend) error {
 	err := r.repo.Update(ctx, backend)
 	if err != nil {
-		boot.Logger(ctx).WithError(err).Errorw("user update failed", map[string]interface{}{"user_id": backend.ID})
+		provider.Logger(ctx).WithError(err).Errorw("user update failed", map[string]interface{}{"user_id": backend.ID})
 		return err
 	}
 
-	boot.Logger(ctx).Infow("backend updated", map[string]interface{}{"user_id": backend.ID})
+	provider.Logger(ctx).Infow("backend updated", map[string]interface{}{"user_id": backend.ID})
 
 	return nil
 }
@@ -100,16 +100,16 @@ func (r *BackendRepo) FindMany(ctx context.Context, conditions map[string]interf
 // }
 
 func (r *BackendRepo) Enable(ctx context.Context, id string) error {
-	boot.Logger(ctx).Infow("backend activation triggered", map[string]interface{}{"backend_id": id})
+	provider.Logger(ctx).Infow("backend activation triggered", map[string]interface{}{"backend_id": id})
 
 	backend, err := r.Find(ctx, id)
 	if err != nil {
-		boot.Logger(ctx).Error("backend activation failed: " + err.Error())
+		provider.Logger(ctx).Error("backend activation failed: " + err.Error())
 		return err
 	}
 
 	if *backend.IsEnabled {
-		boot.Logger(ctx).Error("backend activation failed. Already active")
+		provider.Logger(ctx).Error("backend activation failed. Already active")
 		return errors.New("Already active")
 	}
 
@@ -123,16 +123,16 @@ func (r *BackendRepo) Enable(ctx context.Context, id string) error {
 }
 
 func (r *BackendRepo) Disable(ctx context.Context, id string) error {
-	boot.Logger(ctx).Infow("backend activation triggered", map[string]interface{}{"backend_id": id})
+	provider.Logger(ctx).Infow("backend activation triggered", map[string]interface{}{"backend_id": id})
 
 	backend, err := r.Find(ctx, id)
 	if err != nil {
-		boot.Logger(ctx).Error("backend activation failed: " + err.Error())
+		provider.Logger(ctx).Error("backend activation failed: " + err.Error())
 		return err
 	}
 
 	if !*backend.IsEnabled {
-		boot.Logger(ctx).Error("backend activation failed. Already active")
+		provider.Logger(ctx).Error("backend activation failed. Already active")
 		return errors.New("Already active")
 	}
 
@@ -146,11 +146,11 @@ func (r *BackendRepo) Disable(ctx context.Context, id string) error {
 }
 
 func (r *BackendRepo) Delete(ctx context.Context, id string) error {
-	boot.Logger(ctx).Infow("backend delete request", map[string]interface{}{"backend_id": id})
+	provider.Logger(ctx).Infow("backend delete request", map[string]interface{}{"backend_id": id})
 
 	backend, err := r.Find(ctx, id)
 	if err != nil {
-		boot.Logger(ctx).Error("backend delete failed: " + err.Error())
+		provider.Logger(ctx).Error("backend delete failed: " + err.Error())
 		return err
 	}
 
