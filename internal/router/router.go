@@ -141,7 +141,21 @@ func (r *routerServer) processRequest(req *http.Request) (*http.Request, error) 
 	}
 
 	var backend *gatewayv1.Backend
-	backendFound := func() {
+
+	backendFound := func(backend_id string) {
+		findBackendResp, err := r.gatewayApiClient.Backend.GetBackend(
+			*r.ctx,
+			&gatewayv1.BackendGetRequest{Id: backend_id},
+		)
+		if err != nil {
+			err = errors.New(
+				fmt.Sprint("Cannot find backend for backend id:",
+					backend_id,
+					err.Error()),
+			)
+		}
+		backend = findBackendResp.GetBackend()
+
 		req.URL.Host = backend.Hostname
 		req.URL.Scheme = backend.Scheme.Enum().String()
 		req.Host = backend.Hostname
@@ -153,40 +167,42 @@ func (r *routerServer) processRequest(req *http.Request) (*http.Request, error) 
 
 		querySaveReq.BackendId = backend.Id
 	}
+
 	if clientReq.queryId == "" {
 
-		group, err := r.gatewayApiClient.Policy.EvaluateGroupForClient(*r.ctx, &gatewayv1.EvaluateGroupRequest{
+		evalGrpResp, err := r.gatewayApiClient.Policy.EvaluateGroupForClient(*r.ctx, &gatewayv1.EvaluateGroupRequest{
 			IncomingPort:               clientReq.incomingPort,
 			Host:                       clientReq.host,
 			HeaderConnectionProperties: clientReq.headerConnectionProperties,
 			HeaderClientTags:           clientReq.headerClientTags,
 		})
 		if err != nil {
-			err = errors.New(fmt.Sprint("Group Unresolvable for client id:", req, err.Error()))
+			err = errors.New(fmt.Sprint("Group Unresolvable for client", req, err.Error()))
 		} else {
-			querySaveReq.GroupId = group.Id
-			backend, err = r.gatewayApiClient.Group.EvaluateBackendForGroup(
+			querySaveReq.GroupId = evalGrpResp.GroupId
+			evalBackendResp, err := r.gatewayApiClient.Group.EvaluateBackendForGroup(
 				*r.ctx,
-				&gatewayv1.EvaluateBackendRequest{GroupId: group.Id},
+				&gatewayv1.EvaluateBackendRequest{GroupId: evalGrpResp.GroupId},
 			)
 			if err != nil {
 				err = errors.New(
-					fmt.Sprint("Backend Unresolvable for query id:",
-						clientReq.queryId,
+					fmt.Sprint("Backend Unresolvable for group id:",
+						evalGrpResp.GroupId,
 						err.Error()),
 				)
+			} else {
+				backendFound(evalBackendResp.GetBackendId())
 			}
-			backendFound()
 		}
 	} else {
-		backend, err = r.gatewayApiClient.Query.FindBackendForQuery(
+		findBackendIdResp, err := r.gatewayApiClient.Query.FindBackendForQuery(
 			*r.ctx,
 			&gatewayv1.FindBackendForQueryRequest{QueryId: clientReq.queryId},
 		)
 		if err != nil {
 			err = errors.New(fmt.Sprint("Backend Unresolvable for query id:", clientReq.queryId, err.Error()))
 		} else {
-			backendFound()
+			backendFound(findBackendIdResp.BackendId)
 		}
 	}
 

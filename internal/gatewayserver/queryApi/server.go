@@ -22,15 +22,8 @@ func NewServer(core ICore) *Server {
 }
 
 func (s *Server) CreateOrUpdateQuery(ctx context.Context, req *gatewayv1.Query) (*gatewayv1.Empty, error) {
-	provider.Logger(ctx).Infow("UpsertQueryRequest", map[string]interface{}{
-		"id":           req.GetId(),
-		"text":         req.GetText(),
-		"received_at":  req.GetReceivedAt(),
-		"client_ip":    req.GetClientIp(),
-		"group_id":     req.GetGroupId(),
-		"backend_id":   req.GetBackendId(),
-		"username":     req.GetUsername(),
-		"submitted_at": req.GetSubmittedAt(),
+	provider.Logger(ctx).Debugw("CreateOrUpdateQuery", map[string]interface{}{
+		"request": req.String(),
 	})
 
 	createParams := QueryCreateParams{
@@ -53,6 +46,9 @@ func (s *Server) CreateOrUpdateQuery(ctx context.Context, req *gatewayv1.Query) 
 }
 
 func (s *Server) GetQuery(ctx context.Context, req *gatewayv1.QueryGetRequest) (*gatewayv1.QueryGetResponse, error) {
+	provider.Logger(ctx).Debugw("GetQuery", map[string]interface{}{
+		"request": req.String(),
+	})
 	query, err := s.core.GetQuery(ctx, req.GetId())
 	if err != nil {
 		return nil, err
@@ -65,6 +61,10 @@ func (s *Server) GetQuery(ctx context.Context, req *gatewayv1.QueryGetRequest) (
 }
 
 func (s *Server) ListQueries(ctx context.Context, req *gatewayv1.QueriesListRequest) (*gatewayv1.QueriesListResponse, error) {
+	provider.Logger(ctx).Debugw("ListQueries", map[string]interface{}{
+		"request": req.String(),
+	})
+	// TODO
 	return nil, nil
 }
 
@@ -81,6 +81,15 @@ func toQueryResponseProto(query *models.Query) (*gatewayv1.Query, error) {
 	}, nil
 }
 
-func (s *Server) FindBackendForQuery(ctx context.Context, req *gatewayv1.FindBackendForQueryRequest) (*gatewayv1.Backend, error) {
-	return nil, nil
+func (s *Server) FindBackendForQuery(ctx context.Context, req *gatewayv1.FindBackendForQueryRequest) (*gatewayv1.FindBackendForQueryResponse, error) {
+	provider.Logger(ctx).Debugw("FindBackendForQuery", map[string]interface{}{
+		"request": req.String(),
+	})
+
+	backend_id, err := s.core.FindBackendForQuery(ctx, req.QueryId)
+
+	if err != nil {
+		return &gatewayv1.FindBackendForQueryResponse{BackendId: backend_id}, nil
+	}
+	return nil, err
 }

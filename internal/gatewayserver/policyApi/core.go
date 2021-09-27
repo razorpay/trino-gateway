@@ -22,9 +22,9 @@ type ICore interface {
 	EnablePolicy(ctx context.Context, id string) error
 	DisablePolicy(ctx context.Context, id string) error
 
-	EvaluateRoutingGroup(ctx context.Context, c *EvaluateClientParams) (string, error)
-	EvaluatePolicy(ctx context.Context, group string) (string, error)
-	FindPolicyForQuery(ctx context.Context, q string) (string, error)
+	EvaluateGroupForClient(ctx context.Context, c *EvaluateClientParams) (string, error)
+	// EvaluatePolicy(ctx context.Context, group string) (string, error)
+	// FindPolicyForQuery(ctx context.Context, q string) (string, error)
 }
 
 func NewCore(ctx *context.Context, policy repo.IPolicyRepo) *Core {
@@ -79,21 +79,33 @@ type IFindManyParams interface {
 
 	// custom
 	GetIsEnabled() bool
+	GetRuleType() string
+	GetRuleValue() string
 }
 
 type FindManyParams struct {
 	// pagination
-	Count int32
-	Skip  int32
-	From  int32
-	To    int32
+	// Count int32
+	// Skip  int32
+	// From  int32
+	// To    int32
 
 	// custom
 	IsEnabled bool
+	RuleType  string
+	RuleValue string
 }
 
 func (p *FindManyParams) GetIsEnabled() bool {
 	return p.IsEnabled
+}
+
+func (p *FindManyParams) GetRuleType() string {
+	return p.RuleType
+}
+
+func (p *FindManyParams) GetRuleValue() string {
+	return p.RuleValue
 }
 
 func (c *Core) FindMany(ctx context.Context, params IFindManyParams) (*[]models.Policy, error) {
@@ -124,15 +136,13 @@ func (c *Core) DisablePolicy(ctx context.Context, id string) error {
 }
 
 type EvaluateClientParams struct {
-	ListeningPort int32
+	ListeningPort              int32
+	Hostname                   string
+	HeaderConnectionProperties string
+	HeaderClientTags           string
 }
 
-func (c *Core) EvaluateRoutingGroup(ctx context.Context, params *EvaluateClientParams) (string, error) {
-	return "", nil
-}
-func (c *Core) EvaluatePolicy(ctx context.Context, group string) (string, error) {
-	return "", nil
-}
-func (c *Core) FindPolicyForQuery(ctx context.Context, q string) (string, error) {
+func (c *Core) EvaluateGroupForClient(ctx context.Context, params *EvaluateClientParams) (string, error) {
+	// TODO
 	return "", nil
 }

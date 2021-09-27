@@ -28,7 +28,7 @@ func NewServer(core ICore) *Server {
 func (s *Server) CreateOrUpdateBackend(ctx context.Context, req *gatewayv1.Backend) (*gatewayv1.Empty, error) {
 	// defer span.Finish()
 
-	provider.Logger(ctx).Debugw("UpsertBackendRequest", map[string]interface{}{
+	provider.Logger(ctx).Debugw("CreateOrUpdateBackend", map[string]interface{}{
 		"request": req.String(),
 	})
 
@@ -55,7 +55,7 @@ func (s *Server) CreateOrUpdateBackend(ctx context.Context, req *gatewayv1.Backe
 
 // Get retrieves a single backend record
 func (s *Server) GetBackend(ctx context.Context, req *gatewayv1.BackendGetRequest) (*gatewayv1.BackendGetResponse, error) {
-	provider.Logger(ctx).Debugw("GetBackendRequest", map[string]interface{}{
+	provider.Logger(ctx).Debugw("GetBackend", map[string]interface{}{
 		"request": req.String(),
 	})
 
@@ -72,7 +72,7 @@ func (s *Server) GetBackend(ctx context.Context, req *gatewayv1.BackendGetReques
 
 // List fetches a list of filtered backend records
 func (s *Server) ListAllBackends(ctx context.Context, req *gatewayv1.Empty) (*gatewayv1.BackendListAllResponse, error) {
-	provider.Logger(ctx).Debugw("ListAllBackendsRequest", map[string]interface{}{
+	provider.Logger(ctx).Debugw("ListAllBackends", map[string]interface{}{
 		"request": req.String(),
 	})
 	backends, err := s.core.GetAllBackends(ctx)
@@ -99,7 +99,7 @@ func (s *Server) ListAllBackends(ctx context.Context, req *gatewayv1.Empty) (*ga
 // Approve marks a backends status to approved
 
 func (s *Server) EnableBackend(ctx context.Context, req *gatewayv1.BackendEnableRequest) (*gatewayv1.Empty, error) {
-	provider.Logger(ctx).Debugw("EnableBackendRequest", map[string]interface{}{
+	provider.Logger(ctx).Debugw("EnableBackend", map[string]interface{}{
 		"request": req.String(),
 	})
 	err := s.core.EnableBackend(ctx, req.GetId())
@@ -111,7 +111,7 @@ func (s *Server) EnableBackend(ctx context.Context, req *gatewayv1.BackendEnable
 }
 
 func (s *Server) DisableBackend(ctx context.Context, req *gatewayv1.BackendDisableRequest) (*gatewayv1.Empty, error) {
-	provider.Logger(ctx).Debugw("DisableBackendRequest", map[string]interface{}{
+	provider.Logger(ctx).Debugw("DisableBackend", map[string]interface{}{
 		"request": req.String(),
 	})
 	err := s.core.DisableBackend(ctx, req.GetId())
@@ -124,7 +124,7 @@ func (s *Server) DisableBackend(ctx context.Context, req *gatewayv1.BackendDisab
 
 // Delete deletes a backend, soft-delete
 func (s *Server) DeleteBackend(ctx context.Context, req *gatewayv1.BackendDeleteRequest) (*gatewayv1.Empty, error) {
-	provider.Logger(ctx).Debugw("DeleteBackendRequest", map[string]interface{}{
+	provider.Logger(ctx).Debugw("DeleteBackend", map[string]interface{}{
 		"request": req.String(),
 	})
 	err := s.core.DeleteBackend(ctx, req.GetId())

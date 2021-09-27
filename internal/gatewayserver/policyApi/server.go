@@ -27,13 +27,8 @@ func NewServer(core ICore) *Server {
 func (s *Server) CreateOrUpdatePolicy(ctx context.Context, req *gatewayv1.Policy) (*gatewayv1.Empty, error) {
 	// defer span.Finish()
 
-	provider.Logger(ctx).Infow("UpsertPolicyRequest", map[string]interface{}{
-		"id":         req.GetId(),
-		"rule_type":  req.GetRule().Type.Enum().String(),
-		"rule_value": req.GetRule().Value,
-		"group":      req.GetGroup(),
-		"fallback":   req.GetFallbackGroup(),
-		"is_enabled": req.GetIsEnabled(),
+	provider.Logger(ctx).Debugw("CreateOrUpdatePolicy", map[string]interface{}{
+		"request": req.String(),
 	})
 
 	createParams := PolicyCreateParams{
@@ -55,6 +50,9 @@ func (s *Server) CreateOrUpdatePolicy(ctx context.Context, req *gatewayv1.Policy
 
 // Get retrieves a single policy record
 func (s *Server) GetPolicy(ctx context.Context, req *gatewayv1.PolicyGetRequest) (*gatewayv1.PolicyGetResponse, error) {
+	provider.Logger(ctx).Debugw("GetPolicy", map[string]interface{}{
+		"request": req.String(),
+	})
 	policy, err := s.core.GetPolicy(ctx, req.GetId())
 	if err != nil {
 		return nil, err
@@ -68,6 +66,9 @@ func (s *Server) GetPolicy(ctx context.Context, req *gatewayv1.PolicyGetRequest)
 
 // List fetches a list of filtered policy records
 func (s *Server) ListAllPolicies(ctx context.Context, req *gatewayv1.Empty) (*gatewayv1.PolicyListAllResponse, error) {
+	provider.Logger(ctx).Debugw("ListAllPolicies", map[string]interface{}{
+		"request": req.String(),
+	})
 	policies, err := s.core.GetAllPolicies(ctx)
 	if err != nil {
 		return nil, err
@@ -92,6 +93,9 @@ func (s *Server) ListAllPolicies(ctx context.Context, req *gatewayv1.Empty) (*ga
 // Approve marks a policies status to approved
 
 func (s *Server) EnablePolicy(ctx context.Context, req *gatewayv1.PolicyEnableRequest) (*gatewayv1.Empty, error) {
+	provider.Logger(ctx).Debugw("EnablePolicy", map[string]interface{}{
+		"request": req.String(),
+	})
 	err := s.core.EnablePolicy(ctx, req.GetId())
 	if err != nil {
 		return nil, err
@@ -101,6 +105,9 @@ func (s *Server) EnablePolicy(ctx context.Context, req *gatewayv1.PolicyEnableRe
 }
 
 func (s *Server) DisablePolicy(ctx context.Context, req *gatewayv1.PolicyDisableRequest) (*gatewayv1.Empty, error) {
+	provider.Logger(ctx).Debugw("DisablePolicy", map[string]interface{}{
+		"request": req.String(),
+	})
 	err := s.core.DisablePolicy(ctx, req.GetId())
 	if err != nil {
 		return nil, err
@@ -111,6 +118,9 @@ func (s *Server) DisablePolicy(ctx context.Context, req *gatewayv1.PolicyDisable
 
 // Delete deletes a policy, soft-delete
 func (s *Server) DeletePolicy(ctx context.Context, req *gatewayv1.PolicyDeleteRequest) (*gatewayv1.Empty, error) {
+	provider.Logger(ctx).Debugw("DeletePolicy", map[string]interface{}{
+		"request": req.String(),
+	})
 	err := s.core.DeletePolicy(ctx, req.GetId())
 	if err != nil {
 		return nil, err
@@ -139,6 +149,22 @@ func toPolicyResponseProto(policy *models.Policy) (*gatewayv1.Policy, error) {
 	return &response, nil
 }
 
-func (s *Server) EvaluateGroupForClient(ctx context.Context, req *gatewayv1.EvaluateGroupRequest) (*gatewayv1.Group, error) {
-	return nil, nil
+func (s *Server) EvaluateGroupForClient(ctx context.Context, req *gatewayv1.EvaluateGroupRequest) (*gatewayv1.EvaluateGroupResponse, error) {
+	provider.Logger(ctx).Debugw("EvaluateGroupForClient", map[string]interface{}{
+		"request": req.String(),
+	})
+
+	gid, err := s.core.EvaluateGroupForClient(
+		ctx,
+		&EvaluateClientParams{
+			ListeningPort:              req.GetIncomingPort(),
+			Hostname:                   req.GetHost(),
+			HeaderConnectionProperties: req.GetHeaderConnectionProperties(),
+			HeaderClientTags:           req.GetHeaderClientTags(),
+		})
+
+	if err != nil {
+		return &gatewayv1.EvaluateGroupResponse{GroupId: gid}, nil
+	}
+	return nil, err
 }
