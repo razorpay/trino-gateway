@@ -43,3 +43,11 @@ dev-docker-down:
 dev-migration:
 	go build ./cmd/migration/main.go -o migration.go
 	./migration.go up
+
+.PHONY: test-integration
+test-integration:
+	go test -tags=integration ./test/it -v -count=1
+
+.PHONY: test-unit
+test-unit:
+	go test
