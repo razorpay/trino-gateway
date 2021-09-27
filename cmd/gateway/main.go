@@ -86,10 +86,18 @@ func main() {
 func startGatewayServers(ctx *context.Context) []*http.Server {
 
 	// Start trino gateway reverse proxy servers on ports
-	// TODO: Add support for graceful shutdown
+
+	gatewayApiUrl := fmt.Sprint("http://localhost:", boot.Config.App.Port)
+	gatewayClient := router.GatewayApiClient{
+		Group:   gatewayv1.NewGroupApiProtobufClient(gatewayApiUrl, &http.Client{}),
+		Policy:  gatewayv1.NewPolicyApiProtobufClient(gatewayApiUrl, &http.Client{}),
+		Backend: gatewayv1.NewBackendApiProtobufClient(gatewayApiUrl, &http.Client{}),
+		Query:   gatewayv1.NewQueryApiProtobufClient(gatewayApiUrl, &http.Client{}),
+	}
+
 	servers := make([]*http.Server, len(boot.Config.Gateway.Ports))
 	for i, port := range boot.Config.Gateway.Ports {
-		server := router.StartRoutingServer(ctx, port)
+		server := router.Server(ctx, port, &gatewayClient)
 		servers[i] = server
 
 		go listenHttp(ctx, server, port)
