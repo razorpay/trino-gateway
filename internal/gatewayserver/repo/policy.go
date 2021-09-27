@@ -108,12 +108,12 @@ func (r *PolicyRepo) Enable(ctx context.Context, id string) error {
 		return err
 	}
 
-	if policy.IsEnabled {
+	if *policy.IsEnabled {
 		provider.Logger(ctx).Error("policy activation failed. Already active")
 		return errors.New("Already active")
 	}
 
-	policy.IsEnabled = true
+	*policy.IsEnabled = true
 
 	if err := r.repo.Update(ctx, policy); err != nil {
 		return err
@@ -131,12 +131,12 @@ func (r *PolicyRepo) Disable(ctx context.Context, id string) error {
 		return err
 	}
 
-	if !policy.IsEnabled {
+	if !*policy.IsEnabled {
 		provider.Logger(ctx).Error("policy activation failed. Already active")
 		return errors.New("Already active")
 	}
 
-	policy.IsEnabled = false
+	*policy.IsEnabled = false
 
 	if err := r.repo.Update(ctx, policy); err != nil {
 		return err

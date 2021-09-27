@@ -88,12 +88,12 @@ func (r *GroupRepo) Enable(ctx context.Context, id string) error {
 		return err
 	}
 
-	if group.IsEnabled {
+	if *group.IsEnabled {
 		provider.Logger(ctx).Error("group activation failed. Already active")
 		return errors.New("Already active")
 	}
 
-	group.IsEnabled = true
+	*group.IsEnabled = true
 
 	if err := r.repo.Update(ctx, group); err != nil {
 		return err
@@ -111,12 +111,12 @@ func (r *GroupRepo) Disable(ctx context.Context, id string) error {
 		return err
 	}
 
-	if !group.IsEnabled {
+	if !*group.IsEnabled {
 		provider.Logger(ctx).Error("group activation failed. Already active")
 		return errors.New("Already active")
 	}
 
-	group.IsEnabled = false
+	*group.IsEnabled = false
 
 	if err := r.repo.Update(ctx, group); err != nil {
 		return err

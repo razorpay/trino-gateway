@@ -132,8 +132,8 @@ func toPolicyResponseProto(policy *models.Policy) (*gatewayv1.Policy, error) {
 		Id:            policy.ID,
 		Rule:          &rule,
 		Group:         policy.GroupId,
-		FallbackGroup: policy.FallbackGroupId,
-		IsEnabled:     policy.IsEnabled,
+		FallbackGroup: *policy.FallbackGroupId,
+		IsEnabled:     *policy.IsEnabled,
 	}
 
 	return &response, nil
