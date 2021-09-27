@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 
-	"github.com/razorpay/trino-gateway/internal/boot"
 	"github.com/razorpay/trino-gateway/internal/gatewayserver/database/dbRepo"
 	"github.com/razorpay/trino-gateway/internal/gatewayserver/models"
+	"github.com/razorpay/trino-gateway/internal/provider"
 )
 
 type IGroupRepo interface {
@@ -36,11 +36,11 @@ func (c *GroupRepo) Dummy(ctx context.Context) error { return nil }
 func (r *GroupRepo) Create(ctx context.Context, group *models.Group) error {
 	err := r.repo.Create(ctx, group)
 	if err != nil {
-		boot.Logger(ctx).WithError(err).Errorw("group create failed", map[string]interface{}{"group_id": group.ID})
+		provider.Logger(ctx).WithError(err).Errorw("group create failed", map[string]interface{}{"group_id": group.ID})
 		return err
 	}
 
-	boot.Logger(ctx).Infow("group created", map[string]interface{}{"group_id": group.ID})
+	provider.Logger(ctx).Infow("group created", map[string]interface{}{"group_id": group.ID})
 
 	return nil
 }
@@ -48,11 +48,11 @@ func (r *GroupRepo) Create(ctx context.Context, group *models.Group) error {
 func (r *GroupRepo) Update(ctx context.Context, group *models.Group) error {
 	err := r.repo.Update(ctx, group)
 	if err != nil {
-		boot.Logger(ctx).WithError(err).Errorw("group update failed", map[string]interface{}{"group_id": group.ID})
+		provider.Logger(ctx).WithError(err).Errorw("group update failed", map[string]interface{}{"group_id": group.ID})
 		return err
 	}
 
-	boot.Logger(ctx).Infow("group updated", map[string]interface{}{"group_id": group.ID})
+	provider.Logger(ctx).Infow("group updated", map[string]interface{}{"group_id": group.ID})
 
 	return nil
 }
@@ -80,16 +80,16 @@ func (r *GroupRepo) FindMany(ctx context.Context, conditions map[string]interfac
 }
 
 func (r *GroupRepo) Enable(ctx context.Context, id string) error {
-	boot.Logger(ctx).Infow("group activation triggered", map[string]interface{}{"group_id": id})
+	provider.Logger(ctx).Infow("group activation triggered", map[string]interface{}{"group_id": id})
 
 	group, err := r.Find(ctx, id)
 	if err != nil {
-		boot.Logger(ctx).Error("group activation failed: " + err.Error())
+		provider.Logger(ctx).Error("group activation failed: " + err.Error())
 		return err
 	}
 
 	if group.IsEnabled {
-		boot.Logger(ctx).Error("group activation failed. Already active")
+		provider.Logger(ctx).Error("group activation failed. Already active")
 		return errors.New("Already active")
 	}
 
@@ -103,16 +103,16 @@ func (r *GroupRepo) Enable(ctx context.Context, id string) error {
 }
 
 func (r *GroupRepo) Disable(ctx context.Context, id string) error {
-	boot.Logger(ctx).Infow("group activation triggered", map[string]interface{}{"group_id": id})
+	provider.Logger(ctx).Infow("group activation triggered", map[string]interface{}{"group_id": id})
 
 	group, err := r.Find(ctx, id)
 	if err != nil {
-		boot.Logger(ctx).Error("group activation failed: " + err.Error())
+		provider.Logger(ctx).Error("group activation failed: " + err.Error())
 		return err
 	}
 
 	if !group.IsEnabled {
-		boot.Logger(ctx).Error("group activation failed. Already active")
+		provider.Logger(ctx).Error("group activation failed. Already active")
 		return errors.New("Already active")
 	}
 
@@ -126,11 +126,11 @@ func (r *GroupRepo) Disable(ctx context.Context, id string) error {
 }
 
 func (r *GroupRepo) Delete(ctx context.Context, id string) error {
-	boot.Logger(ctx).Infow("group delete request", map[string]interface{}{"group_id": id})
+	provider.Logger(ctx).Infow("group delete request", map[string]interface{}{"group_id": id})
 
 	group, err := r.Find(ctx, id)
 	if err != nil {
-		boot.Logger(ctx).Error("group delete failed: " + err.Error())
+		provider.Logger(ctx).Error("group delete failed: " + err.Error())
 		return err
 	}
 

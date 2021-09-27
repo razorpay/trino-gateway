@@ -139,16 +139,6 @@ func NewContext(ctx context.Context) context.Context {
 	return ctx
 }
 
-func Logger(ctx context.Context) *logger.Entry {
-	ctxLogger, err := logger.Ctx(ctx)
-
-	if err == nil {
-		return ctxLogger
-	}
-
-	return nil
-}
-
 func InitLogger(ctx context.Context) *logger.ZapLogger {
 	lgrConfig := logger.Config{
 		LogLevel:      Config.App.LogLevel,

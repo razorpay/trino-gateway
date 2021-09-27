@@ -7,6 +7,7 @@ import (
 	"github.com/twitchtv/twirp"
 
 	"github.com/razorpay/trino-gateway/internal/boot"
+	"github.com/razorpay/trino-gateway/internal/provider"
 )
 
 // Ctx returns function which sets context with core service
@@ -30,7 +31,7 @@ func Ctx() *twirp.ServerHooks {
 			"reqPackage": reqPackage,
 		}
 
-		return context.WithValue(ctx, logger.LoggerCtxKey, boot.Logger(ctx).WithFields(req)), nil
+		return context.WithValue(ctx, logger.LoggerCtxKey, provider.Logger(ctx).WithFields(req)), nil
 	}
 
 	return hooks

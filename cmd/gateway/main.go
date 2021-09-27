@@ -22,6 +22,7 @@ import (
 	policyapi "github.com/razorpay/trino-gateway/internal/gatewayserver/policyApi"
 	queryapi "github.com/razorpay/trino-gateway/internal/gatewayserver/queryApi"
 	"github.com/razorpay/trino-gateway/internal/gatewayserver/repo"
+	"github.com/razorpay/trino-gateway/internal/provider"
 	"github.com/razorpay/trino-gateway/internal/router"
 	gatewayv1 "github.com/razorpay/trino-gateway/rpc/gateway"
 	// "github.com/razorpay/trino-gateway/twirpql"
@@ -53,7 +54,7 @@ func main() {
 	// }
 	// defer traceCloser.Close()
 
-	boot.Logger(ctx).Debug(fmt.Sprint(boot.Config))
+	provider.Logger(ctx).Debug(fmt.Sprint(boot.Config))
 
 	// Start Api Server
 	apiServer := startApiServer(&ctx)
@@ -97,7 +98,7 @@ func startGatewayServers(ctx *context.Context) []*http.Server {
 
 	servers := make([]*http.Server, len(boot.Config.Gateway.Ports))
 	for i, port := range boot.Config.Gateway.Ports {
-		server := router.Server(ctx, port, &gatewayClient)
+		server := router.Server(ctx, port, &gatewayClient, boot.Config.App.ServiceExternalHostname)
 		servers[i] = server
 
 		go listenHttp(ctx, server, port)
@@ -113,7 +114,7 @@ func listenHttp(ctx *context.Context, server *http.Server, port int) {
 	}
 
 	if err := server.Serve(listener); err != nil && err != http.ErrServerClosed {
-		boot.Logger(*ctx).WithContext(*ctx, nil).Fatalw("Failed to start http listener", map[string]interface{}{"error": err})
+		provider.Logger(*ctx).WithContext(*ctx, nil).Fatalw("Failed to start http listener", map[string]interface{}{"error": err})
 	}
 }
 
@@ -219,13 +220,13 @@ func shutDown(ctx context.Context, servers ...*http.Server) {
 	ctxWithTimeout, cancel := context.WithTimeout(ctx, time.Duration(boot.Config.App.ShutdownTimeout)*time.Second)
 	defer cancel()
 
-	boot.Logger(ctx).Info("Shutting down trino-gateway")
+	provider.Logger(ctx).Info("Shutting down trino-gateway")
 
 	for _, server := range servers {
 		go func(server *http.Server) {
 			err := server.Shutdown(ctxWithTimeout)
 			if err != nil {
-				boot.Logger(ctx).Errorw("Failed to initiate shutdown", map[string]interface{}{"error": err})
+				provider.Logger(ctx).Errorw("Failed to initiate shutdown", map[string]interface{}{"error": err})
 			}
 		}(server)
 	}
