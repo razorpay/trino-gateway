@@ -70,7 +70,7 @@ service GroupApi {
     rpc EnableGroup (GroupEnableRequest) returns (Empty);
     rpc DisableGroup (GroupDisableRequest) returns (Empty);
 
-    rpc EvaluateBackendForGroup(EvaluateBackendRequest) returns (Backend);
+    rpc EvaluateBackendForGroup(EvaluateBackendRequest) returns (EvaluateBackendResponse);
 }
 
 message Group {
@@ -108,6 +108,14 @@ message GroupDisableRequest {
     string id = 1; // required
 }
 
+message EvaluateBackendRequest  {
+    string group_id = 1; // required
+}
+
+message EvaluateBackendResponse  {
+    string backend_id = 1; // required
+}
+
 service PolicyApi {
     rpc CreateOrUpdatePolicy (Policy) returns (Empty);
     rpc GetPolicy (PolicyGetRequest) returns (PolicyGetResponse);
@@ -116,7 +124,7 @@ service PolicyApi {
     rpc EnablePolicy (PolicyEnableRequest) returns (Empty);
     rpc DisablePolicy (PolicyDisableRequest) returns (Empty);
 
-    rpc EvaluateGroupForClient(EvaluateGroupRequest) returns (Group);
+    rpc EvaluateGroupForClient(EvaluateGroupRequest) returns (EvaluateGroupResponse);
 }
 
 message Policy {
@@ -162,12 +170,23 @@ message PolicyDisableRequest {
     string id = 1; // required
 }
 
+message EvaluateGroupRequest {
+    int32 incoming_port = 1;
+    string host = 2;
+    string header_connection_properties = 3;
+    string header_client_tags = 4;
+}
+
+message EvaluateGroupResponse {
+    string group_id = 1; // required
+}
+
 service QueryApi {
     rpc CreateOrUpdateQuery (Query) returns (Empty);
     rpc GetQuery (QueryGetRequest) returns (QueryGetResponse);
     rpc ListQueries (QueriesListRequest) returns (QueriesListResponse);
 
-    rpc FindBackendForQuery(FindBackendForQueryRequest) returns (Backend);
+    rpc FindBackendForQuery(FindBackendForQueryRequest) returns (FindBackendForQueryResponse);
 }
 
 message Query {
@@ -213,21 +232,10 @@ message QueriesListResponse {
     repeated Query items = 1;
 }
 
-message EvaluateGroupRequest {
-    int32 incoming_port = 1;
-    string host = 2;
-    string header_connection_properties = 3;
-    string header_client_tags = 4;
-}
-
-message EvaluateGroupResponse {
-    string group_id = 1; // required
-}
-
-message EvaluateBackendRequest  {
-    string group_id = 1; // required
-}
-
 message FindBackendForQueryRequest {
     string query_id = 1; // required
+}
+
+message FindBackendForQueryResponse {
+    string backend_id = 1; // required
 }

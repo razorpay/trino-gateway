@@ -113,6 +113,7 @@ func (c *Core) FindMany(ctx context.Context, params IFindManyParams) (*[]models.
 	return c.queryRepo.FindMany(ctx, conditions)
 }
 
-func (c *Core) FindBackendForQuery(ctx context.Context, q string) (string, error) {
+func (c *Core) FindBackendForQuery(ctx context.Context, qid string) (string, error) {
+	// TODO
 	return "", nil
 }
