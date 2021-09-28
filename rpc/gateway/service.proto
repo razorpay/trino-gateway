@@ -70,18 +70,20 @@ service GroupApi {
     rpc EnableGroup (GroupEnableRequest) returns (Empty);
     rpc DisableGroup (GroupDisableRequest) returns (Empty);
 
-    rpc EvaluateBackendForGroup(EvaluateBackendRequest) returns (EvaluateBackendResponse);
+    rpc EvaluateBackendForGroups(EvaluateBackendRequest) returns (EvaluateBackendResponse);
 }
 
 message Group {
     enum RoutingStrategy {
-        ROUND_ROBIN = 0;
-        RANDOM = 1;
+        LEAST_LOADED = 0;
+        ROUND_ROBIN = 1;
+        RANDOM = 2;
     }
     string id = 1; // required
     repeated string backends = 2; // required
     RoutingStrategy strategy = 3;
-    bool is_enabled = 4;
+    string last_routed_backend = 4;
+    bool is_enabled = 5;
 }
 
 message GroupGetRequest {
@@ -109,11 +111,12 @@ message GroupDisableRequest {
 }
 
 message EvaluateBackendRequest  {
-    string group_id = 1; // required
+    repeated string group_ids = 1; // required
 }
 
 message EvaluateBackendResponse  {
     string backend_id = 1; // required
+    string group_id = 2; // required
 }
 
 service PolicyApi {
@@ -124,7 +127,7 @@ service PolicyApi {
     rpc EnablePolicy (PolicyEnableRequest) returns (Empty);
     rpc DisablePolicy (PolicyDisableRequest) returns (Empty);
 
-    rpc EvaluateGroupForClient(EvaluateGroupRequest) returns (EvaluateGroupResponse);
+    rpc EvaluateGroupsForClient(EvaluateGroupsRequest) returns (EvaluateGroupsResponse);
 }
 
 message Policy {
@@ -170,15 +173,15 @@ message PolicyDisableRequest {
     string id = 1; // required
 }
 
-message EvaluateGroupRequest {
+message EvaluateGroupsRequest {
     int32 incoming_port = 1;
     string host = 2;
     string header_connection_properties = 3;
     string header_client_tags = 4;
 }
 
-message EvaluateGroupResponse {
-    string group_id = 1; // required
+message EvaluateGroupsResponse {
+    repeated string group_ids = 1; // required
 }
 
 service QueryApi {

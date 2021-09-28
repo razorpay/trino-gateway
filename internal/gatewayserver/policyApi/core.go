@@ -22,7 +22,7 @@ type ICore interface {
 	EnablePolicy(ctx context.Context, id string) error
 	DisablePolicy(ctx context.Context, id string) error
 
-	EvaluateGroupForClient(ctx context.Context, c *EvaluateClientParams) (string, error)
+	EvaluateGroupsForClient(ctx context.Context, c *EvaluateClientParams) (*[]string, error)
 	// EvaluatePolicy(ctx context.Context, group string) (string, error)
 	// FindPolicyForQuery(ctx context.Context, q string) (string, error)
 }
@@ -142,7 +142,71 @@ type EvaluateClientParams struct {
 	HeaderClientTags           string
 }
 
-func (c *Core) EvaluateGroupForClient(ctx context.Context, params *EvaluateClientParams) (string, error) {
-	// TODO
-	return "", nil
+func (c *Core) EvaluateGroupsForClient(ctx context.Context, params *EvaluateClientParams) (*[]string, error) {
+	// policies, err := c.GetAllActivePolicies(ctx)
+	var err error
+
+	findGroupsForPolicyTypes := func(ruleType string, ruleValue string) (*map[string]struct{}, error) {
+		activePolicies, err := c.FindMany(
+			ctx,
+			&FindManyParams{
+				IsEnabled: true,
+				RuleType:  ruleType,
+				RuleValue: ruleValue,
+			})
+		if err != nil {
+			return nil, err
+		}
+		var gids map[string]struct{}
+		for _, policy := range *activePolicies {
+			gids[policy.GroupId] = struct{}{}
+		}
+		return &gids, nil
+	}
+
+	// Step 1: find all policies
+	listeningPortPolicies, err := findGroupsForPolicyTypes("listening_port", string(params.ListeningPort))
+	if err != nil {
+		return nil, err
+	}
+
+	hostnamePolicies, err := findGroupsForPolicyTypes("header_host", params.Hostname)
+	if err != nil {
+		return nil, err
+	}
+
+	clientTagsPolicies, err := findGroupsForPolicyTypes("header_client_tags", params.HeaderClientTags)
+	if err != nil {
+		return nil, err
+	}
+
+	clientConnPropsPolicies, err := findGroupsForPolicyTypes("header_connection_properties", params.HeaderConnectionProperties)
+	if err != nil {
+		return nil, err
+	}
+
+	// Step 2: take intersections of all non nil grp sets; a nil set = any grp; all sets nil == route to fallbackGrp;
+	gids := setIntersection(setIntersection(setIntersection(*listeningPortPolicies, *hostnamePolicies), *clientTagsPolicies), *clientConnPropsPolicies)
+
+	res := make([]string, 0, len(gids))
+	i := 0
+	for k := range gids {
+		res[i] = k
+		i++
+	}
+	return &res, nil
+}
+
+// Implementing "set" collection methods here, :)
+func setIntersection(s1 map[string]struct{}, s2 map[string]struct{}) map[string]struct{} {
+	s_intersection := map[string]struct{}{}
+	if len(s1) > len(s2) {
+		s1, s2 = s2, s1 // better to iterate over a shorter set
+	}
+	for k, _ := range s1 {
+		if (s2)[k] == struct{}{} {
+			s_intersection[k] = struct{}{}
+		}
+	}
+	return s_intersection
 }

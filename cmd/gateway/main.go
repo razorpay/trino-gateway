@@ -152,7 +152,7 @@ func startApiServer(ctx *context.Context) *http.Server {
 	gatewayQueryRepo := repo.NewQueryRepo(*ctx, gatewayDbRepo)
 
 	gatewayBackendCore := backendapi.NewCore(ctx, gatewayBackendRepo)
-	gatewayGroupCore := groupapi.NewCore(ctx, gatewayGroupRepo)
+	gatewayGroupCore := groupapi.NewCore(ctx, gatewayGroupRepo, gatewayBackendRepo)
 	gatewayPolicyCore := policyapi.NewCore(ctx, gatewayPolicyRepo)
 	gatewayQueryCore := queryapi.NewCore(ctx, gatewayQueryRepo)
 
