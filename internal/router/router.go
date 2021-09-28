@@ -170,29 +170,28 @@ func (r *routerServer) processRequest(req *http.Request) (*http.Request, error) 
 
 	if clientReq.queryId == "" {
 
-		evalGrpResp, err := r.gatewayApiClient.Policy.EvaluateGroupForClient(*r.ctx, &gatewayv1.EvaluateGroupRequest{
+		evalGrpResp, err := r.gatewayApiClient.Policy.EvaluateGroupsForClient(*r.ctx, &gatewayv1.EvaluateGroupsRequest{
 			IncomingPort:               clientReq.incomingPort,
 			Host:                       clientReq.host,
 			HeaderConnectionProperties: clientReq.headerConnectionProperties,
 			HeaderClientTags:           clientReq.headerClientTags,
 		})
 		if err != nil {
-			err = errors.New(fmt.Sprint("Group Unresolvable for client", req, err.Error()))
+			err = errors.New(fmt.Sprint("Groups Unresolvable for client", req, err.Error()))
 		} else {
-			querySaveReq.GroupId = evalGrpResp.GroupId
-			evalBackendResp, err := r.gatewayApiClient.Group.EvaluateBackendForGroup(
+			evalBackendResp, err := r.gatewayApiClient.Group.EvaluateBackendForGroups(
 				*r.ctx,
-				&gatewayv1.EvaluateBackendRequest{GroupId: evalGrpResp.GroupId},
+				&gatewayv1.EvaluateBackendRequest{GroupIds: evalGrpResp.GetGroupIds()},
 			)
 			if err != nil {
 				err = errors.New(
-					fmt.Sprint("Backend Unresolvable for group id:",
-						evalGrpResp.GroupId,
+					fmt.Sprint("Backend Unresolvable for groups",
+						evalGrpResp.GetGroupIds(),
 						err.Error()),
 				)
-			} else {
-				backendFound(evalBackendResp.GetBackendId())
 			}
+			querySaveReq.GroupId = evalBackendResp.GetGroupId()
+			backendFound(evalBackendResp.GetBackendId())
 		}
 	} else {
 		findBackendIdResp, err := r.gatewayApiClient.Query.FindBackendForQuery(

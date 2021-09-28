@@ -32,10 +32,11 @@ func (s *Server) CreateOrUpdateGroup(ctx context.Context, req *gatewayv1.Group) 
 	})
 
 	createParams := GroupCreateParams{
-		ID:        req.GetId(),
-		Strategy:  req.GetStrategy().Enum().String(),
-		Backends:  req.GetBackends(),
-		IsEnabled: req.GetIsEnabled(),
+		ID:                req.GetId(),
+		Strategy:          req.GetStrategy().Enum().String(),
+		Backends:          req.GetBackends(),
+		IsEnabled:         req.GetIsEnabled(),
+		LastRoutedBackend: req.GetLastRoutedBackend(),
 	}
 
 	err := s.core.CreateOrUpdateGroup(ctx, &createParams)
@@ -138,24 +139,25 @@ func toGroupResponseProto(group *models.Group) (*gatewayv1.Group, error) {
 		backends = append(backends, backend.BackendId)
 	}
 	response := gatewayv1.Group{
-		Id:        group.ID,
-		Strategy:  *gatewayv1.Group_RoutingStrategy(strategy).Enum(),
-		Backends:  backends,
-		IsEnabled: *group.IsEnabled,
+		Id:                group.ID,
+		Strategy:          *gatewayv1.Group_RoutingStrategy(strategy).Enum(),
+		Backends:          backends,
+		IsEnabled:         *group.IsEnabled,
+		LastRoutedBackend: *group.LastRoutedBackend,
 	}
 
 	return &response, nil
 }
 
-func (s *Server) EvaluateBackendForGroup(ctx context.Context, req *gatewayv1.EvaluateBackendRequest) (*gatewayv1.EvaluateBackendResponse, error) {
-	provider.Logger(ctx).Debugw("EvaluateBackendForGroup", map[string]interface{}{
+func (s *Server) EvaluateBackendForGroups(ctx context.Context, req *gatewayv1.EvaluateBackendRequest) (*gatewayv1.EvaluateBackendResponse, error) {
+	provider.Logger(ctx).Debugw("EvaluateBackendForGroups", map[string]interface{}{
 		"request": req.String(),
 	})
 
-	backend_id, err := s.core.EvaluateBackend(ctx, req.GroupId)
-
+	backend_id, group_id, err := s.core.EvaluateBackendForGroups(ctx, req.GetGroupIds())
 	if err != nil {
-		return &gatewayv1.EvaluateBackendResponse{BackendId: backend_id}, nil
+		return nil, err
+
 	}
-	return nil, err
+	return &gatewayv1.EvaluateBackendResponse{BackendId: backend_id, GroupId: group_id}, nil
 }

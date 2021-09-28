@@ -149,12 +149,12 @@ func toPolicyResponseProto(policy *models.Policy) (*gatewayv1.Policy, error) {
 	return &response, nil
 }
 
-func (s *Server) EvaluateGroupForClient(ctx context.Context, req *gatewayv1.EvaluateGroupRequest) (*gatewayv1.EvaluateGroupResponse, error) {
-	provider.Logger(ctx).Debugw("EvaluateGroupForClient", map[string]interface{}{
+func (s *Server) EvaluateGroupsForClient(ctx context.Context, req *gatewayv1.EvaluateGroupsRequest) (*gatewayv1.EvaluateGroupsResponse, error) {
+	provider.Logger(ctx).Debugw("EvaluateGroupsForClient", map[string]interface{}{
 		"request": req.String(),
 	})
 
-	gid, err := s.core.EvaluateGroupForClient(
+	gids, err := s.core.EvaluateGroupsForClient(
 		ctx,
 		&EvaluateClientParams{
 			ListeningPort:              req.GetIncomingPort(),
@@ -164,7 +164,11 @@ func (s *Server) EvaluateGroupForClient(ctx context.Context, req *gatewayv1.Eval
 		})
 
 	if err != nil {
-		return &gatewayv1.EvaluateGroupResponse{GroupId: gid}, nil
+		return nil, err
+
 	}
-	return nil, err
+	if gids != nil {
+		return &gatewayv1.EvaluateGroupsResponse{GroupIds: *gids}, nil
+	}
+	return &gatewayv1.EvaluateGroupsResponse{}, nil
 }

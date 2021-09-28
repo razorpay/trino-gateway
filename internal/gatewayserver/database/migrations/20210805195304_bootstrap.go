@@ -39,6 +39,7 @@ func Up20210805195304(tx *sql.Tx) error {
 		`id VARCHAR(255) NOT NULL,
 			strategy ENUM('random', 'round_robin') DEFAULT 'random',
 			is_enabled bool DEFAULT FALSE,
+			last_routed_backend VARCHAR(255);
 			created_at INT(11) NOT NULL,
 			updated_at INT(11) NOT NULL,
 			PRIMARY KEY (id),

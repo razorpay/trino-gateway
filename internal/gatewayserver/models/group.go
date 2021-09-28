@@ -7,6 +7,7 @@ type Group struct {
 	spine.Model
 	Strategy              *string `json:"strategy"`
 	IsEnabled             *bool   `json:"is_enabled" sql:"DEFAULT:true"`
+	LastRoutedBackend     *string `json:"last_routed_backend"`
 	GroupBackendsMappings *[]GroupBackendsMapping
 }
 
