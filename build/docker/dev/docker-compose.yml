@@ -37,6 +37,8 @@ services:
   trino_gateway_mysql:
     image: mysql:8.0.18
     container_name: trino_gateway_mysql
+    volumes:
+    - ./mysqlconf:/etc/mysql/conf.d
     ports:
     - 33306:3306
     environment:

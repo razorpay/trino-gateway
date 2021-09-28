@@ -130,7 +130,7 @@ func (r *routerServer) processRequest(req *http.Request) (*http.Request, error) 
 
 	clientReq := r.parseClientRequest(req)
 	if !isValidRequest(clientReq) {
-		return req, errors.New("invalid request")
+		return req, errors.New("not a valid Trino request")
 	}
 	querySaveReq := gatewayv1.Query{
 		Id:         clientReq.queryId,
@@ -143,15 +143,16 @@ func (r *routerServer) processRequest(req *http.Request) (*http.Request, error) 
 	var backend *gatewayv1.Backend
 
 	backendFound := func(backend_id string) {
-		findBackendResp, err := r.gatewayApiClient.Backend.GetBackend(
+		provider.Logger(*r.ctx).Debug(fmt.Sprint(LOG_TAG, "fetching details of resolved backend"))
+		findBackendResp, err2 := r.gatewayApiClient.Backend.GetBackend(
 			*r.ctx,
 			&gatewayv1.BackendGetRequest{Id: backend_id},
 		)
-		if err != nil {
+		if err2 != nil {
 			err = errors.New(
 				fmt.Sprint("Cannot find backend for backend id:",
 					backend_id,
-					err.Error()),
+					err2.Error()),
 			)
 		}
 		backend = findBackendResp.GetBackend()
@@ -170,39 +171,50 @@ func (r *routerServer) processRequest(req *http.Request) (*http.Request, error) 
 
 	if clientReq.queryId == "" {
 
-		evalGrpResp, err := r.gatewayApiClient.Policy.EvaluateGroupsForClient(*r.ctx, &gatewayv1.EvaluateGroupsRequest{
+		provider.Logger(*r.ctx).Debug(fmt.Sprint(LOG_TAG, "evaluating groups for client request"))
+		evalGrpResp, err2 := r.gatewayApiClient.Policy.EvaluateGroupsForClient(*r.ctx, &gatewayv1.EvaluateGroupsRequest{
 			IncomingPort:               clientReq.incomingPort,
 			Host:                       clientReq.host,
 			HeaderConnectionProperties: clientReq.headerConnectionProperties,
 			HeaderClientTags:           clientReq.headerClientTags,
 		})
-		if err != nil {
-			err = errors.New(fmt.Sprint("Groups Unresolvable for client", req, err.Error()))
+		if err2 != nil {
+			err = errors.New(fmt.Sprint("Groups Unresolvable for client", req, err2.Error()))
 		} else {
-			evalBackendResp, err := r.gatewayApiClient.Group.EvaluateBackendForGroups(
+			provider.Logger(*r.ctx).Debug(fmt.Sprint(LOG_TAG, "evaluating backend for groups"))
+			evalBackendResp, err2 := r.gatewayApiClient.Group.EvaluateBackendForGroups(
 				*r.ctx,
 				&gatewayv1.EvaluateBackendRequest{GroupIds: evalGrpResp.GetGroupIds()},
 			)
-			if err != nil {
+			if err2 != nil {
 				err = errors.New(
 					fmt.Sprint("Backend Unresolvable for groups",
 						evalGrpResp.GetGroupIds(),
-						err.Error()),
+						err2.Error()),
 				)
+			} else {
+				provider.Logger(*r.ctx).Debugw(fmt.Sprint(LOG_TAG, "backend resolved"), map[string]interface{}{
+					"backend_id": evalBackendResp.GetBackendId(),
+					"group_id":   evalBackendResp.GetGroupId(),
+				})
+				querySaveReq.GroupId = evalBackendResp.GetGroupId()
+				backendFound(evalBackendResp.GetBackendId())
 			}
-			querySaveReq.GroupId = evalBackendResp.GetGroupId()
-			backendFound(evalBackendResp.GetBackendId())
 		}
 	} else {
-		findBackendIdResp, err := r.gatewayApiClient.Query.FindBackendForQuery(
+		findBackendIdResp, err2 := r.gatewayApiClient.Query.FindBackendForQuery(
 			*r.ctx,
 			&gatewayv1.FindBackendForQueryRequest{QueryId: clientReq.queryId},
 		)
-		if err != nil {
-			err = errors.New(fmt.Sprint("Backend Unresolvable for query id:", clientReq.queryId, err.Error()))
+		if err2 != nil {
+			err = errors.New(fmt.Sprint("Backend Unresolvable for query id:", clientReq.queryId, err2.Error()))
 		} else {
 			backendFound(findBackendIdResp.BackendId)
 		}
+	}
+
+	if err != nil {
+		return req, err
 	}
 
 	_, err2 := r.gatewayApiClient.Query.CreateOrUpdateQuery(*r.ctx, &querySaveReq)

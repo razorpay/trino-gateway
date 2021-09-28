@@ -37,9 +37,9 @@ func Up20210805195304(tx *sql.Tx) error {
 	// groups is a keyword in mysql, so we use groups_
 	_, err = tx.Exec("CREATE TABLE `groups_` (" +
 		`id VARCHAR(255) NOT NULL,
-			strategy ENUM('random', 'round_robin') DEFAULT 'random',
+			strategy ENUM('random', 'round_robin', 'least_load') DEFAULT 'random',
 			is_enabled bool DEFAULT FALSE,
-			last_routed_backend VARCHAR(255);
+			last_routed_backend VARCHAR(255),
 			created_at INT(11) NOT NULL,
 			updated_at INT(11) NOT NULL,
 			PRIMARY KEY (id),
@@ -57,6 +57,7 @@ func Up20210805195304(tx *sql.Tx) error {
 			created_at int(11),
 			updated_at int(11),
 			PRIMARY KEY (id),
+			UNIQUE KEY (group_id, backend_id),
 			KEY users_created_at_index (created_at),
 			KEY users_updated_at_index (updated_at)
 		);`)
@@ -85,8 +86,8 @@ func Up20210805195304(tx *sql.Tx) error {
 			id varchar(255),
 			text varchar(255),
 			client_ip varchar(255),
-			group_id varchar(255),
-			backend_id varchar(255),
+			group_id varchar(255) NULL,
+			backend_id varchar(255) NULL,
 			username varchar(255),
 			received_at int(11),
 			submitted_at int(11),

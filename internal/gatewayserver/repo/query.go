@@ -30,11 +30,11 @@ func NewQueryRepo(ctx context.Context, repo dbRepo.IDbRepo) *QueryRepo {
 func (r *QueryRepo) Create(ctx context.Context, query *models.Query) error {
 	err := r.repo.Create(ctx, query)
 	if err != nil {
-		provider.Logger(ctx).WithError(err).Errorw("user create failed", map[string]interface{}{"user_id": query.ID})
+		provider.Logger(ctx).WithError(err).Errorw("query create failed", map[string]interface{}{"query_id": query.ID})
 		return err
 	}
 
-	provider.Logger(ctx).Infow("query created", map[string]interface{}{"user_id": query.ID})
+	provider.Logger(ctx).Infow("query created", map[string]interface{}{"query_id": query.ID})
 
 	return nil
 }
@@ -42,7 +42,7 @@ func (r *QueryRepo) Create(ctx context.Context, query *models.Query) error {
 func (r *QueryRepo) Update(ctx context.Context, query *models.Query) error {
 	err := r.repo.Update(ctx, query)
 	if err != nil {
-		provider.Logger(ctx).WithError(err).Errorw("user update failed", map[string]interface{}{"query_id": query.ID})
+		provider.Logger(ctx).WithError(err).Errorw("query update failed", map[string]interface{}{"query_id": query.ID})
 		return err
 	}
 

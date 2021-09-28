@@ -130,6 +130,9 @@ func (s *Server) DeletePolicy(ctx context.Context, req *gatewayv1.PolicyDeleteRe
 }
 
 func toPolicyResponseProto(policy *models.Policy) (*gatewayv1.Policy, error) {
+	if policy == nil {
+		return &gatewayv1.Policy{}, nil
+	}
 	rule_type, ok := gatewayv1.Policy_Rule_RuleType_value[policy.RuleType]
 	if !ok {
 		return nil, errors.New(fmt.Sprint("error encoding response: invalid rule_type ", policy.RuleType))

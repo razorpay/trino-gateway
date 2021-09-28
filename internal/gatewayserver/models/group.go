@@ -5,10 +5,10 @@ import "github.com/razorpay/trino-gateway/pkg/spine"
 // group model struct definition
 type Group struct {
 	spine.Model
-	Strategy              *string `json:"strategy"`
-	IsEnabled             *bool   `json:"is_enabled" sql:"DEFAULT:true"`
-	LastRoutedBackend     *string `json:"last_routed_backend"`
-	GroupBackendsMappings *[]GroupBackendsMapping
+	Strategy              *string                 `json:"strategy"`
+	IsEnabled             *bool                   `json:"is_enabled" sql:"DEFAULT:true"`
+	LastRoutedBackend     *string                 `json:"last_routed_backend"`
+	GroupBackendsMappings *[]GroupBackendsMapping `gorm:"foreignKey:GroupId;references:ID"`
 }
 
 func (u *Group) TableName() string {
@@ -29,16 +29,17 @@ func (u *Group) Validate() error {
 
 type GroupBackendsMapping struct {
 	spine.Model
-	GroupId   string `json:"group_id"`
-	BackendId string `json:"backend_id"`
+	ID        *int32 `json:"id" sql:"DEFAULT:NULL"`
+	GroupId   string `json:"group_id" gorm:"primaryKey"`
+	BackendId string `json:"backend_id" gorm:"primaryKey"`
 }
 
 func (u *GroupBackendsMapping) TableName() string {
-	return "groups_backend_mappings"
+	return "group_backends_mappings"
 }
 
 func (u *GroupBackendsMapping) EntityName() string {
-	return "groups_backend_mapping"
+	return "group_backends_mappings"
 }
 
 func (u *GroupBackendsMapping) SetDefaults() error {

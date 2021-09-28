@@ -72,22 +72,22 @@ type IFindManyParams interface {
 	GetUsername() string
 	GetBackendId() string
 	GetGroup() string
-	GetSuccessfulSubmission() bool
+	// GetSuccessfulSubmission() bool
 }
 
 type FindManyParams struct {
 	// pagination
-	Count   int32
-	Skip    int32
-	From    int32
-	To      int32
-	OrderBy string
+	// Count   int32
+	// Skip    int32
+	// From    int32
+	// To      int32
+	// OrderBy string
 
 	// custom
-	Username             string
-	BackendId            string
-	Group                string
-	SuccessfulSubmission bool
+	Username  string `json:"username"`
+	BackendId string `json:"backend_id"`
+	Group     string `json:"group_id"`
+	// SuccessfulSubmission bool   `json:"rule_type"`
 }
 
 func (p *FindManyParams) GetUsername() string {
@@ -99,9 +99,10 @@ func (p *FindManyParams) GetBackendId() string {
 func (p *FindManyParams) GetGroup() string {
 	return p.Group
 }
-func (p *FindManyParams) GetSuccessfulSubmission() bool {
-	return p.SuccessfulSubmission
-}
+
+// func (p *FindManyParams) GetSuccessfulSubmission() bool {
+// 	return p.SuccessfulSubmission
+// }
 
 func (c *Core) FindMany(ctx context.Context, params IFindManyParams) (*[]models.Query, error) {
 

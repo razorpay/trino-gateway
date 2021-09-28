@@ -89,13 +89,13 @@ type IFindManyParams interface {
 
 type FindManyParams struct {
 	// pagination
-	Count int32
-	Skip  int32
-	From  int32
-	To    int32
+	// Count int32
+	// Skip  int32
+	// From  int32
+	// To    int32
 
 	// custom
-	IsEnabled bool
+	IsEnabled bool `json:"is_enabled"`
 }
 
 func (p *FindManyParams) GetIsEnabled() bool {

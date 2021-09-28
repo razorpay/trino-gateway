@@ -17,6 +17,7 @@ type IDbRepo interface {
 	FindMany(ctx context.Context, receivers interface{}, condition map[string]interface{}) error
 	Delete(ctx context.Context, receiver spine.IModel) error
 	Update(ctx context.Context, receiver spine.IModel, attrList ...string) error
+	Preload(ctx context.Context, query string, args ...interface{}) *spine.Repo
 }
 
 func NewDbRepo(ctx context.Context, db *db.DB) IDbRepo {

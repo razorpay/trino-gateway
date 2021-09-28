@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/razorpay/trino-gateway/internal/gatewayserver/models"
 	"github.com/razorpay/trino-gateway/internal/provider"
@@ -130,9 +131,12 @@ func (s *Server) DeleteGroup(ctx context.Context, req *gatewayv1.GroupDeleteRequ
 }
 
 func toGroupResponseProto(group *models.Group) (*gatewayv1.Group, error) {
-	strategy, ok := gatewayv1.Group_RoutingStrategy_value[*group.Strategy]
+	if group == nil {
+		return &gatewayv1.Group{}, nil
+	}
+	strategy, ok := gatewayv1.Group_RoutingStrategy_value[strings.ToUpper(*group.Strategy)]
 	if !ok {
-		return nil, errors.New(fmt.Sprint("error encoding response: invalid strategy ", group.Strategy))
+		return nil, errors.New(fmt.Sprint("error encoding response: invalid strategy ", *group.Strategy))
 	}
 	var backends []string
 	for _, backend := range *group.GroupBackendsMappings {

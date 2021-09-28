@@ -2,9 +2,9 @@ package policyapi
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/fatih/structs"
+	"github.com/razorpay/trino-gateway/internal/boot"
 	"github.com/razorpay/trino-gateway/internal/gatewayserver/models"
 	"github.com/razorpay/trino-gateway/internal/gatewayserver/repo"
 )
@@ -52,7 +52,10 @@ func (c *Core) CreateOrUpdatePolicy(ctx context.Context, params *PolicyCreatePar
 	}
 	policy.ID = params.ID
 
-	fmt.Println(policy.IsEnabled)
+	if policy.FallbackGroupId == nil {
+		policy.FallbackGroupId = &boot.Config.Gateway.DefaultRoutingGroup
+	}
+
 	_, exists := c.policyRepo.Find(ctx, params.ID)
 	if exists == nil { // update
 		return c.policyRepo.Update(ctx, &policy)
@@ -91,9 +94,9 @@ type FindManyParams struct {
 	// To    int32
 
 	// custom
-	IsEnabled bool
-	RuleType  string
-	RuleValue string
+	IsEnabled bool   `json:"is_enabled"`
+	RuleType  string `json:"rule_value"`
+	RuleValue string `json:"rule_type"`
 }
 
 func (p *FindManyParams) GetIsEnabled() bool {

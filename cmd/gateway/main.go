@@ -166,6 +166,9 @@ func startApiServer(ctx *context.Context) *http.Server {
 	gatewayPolicyServerHandler := gatewayv1.NewPolicyApiServer(gatewayPolicyServer, twirpHooks())
 	gatewayQueryServerHandler := gatewayv1.NewQueryApiServer(gatewayQueryServer, twirpHooks())
 
+	// // Ensure defaultRoutingGroup is present
+	// grp, gatewayGroupCore.GetGroup(*ctx, boot.Config.Gateway.DefaultRoutingGroup)
+
 	mux.Handle(gatewayv1.BackendApiPathPrefix, gatewayBackendServerHandler)
 	mux.Handle(gatewayv1.GroupApiPathPrefix, gatewayGroupServerHandler)
 	mux.Handle(gatewayv1.PolicyApiPathPrefix, gatewayPolicyServerHandler)

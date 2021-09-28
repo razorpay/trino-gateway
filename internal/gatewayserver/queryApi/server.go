@@ -69,6 +69,9 @@ func (s *Server) ListQueries(ctx context.Context, req *gatewayv1.QueriesListRequ
 }
 
 func toQueryResponseProto(query *models.Query) (*gatewayv1.Query, error) {
+	if query == nil {
+		return &gatewayv1.Query{}, nil
+	}
 	return &gatewayv1.Query{
 		Id:          query.ID,
 		Text:        query.Text,

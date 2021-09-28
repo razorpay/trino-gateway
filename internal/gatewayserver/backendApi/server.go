@@ -136,6 +136,9 @@ func (s *Server) DeleteBackend(ctx context.Context, req *gatewayv1.BackendDelete
 }
 
 func toBackendResponseProto(backend *models.Backend) (*gatewayv1.Backend, error) {
+	if backend == nil {
+		return &gatewayv1.Backend{}, nil
+	}
 	scheme, ok := gatewayv1.Backend_Scheme_value[backend.Scheme]
 	if !ok {
 		return nil, errors.New(fmt.Sprint("error encoding response: invalid scheme ", backend.Scheme))

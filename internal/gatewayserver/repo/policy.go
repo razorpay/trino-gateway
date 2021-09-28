@@ -34,11 +34,11 @@ func NewPolicyRepo(ctx context.Context, repo dbRepo.IDbRepo) *PolicyRepo {
 func (r *PolicyRepo) Create(ctx context.Context, policy *models.Policy) error {
 	err := r.repo.Create(ctx, policy)
 	if err != nil {
-		provider.Logger(ctx).WithError(err).Errorw("user create failed", map[string]interface{}{"user_id": policy.ID})
+		provider.Logger(ctx).WithError(err).Errorw("policy create failed", map[string]interface{}{"id": policy.ID})
 		return err
 	}
 
-	provider.Logger(ctx).Infow("policy created", map[string]interface{}{"user_id": policy.ID})
+	provider.Logger(ctx).Infow("policy created", map[string]interface{}{"id": policy.ID})
 
 	return nil
 }
@@ -46,11 +46,11 @@ func (r *PolicyRepo) Create(ctx context.Context, policy *models.Policy) error {
 func (r *PolicyRepo) Update(ctx context.Context, policy *models.Policy) error {
 	err := r.repo.Update(ctx, policy)
 	if err != nil {
-		provider.Logger(ctx).WithError(err).Errorw("user update failed", map[string]interface{}{"user_id": policy.ID})
+		provider.Logger(ctx).WithError(err).Errorw("policy update failed", map[string]interface{}{"policy_id": policy.ID})
 		return err
 	}
 
-	provider.Logger(ctx).Infow("policy updated", map[string]interface{}{"user_id": policy.ID})
+	provider.Logger(ctx).Infow("policy updated", map[string]interface{}{"id": policy.ID})
 
 	return nil
 }

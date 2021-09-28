@@ -75,7 +75,7 @@ service GroupApi {
 
 message Group {
     enum RoutingStrategy {
-        LEAST_LOADED = 0;
+        LEAST_LOAD = 0;
         ROUND_ROBIN = 1;
         RANDOM = 2;
     }

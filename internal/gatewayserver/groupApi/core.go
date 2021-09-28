@@ -89,13 +89,13 @@ type IFindManyParams interface {
 
 type FindManyParams struct {
 	// pagination
-	Count int32
-	Skip  int32
-	From  int32
-	To    int32
+	// Count int32
+	// Skip  int32
+	// From  int32
+	// To    int32
 
 	// custom
-	IsEnabled bool
+	IsEnabled bool `json:"is_enabled"`
 }
 
 func (p *FindManyParams) GetIsEnabled() bool {
@@ -220,7 +220,7 @@ func (c *Core) findBackend(ctx context.Context, group models.Group) (*string, er
 		}
 		selectedBackendId = activeBackendIds[index]
 
-	case "LEAST_LOADED":
+	case "LEAST_LOAD":
 		leastLoaded := (*activeBackends)[0]
 		load := func(b models.Backend) int {
 			return int(*b.RunningQueries) + int(*b.QueuedQueries)

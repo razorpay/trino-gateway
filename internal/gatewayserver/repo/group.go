@@ -7,6 +7,7 @@ import (
 	"github.com/razorpay/trino-gateway/internal/gatewayserver/database/dbRepo"
 	"github.com/razorpay/trino-gateway/internal/gatewayserver/models"
 	"github.com/razorpay/trino-gateway/internal/provider"
+	"gorm.io/gorm/clause"
 )
 
 type IGroupRepo interface {
@@ -60,7 +61,7 @@ func (r *GroupRepo) Update(ctx context.Context, group *models.Group) error {
 func (r *GroupRepo) Find(ctx context.Context, id string) (*models.Group, error) {
 	group := models.Group{}
 
-	err := r.repo.FindByID(ctx, &group, id)
+	err := r.repo.Preload(ctx, clause.Associations).FindByID(ctx, &group, id)
 	if err != nil {
 		return nil, err
 	}

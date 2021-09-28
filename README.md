@@ -82,3 +82,7 @@ https://github.com/gopherjs/gopherjs/issues/889
 gopherjs build ./cmd/frontend -o ./web/frontend/frontend.js
 
 It is necessary to hav a main package
+
+
+### Restriction
+Policy can't be created unless atleast one group is created, <- this is to satisfy fallback group criteria
