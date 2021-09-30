@@ -16,13 +16,13 @@ type Core struct {
 type ICore interface {
 	CreateOrUpdatePolicy(ctx context.Context, params *PolicyCreateParams) error
 	GetPolicy(ctx context.Context, id string) (*models.Policy, error)
-	GetAllPolicies(ctx context.Context) (*[]models.Policy, error)
-	GetAllActivePolicies(ctx context.Context) (*[]models.Policy, error)
+	GetAllPolicies(ctx context.Context) ([]models.Policy, error)
+	GetAllActivePolicies(ctx context.Context) ([]models.Policy, error)
 	DeletePolicy(ctx context.Context, id string) error
 	EnablePolicy(ctx context.Context, id string) error
 	DisablePolicy(ctx context.Context, id string) error
 
-	EvaluateGroupsForClient(ctx context.Context, c *EvaluateClientParams) (*[]string, error)
+	EvaluateGroupsForClient(ctx context.Context, c *EvaluateClientParams) ([]string, error)
 	// EvaluatePolicy(ctx context.Context, group string) (string, error)
 	// FindPolicyForQuery(ctx context.Context, q string) (string, error)
 }
@@ -69,7 +69,7 @@ func (c *Core) GetPolicy(ctx context.Context, id string) (*models.Policy, error)
 	return policy, err
 }
 
-func (c *Core) GetAllPolicies(ctx context.Context) (*[]models.Policy, error) {
+func (c *Core) GetAllPolicies(ctx context.Context) ([]models.Policy, error) {
 	policies, err := c.policyRepo.FindMany(ctx, make(map[string]interface{}))
 	return policies, err
 }
@@ -111,7 +111,7 @@ func (p *FindManyParams) GetRuleValue() string {
 	return p.RuleValue
 }
 
-func (c *Core) FindMany(ctx context.Context, params IFindManyParams) (*[]models.Policy, error) {
+func (c *Core) FindMany(ctx context.Context, params IFindManyParams) ([]models.Policy, error) {
 
 	conditionStr := structs.New(params)
 	// use the json tag name, so we can respect omitempty tags
@@ -121,7 +121,7 @@ func (c *Core) FindMany(ctx context.Context, params IFindManyParams) (*[]models.
 	return c.policyRepo.FindMany(ctx, conditions)
 }
 
-func (c *Core) GetAllActivePolicies(ctx context.Context) (*[]models.Policy, error) {
+func (c *Core) GetAllActivePolicies(ctx context.Context) ([]models.Policy, error) {
 	policies, err := c.FindMany(ctx, &FindManyParams{IsEnabled: true})
 	return policies, err
 }
@@ -145,7 +145,7 @@ type EvaluateClientParams struct {
 	HeaderClientTags           string
 }
 
-func (c *Core) EvaluateGroupsForClient(ctx context.Context, params *EvaluateClientParams) (*[]string, error) {
+func (c *Core) EvaluateGroupsForClient(ctx context.Context, params *EvaluateClientParams) ([]string, error) {
 	// policies, err := c.GetAllActivePolicies(ctx)
 	var err error
 
@@ -161,7 +161,7 @@ func (c *Core) EvaluateGroupsForClient(ctx context.Context, params *EvaluateClie
 			return nil, err
 		}
 		var gids map[string]struct{}
-		for _, policy := range *activePolicies {
+		for _, policy := range activePolicies {
 			gids[policy.GroupId] = struct{}{}
 		}
 		return &gids, nil
@@ -191,13 +191,13 @@ func (c *Core) EvaluateGroupsForClient(ctx context.Context, params *EvaluateClie
 	// Step 2: take intersections of all non nil grp sets; a nil set = any grp; all sets nil == route to fallbackGrp;
 	gids := setIntersection(setIntersection(setIntersection(*listeningPortPolicies, *hostnamePolicies), *clientTagsPolicies), *clientConnPropsPolicies)
 
-	res := make([]string, 0, len(gids))
+	res := make([]string, len(gids))
 	i := 0
 	for k := range gids {
 		res[i] = k
 		i++
 	}
-	return &res, nil
+	return res, nil
 }
 
 // Implementing "set" collection methods here, :)

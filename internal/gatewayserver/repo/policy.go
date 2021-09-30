@@ -13,9 +13,9 @@ type IPolicyRepo interface {
 	Create(ctx context.Context, policy *models.Policy) error
 	Update(ctx context.Context, policy *models.Policy) error
 	Find(ctx context.Context, id string) (*models.Policy, error)
-	FindMany(ctx context.Context, conditions map[string]interface{}) (*[]models.Policy, error)
-	// GetAll(ctx context.Context) (*[]models.Policy, error)
-	// GetAllActive(ctx context.Context) (*[]models.Policy, error)
+	FindMany(ctx context.Context, conditions map[string]interface{}) ([]models.Policy, error)
+	// GetAll(ctx context.Context) ([]models.Policy, error)
+	// GetAllActive(ctx context.Context) ([]models.Policy, error)
 	Delete(ctx context.Context, id string) error
 	Enable(ctx context.Context, id string) error
 	Disable(ctx context.Context, id string) error
@@ -66,7 +66,7 @@ func (r *PolicyRepo) Find(ctx context.Context, id string) (*models.Policy, error
 	return &policy, nil
 }
 
-func (r *PolicyRepo) FindMany(ctx context.Context, conditions map[string]interface{}) (*[]models.Policy, error) {
+func (r *PolicyRepo) FindMany(ctx context.Context, conditions map[string]interface{}) ([]models.Policy, error) {
 	var policies []models.Policy
 
 	err := r.repo.FindMany(ctx, &policies, conditions)
@@ -74,10 +74,10 @@ func (r *PolicyRepo) FindMany(ctx context.Context, conditions map[string]interfa
 		return nil, err
 	}
 
-	return &policies, nil
+	return policies, nil
 }
 
-// func (r *PolicyRepo) GetAll(ctx context.Context) (*[]models.Policy, error) {
+// func (r *PolicyRepo) GetAll(ctx context.Context) ([]models.Policy, error) {
 // 	var policies []models.Policy
 
 // 	err := r.repo.FindMany(ctx, &policies, make(map[string]interface{}))
@@ -88,7 +88,7 @@ func (r *PolicyRepo) FindMany(ctx context.Context, conditions map[string]interfa
 // 	return &policies, nil
 // }
 
-// func (r *PolicyRepo) GetAllActive(ctx context.Context) (*[]models.Policy, error) {
+// func (r *PolicyRepo) GetAllActive(ctx context.Context) ([]models.Policy, error) {
 // 	var policies []models.Policy
 
 // 	err := r.repo.FindMany(ctx, &policies, map[string]interface{}{"is_enabled": true})

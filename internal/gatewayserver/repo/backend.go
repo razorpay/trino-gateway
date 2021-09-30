@@ -13,9 +13,10 @@ type IBackendRepo interface {
 	Create(ctx context.Context, backend *models.Backend) error
 	Update(ctx context.Context, backend *models.Backend) error
 	Find(ctx context.Context, id string) (*models.Backend, error)
-	FindMany(ctx context.Context, conditions map[string]interface{}) (*[]models.Backend, error)
-	// GetAll(ctx context.Context) (*[]models.Backend, error)
-	// GetAllActive(ctx context.Context) (*[]models.Backend, error)
+	FindMany(ctx context.Context, conditions map[string]interface{}) ([]models.Backend, error)
+	// GetAll(ctx context.Context) ([]models.Backend, error)
+	// GetAllActive(ctx context.Context) ([]models.Backend, error)
+	GetAllActiveByIDs(ctx context.Context, ids []string) ([]models.Backend, error)
 	Delete(ctx context.Context, id string) error
 	Enable(ctx context.Context, id string) error
 	Disable(ctx context.Context, id string) error
@@ -66,7 +67,18 @@ func (r *BackendRepo) Find(ctx context.Context, id string) (*models.Backend, err
 	return &backend, nil
 }
 
-func (r *BackendRepo) FindMany(ctx context.Context, conditions map[string]interface{}) (*[]models.Backend, error) {
+func (r *BackendRepo) GetAllActiveByIDs(ctx context.Context, ids []string) ([]models.Backend, error) {
+	var backends []models.Backend
+
+	err := r.repo.FindWithConditionByIDs(ctx, &backends, map[string]interface{}{"is_enabled": true}, ids)
+	if err != nil {
+		return nil, err
+	}
+
+	return backends, nil
+}
+
+func (r *BackendRepo) FindMany(ctx context.Context, conditions map[string]interface{}) ([]models.Backend, error) {
 	var backends []models.Backend
 
 	err := r.repo.FindMany(ctx, &backends, conditions)
@@ -74,10 +86,10 @@ func (r *BackendRepo) FindMany(ctx context.Context, conditions map[string]interf
 		return nil, err
 	}
 
-	return &backends, nil
+	return backends, nil
 }
 
-// func (r *BackendRepo) GetAll(ctx context.Context) (*[]models.Backend, error) {
+// func (r *BackendRepo) GetAll(ctx context.Context) ([]models.Backend, error) {
 // 	var backends []models.Backend
 
 // 	err := r.repo.FindMany(ctx, &backends, make(map[string]interface{}))
@@ -88,7 +100,7 @@ func (r *BackendRepo) FindMany(ctx context.Context, conditions map[string]interf
 // 	return &backends, nil
 // }
 
-// func (r *BackendRepo) GetAllActive(ctx context.Context) (*[]models.Backend, error) {
+// func (r *BackendRepo) GetAllActive(ctx context.Context) ([]models.Backend, error) {
 // 	var backends []models.Backend
 
 // 	err := r.repo.FindMany(ctx, &backends, map[string]interface{}{"is_enabled": true})

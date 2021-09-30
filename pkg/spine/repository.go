@@ -18,7 +18,19 @@ type Repo struct {
 // FindByID fetches the record which matches the ID provided from the entity defined by receiver
 // and the result will be loaded into receiver
 func (repo Repo) FindByID(ctx context.Context, receiver IModel, id string) error {
-	q := repo.DBInstance(ctx).Where("id = ?", id).First(receiver)
+	q := repo.DBInstance(ctx).Where(AttributeID+" = ?", id).First(receiver)
+
+	return GetDBError(q)
+}
+
+func (repo Repo) FindWithConditionByIDs(
+	ctx context.Context,
+	receivers interface{},
+	condition map[string]interface{},
+	ids []string,
+) error {
+
+	q := repo.DBInstance(ctx).Where(AttributeID+" in (?)", ids).Where(condition).Find(receivers)
 
 	return GetDBError(q)
 }

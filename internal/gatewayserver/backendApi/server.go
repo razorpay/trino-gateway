@@ -80,8 +80,8 @@ func (s *Server) ListAllBackends(ctx context.Context, req *gatewayv1.Empty) (*ga
 		return nil, err
 	}
 
-	backendsProto := make([]*gatewayv1.Backend, 0, len(*backends))
-	for _, backendModel := range *backends {
+	backendsProto := make([]*gatewayv1.Backend, len(backends))
+	for _, backendModel := range backends {
 		backend, err := toBackendResponseProto(&backendModel)
 		if err != nil {
 			return nil, err

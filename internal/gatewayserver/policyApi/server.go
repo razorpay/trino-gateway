@@ -74,8 +74,8 @@ func (s *Server) ListAllPolicies(ctx context.Context, req *gatewayv1.Empty) (*ga
 		return nil, err
 	}
 
-	policiesProto := make([]*gatewayv1.Policy, 0, len(*policies))
-	for _, policyModel := range *policies {
+	policiesProto := make([]*gatewayv1.Policy, len(policies))
+	for _, policyModel := range policies {
 		policy, err := toPolicyResponseProto(&policyModel)
 		if err != nil {
 			return nil, err
@@ -171,7 +171,7 @@ func (s *Server) EvaluateGroupsForClient(ctx context.Context, req *gatewayv1.Eva
 
 	}
 	if gids != nil {
-		return &gatewayv1.EvaluateGroupsResponse{GroupIds: *gids}, nil
+		return &gatewayv1.EvaluateGroupsResponse{GroupIds: gids}, nil
 	}
 	return &gatewayv1.EvaluateGroupsResponse{}, nil
 }

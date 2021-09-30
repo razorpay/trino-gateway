@@ -15,8 +15,8 @@ type Core struct {
 type ICore interface {
 	CreateOrUpdateBackend(ctx context.Context, params *BackendCreateParams) error
 	GetBackend(ctx context.Context, id string) (*models.Backend, error)
-	GetAllBackends(ctx context.Context) (*[]models.Backend, error)
-	GetAllActiveBackends(ctx context.Context) (*[]models.Backend, error)
+	GetAllBackends(ctx context.Context) ([]models.Backend, error)
+	GetAllActiveBackends(ctx context.Context) ([]models.Backend, error)
 	DeleteBackend(ctx context.Context, id string) error
 	EnableBackend(ctx context.Context, id string) error
 	DisableBackend(ctx context.Context, id string) error
@@ -72,7 +72,7 @@ func (c *Core) GetBackend(ctx context.Context, id string) (*models.Backend, erro
 	return backend, err
 }
 
-func (c *Core) GetAllBackends(ctx context.Context) (*[]models.Backend, error) {
+func (c *Core) GetAllBackends(ctx context.Context) ([]models.Backend, error) {
 	backends, err := c.backendRepo.FindMany(ctx, make(map[string]interface{}))
 	return backends, err
 }
@@ -102,7 +102,7 @@ func (p *FindManyParams) GetIsEnabled() bool {
 	return p.IsEnabled
 }
 
-func (c *Core) FindMany(ctx context.Context, params IFindManyParams) (*[]models.Backend, error) {
+func (c *Core) FindMany(ctx context.Context, params IFindManyParams) ([]models.Backend, error) {
 
 	conditionStr := structs.New(params)
 	// use the json tag name, so we can respect omitempty tags
@@ -112,7 +112,7 @@ func (c *Core) FindMany(ctx context.Context, params IFindManyParams) (*[]models.
 	return c.backendRepo.FindMany(ctx, conditions)
 }
 
-func (c *Core) GetAllActiveBackends(ctx context.Context) (*[]models.Backend, error) {
+func (c *Core) GetAllActiveBackends(ctx context.Context) ([]models.Backend, error) {
 	backends, err := c.FindMany(ctx, &FindManyParams{IsEnabled: true})
 	return backends, err
 }

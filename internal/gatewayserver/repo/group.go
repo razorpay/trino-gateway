@@ -14,9 +14,9 @@ type IGroupRepo interface {
 	Create(ctx context.Context, group *models.Group) error
 	Update(ctx context.Context, group *models.Group) error
 	Find(ctx context.Context, id string) (*models.Group, error)
-	FindMany(ctx context.Context, conditions map[string]interface{}) (*[]models.Group, error)
-	// GetAll(ctx context.Context) (*[]models.Group, error)
-	// GetAllActive(ctx context.Context) (*[]models.Group, error)
+	FindMany(ctx context.Context, conditions map[string]interface{}) ([]models.Group, error)
+	// GetAll(ctx context.Context) ([]models.Group, error)
+	// GetAllActive(ctx context.Context) ([]models.Group, error)
 	Delete(ctx context.Context, id string) error
 	Enable(ctx context.Context, id string) error
 	Disable(ctx context.Context, id string) error
@@ -69,15 +69,15 @@ func (r *GroupRepo) Find(ctx context.Context, id string) (*models.Group, error) 
 	return &group, nil
 }
 
-func (r *GroupRepo) FindMany(ctx context.Context, conditions map[string]interface{}) (*[]models.Group, error) {
+func (r *GroupRepo) FindMany(ctx context.Context, conditions map[string]interface{}) ([]models.Group, error) {
 	var groups []models.Group
 
-	err := r.repo.FindMany(ctx, &groups, conditions)
+	err := r.repo.Preload(ctx, clause.Associations).FindMany(ctx, &groups, conditions)
 	if err != nil {
 		return nil, err
 	}
 
-	return &groups, nil
+	return groups, nil
 }
 
 func (r *GroupRepo) Enable(ctx context.Context, id string) error {
@@ -91,7 +91,7 @@ func (r *GroupRepo) Enable(ctx context.Context, id string) error {
 
 	if *group.IsEnabled {
 		provider.Logger(ctx).Error("group activation failed. Already active")
-		return errors.New("Already active")
+		return errors.New("already active")
 	}
 
 	*group.IsEnabled = true
@@ -113,8 +113,8 @@ func (r *GroupRepo) Disable(ctx context.Context, id string) error {
 	}
 
 	if !*group.IsEnabled {
-		provider.Logger(ctx).Error("group activation failed. Already active")
-		return errors.New("Already active")
+		provider.Logger(ctx).Error("group deactivation failed. Already inactive")
+		return errors.New("already inactive")
 	}
 
 	*group.IsEnabled = false

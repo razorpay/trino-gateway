@@ -12,9 +12,9 @@ type IQueryRepo interface {
 	Create(ctx context.Context, query *models.Query) error
 	Update(ctx context.Context, query *models.Query) error
 	Find(ctx context.Context, id string) (*models.Query, error)
-	FindMany(ctx context.Context, conditions map[string]interface{}) (*[]models.Query, error)
+	FindMany(ctx context.Context, conditions map[string]interface{}) ([]models.Query, error)
 	// Find(ctx context.Context, id string) (*Query, error)
-	// FindAll(ctx context.Context) (*[]Query, error)
+	// FindAll(ctx context.Context) ([]Query, error)
 }
 
 type QueryRepo struct {
@@ -62,7 +62,7 @@ func (r *QueryRepo) Find(ctx context.Context, id string) (*models.Query, error) 
 	return &query, nil
 }
 
-func (r *QueryRepo) FindMany(ctx context.Context, conditions map[string]interface{}) (*[]models.Query, error) {
+func (r *QueryRepo) FindMany(ctx context.Context, conditions map[string]interface{}) ([]models.Query, error) {
 	var queries []models.Query
 
 	err := r.repo.FindMany(ctx, &queries, conditions)
@@ -70,5 +70,5 @@ func (r *QueryRepo) FindMany(ctx context.Context, conditions map[string]interfac
 		return nil, err
 	}
 
-	return &queries, nil
+	return queries, nil
 }

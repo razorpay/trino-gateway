@@ -75,8 +75,8 @@ func (s *Server) ListAllGroups(ctx context.Context, req *gatewayv1.Empty) (*gate
 		return nil, err
 	}
 
-	groupsProto := make([]*gatewayv1.Group, 0, len(*groups))
-	for _, groupModel := range *groups {
+	groupsProto := make([]*gatewayv1.Group, len(groups))
+	for _, groupModel := range groups {
 		group, err := toGroupResponseProto(&groupModel)
 		if err != nil {
 			return nil, err
@@ -139,7 +139,7 @@ func toGroupResponseProto(group *models.Group) (*gatewayv1.Group, error) {
 		return nil, errors.New(fmt.Sprint("error encoding response: invalid strategy ", *group.Strategy))
 	}
 	var backends []string
-	for _, backend := range *group.GroupBackendsMappings {
+	for _, backend := range group.GroupBackendsMappings {
 		backends = append(backends, backend.BackendId)
 	}
 	response := gatewayv1.Group{

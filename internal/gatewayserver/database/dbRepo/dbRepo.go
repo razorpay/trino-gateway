@@ -14,6 +14,7 @@ type DbRepo struct {
 type IDbRepo interface {
 	Create(ctx context.Context, receiver spine.IModel) error
 	FindByID(ctx context.Context, receiver spine.IModel, id string) error
+	FindWithConditionByIDs(ctx context.Context, receivers interface{}, condition map[string]interface{}, ids []string) error
 	FindMany(ctx context.Context, receivers interface{}, condition map[string]interface{}) error
 	Delete(ctx context.Context, receiver spine.IModel) error
 	Update(ctx context.Context, receiver spine.IModel, attrList ...string) error

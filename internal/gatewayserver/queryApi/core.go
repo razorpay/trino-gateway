@@ -15,7 +15,7 @@ type Core struct {
 type ICore interface {
 	CreateOrUpdateQuery(ctx context.Context, params *QueryCreateParams) error
 	GetQuery(ctx context.Context, id string) (*models.Query, error)
-	FindMany(ctx context.Context, params IFindManyParams) (*[]models.Query, error)
+	FindMany(ctx context.Context, params IFindManyParams) ([]models.Query, error)
 
 	FindBackendForQuery(ctx context.Context, q string) (string, error)
 }
@@ -104,7 +104,7 @@ func (p *FindManyParams) GetGroup() string {
 // 	return p.SuccessfulSubmission
 // }
 
-func (c *Core) FindMany(ctx context.Context, params IFindManyParams) (*[]models.Query, error) {
+func (c *Core) FindMany(ctx context.Context, params IFindManyParams) ([]models.Query, error) {
 
 	conditionStr := structs.New(params)
 	// use the json tag name, so we can respect omitempty tags

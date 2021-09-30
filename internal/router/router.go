@@ -3,6 +3,7 @@ package router
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -27,7 +28,6 @@ type GatewayApiClient struct {
 
 type routerServer struct {
 	gatewayApiClient *GatewayApiClient
-	ctx              *context.Context
 	port             int
 	routerHostname   string
 }
@@ -46,16 +46,24 @@ type clientRequest struct {
 func Server(ctx *context.Context, port int, apiClient *GatewayApiClient, routerHostname string) *http.Server {
 
 	routerServer := routerServer{
-		ctx:              ctx,
 		port:             port,
 		gatewayApiClient: apiClient,
 		routerHostname:   routerHostname,
 	}
+
+	/*
+		For data sharing between processClientReq & processClientResponse, we hav following approaches
+		1. context - Tried it, modified using req.WithValue() but in resp.Request.Context() modifications were not propagated.
+		2. pointers - issues with synchronization, also hinders readability and code is prone to bugs
+		3. goroutines + channel - cleaner but extra overhead
+	*/
+	var query gatewayv1.Query
+
 	reverseProxy := httputil.ReverseProxy{
 		Director: func(req *http.Request) {
-			_, err := routerServer.processRequest(req)
+			req, err := routerServer.processRequest(ctx, req, &query)
 			if err != nil {
-				provider.Logger(*routerServer.ctx).Errorw(
+				provider.Logger(*ctx).Errorw(
 					fmt.Sprint(LOG_TAG, "Request Processing failed"),
 					map[string]interface{}{
 						"error": err.Error(),
@@ -63,21 +71,27 @@ func Server(ctx *context.Context, port int, apiClient *GatewayApiClient, routerH
 				req.URL.Host = "http://invalid:8080"
 			}
 
+			provider.Logger(*ctx).Debugw(
+				fmt.Sprint(LOG_TAG, "Request Processed, forwarding to server"),
+				map[string]interface{}{
+					"host": req.URL.Host,
+				})
+
 		},
 		Transport: nil,
 		ErrorHandler: func(resp http.ResponseWriter, req *http.Request, err error) {
 			msg := "Backend unavailable Or Invalid request"
 			resp.Write([]byte(msg))
-			provider.Logger(*ctx).Errorw(
+			provider.Logger(*ctx).WithError(err).Errorw(
 				fmt.Sprint(LOG_TAG, msg),
 				map[string]interface{}{
-					"request": routerServer.stringifyHttpRequest(req),
+					"request": routerServer.stringifyHttpRequest(ctx, req),
 				})
 		},
 		ModifyResponse: func(resp *http.Response) error {
-			err := routerServer.processResponse(resp)
+			err := routerServer.processResponse(ctx, resp, &query)
 			if err != nil {
-				provider.Logger(*routerServer.ctx).Errorw(
+				provider.Logger(*ctx).Errorw(
 					fmt.Sprint(LOG_TAG, "Unable to process server response"),
 					map[string]interface{}{
 						"error": err.Error(),
@@ -97,20 +111,29 @@ func constructQueryFromReq(body string, preparedStmt string) string {
 	return body
 }
 
-func (r *routerServer) parseClientRequest(req *http.Request) *clientRequest {
+func (r *routerServer) parseClientRequest(ctx *context.Context, req *http.Request) *clientRequest {
 
-	var body string
+	body := ""
 	// Assumption that HTTP spec is followed and body in GET is meaningless
 	if req.Method == "GET" {
 		body = ""
-	} else {
-		body = parseBody(req.Body)
+	} else if req.Method == "POST" {
+		b, e := parseBody(ctx, &req.Body)
+		if e != nil {
+			provider.Logger(*ctx).WithError(e).Error(fmt.Sprint(LOG_TAG, "unable to parse body of client request"))
+		}
+		provider.Logger(*ctx).Debugw(fmt.Sprint(LOG_TAG, "parsed body of client request"),
+			map[string]interface{}{
+				"body": body,
+			})
+		body = b
 	}
+
 	query := constructQueryFromReq(body, req.Header.Get("X-Trino-Prepared-Statement"))
 
 	return &clientRequest{
 		username:                   req.Header.Get("X-Trino-User"),
-		queryId:                    extractQueryId(query),
+		queryId:                    extractQueryId(ctx, query),
 		incomingPort:               int32(r.port),
 		host:                       req.Host,
 		headerConnectionProperties: req.Header.Get("X-Trino-Connection-Properties"),
@@ -119,17 +142,17 @@ func (r *routerServer) parseClientRequest(req *http.Request) *clientRequest {
 	}
 }
 
-func (r *routerServer) processRequest(req *http.Request) (*http.Request, error) {
+func (r *routerServer) processRequest(ctx *context.Context, req *http.Request, q *gatewayv1.Query) (*http.Request, error) {
 	var err error = nil
-	provider.Logger(*r.ctx).Infow(
+	provider.Logger(*ctx).Infow(
 		fmt.Sprint(LOG_TAG, "Request received"),
 		map[string]interface{}{
-			"request":       r.stringifyHttpRequest(req),
+			"request":       r.stringifyHttpRequest(ctx, req),
 			"listeningPort": r.port,
 		})
 
-	clientReq := r.parseClientRequest(req)
-	if !isValidRequest(clientReq) {
+	clientReq := r.parseClientRequest(ctx, req)
+	if !isValidRequest(ctx, clientReq) {
 		return req, errors.New("not a valid Trino request")
 	}
 	querySaveReq := gatewayv1.Query{
@@ -143,9 +166,9 @@ func (r *routerServer) processRequest(req *http.Request) (*http.Request, error) 
 	var backend *gatewayv1.Backend
 
 	backendFound := func(backend_id string) {
-		provider.Logger(*r.ctx).Debug(fmt.Sprint(LOG_TAG, "fetching details of resolved backend"))
+		provider.Logger(*ctx).Debug(fmt.Sprint(LOG_TAG, "fetching details of resolved backend"))
 		findBackendResp, err2 := r.gatewayApiClient.Backend.GetBackend(
-			*r.ctx,
+			*ctx,
 			&gatewayv1.BackendGetRequest{Id: backend_id},
 		)
 		if err2 != nil {
@@ -160,10 +183,10 @@ func (r *routerServer) processRequest(req *http.Request) (*http.Request, error) 
 		req.URL.Host = backend.Hostname
 		req.URL.Scheme = backend.Scheme.Enum().String()
 		req.Host = backend.Hostname
-		provider.Logger(*r.ctx).Infow(
+		provider.Logger(*ctx).Infow(
 			fmt.Sprint(LOG_TAG, "Request modified, ready to be forwarded"),
 			map[string]interface{}{
-				"request": r.stringifyHttpRequest(req),
+				"request": r.stringifyHttpRequest(ctx, req),
 			})
 
 		querySaveReq.BackendId = backend.Id
@@ -171,19 +194,19 @@ func (r *routerServer) processRequest(req *http.Request) (*http.Request, error) 
 
 	if clientReq.queryId == "" {
 
-		provider.Logger(*r.ctx).Debug(fmt.Sprint(LOG_TAG, "evaluating groups for client request"))
-		evalGrpResp, err2 := r.gatewayApiClient.Policy.EvaluateGroupsForClient(*r.ctx, &gatewayv1.EvaluateGroupsRequest{
+		provider.Logger(*ctx).Debug(fmt.Sprint(LOG_TAG, "evaluating groups for client request"))
+		evalGrpResp, err2 := r.gatewayApiClient.Policy.EvaluateGroupsForClient(*ctx, &gatewayv1.EvaluateGroupsRequest{
 			IncomingPort:               clientReq.incomingPort,
 			Host:                       clientReq.host,
 			HeaderConnectionProperties: clientReq.headerConnectionProperties,
 			HeaderClientTags:           clientReq.headerClientTags,
 		})
 		if err2 != nil {
-			err = errors.New(fmt.Sprint("Groups Unresolvable for client", req, err2.Error()))
+			err = errors.New(fmt.Sprint("Groups resolution encountered error for client", req, err2.Error()))
 		} else {
-			provider.Logger(*r.ctx).Debug(fmt.Sprint(LOG_TAG, "evaluating backend for groups"))
+			provider.Logger(*ctx).Debugw(fmt.Sprint(LOG_TAG, "evaluating backend for groups"), map[string]interface{}{"groups": evalGrpResp.GetGroupIds()})
 			evalBackendResp, err2 := r.gatewayApiClient.Group.EvaluateBackendForGroups(
-				*r.ctx,
+				*ctx,
 				&gatewayv1.EvaluateBackendRequest{GroupIds: evalGrpResp.GetGroupIds()},
 			)
 			if err2 != nil {
@@ -193,7 +216,7 @@ func (r *routerServer) processRequest(req *http.Request) (*http.Request, error) 
 						err2.Error()),
 				)
 			} else {
-				provider.Logger(*r.ctx).Debugw(fmt.Sprint(LOG_TAG, "backend resolved"), map[string]interface{}{
+				provider.Logger(*ctx).Debugw(fmt.Sprint(LOG_TAG, "backend resolved"), map[string]interface{}{
 					"backend_id": evalBackendResp.GetBackendId(),
 					"group_id":   evalBackendResp.GetGroupId(),
 				})
@@ -203,7 +226,7 @@ func (r *routerServer) processRequest(req *http.Request) (*http.Request, error) 
 		}
 	} else {
 		findBackendIdResp, err2 := r.gatewayApiClient.Query.FindBackendForQuery(
-			*r.ctx,
+			*ctx,
 			&gatewayv1.FindBackendForQueryRequest{QueryId: clientReq.queryId},
 		)
 		if err2 != nil {
@@ -217,20 +240,12 @@ func (r *routerServer) processRequest(req *http.Request) (*http.Request, error) 
 		return req, err
 	}
 
-	_, err2 := r.gatewayApiClient.Query.CreateOrUpdateQuery(*r.ctx, &querySaveReq)
-	if err2 != nil {
-		provider.Logger(
-			*r.ctx).Errorw(
-			fmt.Sprint(LOG_TAG, "Unable to save query"),
-			map[string]interface{}{
-				"query_id": querySaveReq.Id,
-				"error":    err2.Error()})
-	}
+	*q = querySaveReq
 
 	return req, err
 }
 
-func (r *routerServer) processResponse(resp *http.Response) error {
+func (r *routerServer) processResponse(ctx *context.Context, resp *http.Response, q *gatewayv1.Query) error {
 	// Handle Redirects
 	// TODO: Clean it up
 	regex := regexp.MustCompile(`\w+\:\/\/[^\/]*(.*)`)
@@ -240,34 +255,53 @@ func (r *routerServer) processResponse(resp *http.Response) error {
 		resp.Header.Set("Location", newLoc)
 	}
 
-	go func() {
+	func() {
+		provider.Logger(*ctx).Errorw(
+			fmt.Sprint(LOG_TAG, "HAKUNA MATATA"),
+			map[string]interface{}{
+				"resp": r.stringifyHttpResponse(ctx, resp)})
+
 		isQuerySubmissionSuccessful := true
 		if isQuerySubmissionSuccessful {
-			queryId := extractQueryIdFromServerResponse(parseBody(resp.Body))
-			req := gatewayv1.Query{
-				// TODO
-				Id:          queryId,
-				SubmittedAt: time.Now().Unix(),
-			}
 
-			_, err := r.gatewayApiClient.Query.CreateOrUpdateQuery(*r.ctx, &req)
+			req := q
+			body, err := parseBody(ctx, &resp.Body)
 			if err != nil {
-				provider.Logger(*r.ctx).Errorw(LOG_TAG, map[string]interface{}{"msg": "Unable to save successfully submitted query", "query_id": req.Id, "error": err.Error()})
+				provider.Logger(*ctx).WithError(err).Error(fmt.Sprint(LOG_TAG, "unable to parse body of server response"))
+			}
+			req.Id = extractQueryIdFromServerResponse(ctx, body)
+			req.SubmittedAt = time.Now().Unix()
+
+			_, err2 := r.gatewayApiClient.Query.CreateOrUpdateQuery(*ctx, req)
+			if err2 != nil {
+				provider.Logger(
+					*ctx).Errorw(
+					fmt.Sprint(LOG_TAG, "Unable to save query"),
+					map[string]interface{}{
+						"query_id": req.Id,
+						"error":    err2.Error()})
 			}
 		}
+		return
 	}()
 
 	return nil
 }
 
-func extractQueryIdFromServerResponse(body string) string {
-	return ""
+func extractQueryIdFromServerResponse(ctx *context.Context, body string) string {
+	provider.Logger(*ctx).Debugw(fmt.Sprint(LOG_TAG, "extracting queryId from server response"),
+		map[string]interface{}{
+			"body": body,
+		})
+	var resp struct{ Id string }
+	json.Unmarshal([]byte(body), &resp)
+	return resp.Id
 }
 
-func (r *routerServer) stringifyHttpRequest(req *http.Request) string {
+func (r *routerServer) stringifyHttpRequest(ctx *context.Context, req *http.Request) string {
 	requestDump, err := httputil.DumpRequest(req, true)
 	if err != nil {
-		provider.Logger(*r.ctx).Errorw(
+		provider.Logger(*ctx).Errorw(
 			fmt.Sprint(LOG_TAG, "Unable to stringify http request"),
 			map[string]interface{}{
 				"error": err.Error(),
@@ -276,21 +310,38 @@ func (r *routerServer) stringifyHttpRequest(req *http.Request) string {
 	return string(requestDump)
 }
 
-func parseBody(body io.ReadCloser) string {
-	bodyBytes, _ := io.ReadAll(body)
-	// since its a ReadCloser type, the stream will be empty after its read once
-	// ensure a it is restored in original request
-	body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
-
-	return string(bodyBytes)
+func (r *routerServer) stringifyHttpResponse(ctx *context.Context, req *http.Response) string {
+	responseDump, err := httputil.DumpResponse(req, true)
+	if err != nil {
+		provider.Logger(*ctx).Errorw(
+			fmt.Sprint(LOG_TAG, "Unable to stringify http response"),
+			map[string]interface{}{
+				"error": err.Error(),
+			})
+	}
+	return string(responseDump)
 }
 
-func extractQueryId(body string) string {
+func parseBody(ctx *context.Context, body *io.ReadCloser) (string, error) {
+	//b := req.Body
+
+	bodyBytes, err := io.ReadAll(*body)
+	if err != nil {
+		return "", err
+	}
+	// since its a ReadCloser type, the stream will be empty after its read once
+	// ensure a it is restored in original request
+	*body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
+
+	return string(bodyBytes), nil
+}
+
+func extractQueryId(ctx *context.Context, body string) string {
 	// TODO
 	return ""
 }
 
-func isValidRequest(req *clientRequest) bool {
+func isValidRequest(ctx *context.Context, req *clientRequest) bool {
 	if req.username == "" || req.queryText == "" {
 		return false
 	}

@@ -9,6 +9,7 @@ import (
 	"github.com/razorpay/trino-gateway/internal/boot"
 	"github.com/razorpay/trino-gateway/internal/gatewayserver/models"
 	"github.com/razorpay/trino-gateway/internal/gatewayserver/repo"
+	"github.com/razorpay/trino-gateway/internal/provider"
 )
 
 type Core struct {
@@ -19,8 +20,8 @@ type Core struct {
 type ICore interface {
 	CreateOrUpdateGroup(ctx context.Context, params *GroupCreateParams) error
 	GetGroup(ctx context.Context, id string) (*models.Group, error)
-	GetAllGroups(ctx context.Context) (*[]models.Group, error)
-	GetAllActiveGroups(ctx context.Context) (*[]models.Group, error)
+	GetAllGroups(ctx context.Context) ([]models.Group, error)
+	GetAllActiveGroups(ctx context.Context) ([]models.Group, error)
 	DeleteGroup(ctx context.Context, id string) error
 	EnableGroup(ctx context.Context, id string) error
 	DisableGroup(ctx context.Context, id string) error
@@ -58,7 +59,7 @@ func (c *Core) CreateOrUpdateGroup(ctx context.Context, params *GroupCreateParam
 		LastRoutedBackend: &params.LastRoutedBackend,
 	}
 	group.ID = params.ID
-	group.GroupBackendsMappings = &backendMappings
+	group.GroupBackendsMappings = backendMappings
 	_, exists := c.groupRepo.Find(ctx, params.ID)
 	if exists == nil { // update
 		return c.groupRepo.Update(ctx, &group)
@@ -72,7 +73,7 @@ func (c *Core) GetGroup(ctx context.Context, id string) (*models.Group, error) {
 	return group, err
 }
 
-func (c *Core) GetAllGroups(ctx context.Context) (*[]models.Group, error) {
+func (c *Core) GetAllGroups(ctx context.Context) ([]models.Group, error) {
 	groups, err := c.groupRepo.FindMany(ctx, make(map[string]interface{}))
 	return groups, err
 }
@@ -102,7 +103,7 @@ func (p *FindManyParams) GetIsEnabled() bool {
 	return p.IsEnabled
 }
 
-func (c *Core) FindMany(ctx context.Context, params IFindManyParams) (*[]models.Group, error) {
+func (c *Core) FindMany(ctx context.Context, params IFindManyParams) ([]models.Group, error) {
 
 	conditionStr := structs.New(params)
 	// use the json tag name, so we can respect omitempty tags
@@ -112,7 +113,7 @@ func (c *Core) FindMany(ctx context.Context, params IFindManyParams) (*[]models.
 	return c.groupRepo.FindMany(ctx, conditions)
 }
 
-func (c *Core) GetAllActiveGroups(ctx context.Context) (*[]models.Group, error) {
+func (c *Core) GetAllActiveGroups(ctx context.Context) ([]models.Group, error) {
 	groups, err := c.FindMany(ctx, &FindManyParams{IsEnabled: true})
 	return groups, err
 }
@@ -141,13 +142,13 @@ func (c *Core) EvaluateBackendForGroups(ctx context.Context, groups []string) (s
 	}
 
 	// Evaluate Backend for each
-	evaluatedBackendId := make(map[models.Group]*string, len(*activeGroups))
-	for _, g := range *activeGroups {
+	evaluatedBackendId := make(map[*models.Group]*string, len(activeGroups))
+	for _, g := range activeGroups {
 		backend_id, err := c.findBackend(ctx, g)
 		if err != nil {
 			return "", "", err
 		}
-		evaluatedBackendId[g] = backend_id
+		evaluatedBackendId[&g] = backend_id
 		if backend_id != nil {
 			chosenGroup = &g
 		}
@@ -156,7 +157,7 @@ func (c *Core) EvaluateBackendForGroups(ctx context.Context, groups []string) (s
 
 	var chosenBackendId string
 	if chosenGroup != nil {
-		chosenBackendId = *evaluatedBackendId[*chosenGroup]
+		chosenBackendId = *evaluatedBackendId[chosenGroup]
 	} else {
 		chosenGroup, err = c.GetGroup(ctx, boot.Config.Gateway.DefaultRoutingGroup)
 		if err != nil {
@@ -167,7 +168,7 @@ func (c *Core) EvaluateBackendForGroups(ctx context.Context, groups []string) (s
 			return "", "", err
 		}
 		if b == nil {
-			return "", "", errors.New("Unable to find Backend for Default Routing Group")
+			return "", "", errors.New("unable to find Backend for Default Routing Group")
 		}
 	}
 
@@ -175,34 +176,35 @@ func (c *Core) EvaluateBackendForGroups(ctx context.Context, groups []string) (s
 }
 
 func (c *Core) findBackend(ctx context.Context, group models.Group) (*string, error) {
+	provider.Logger(ctx).Infow("Choose a backend for group", map[string]interface{}{"group": group.GetID()})
 
 	// Step 0: get all backends
 	//var backends := (*group.GroupBackendsMappings)[0].BackendId
 
-	backends := make([]string, 0, len(*group.GroupBackendsMappings))
-	for i, k := range *group.GroupBackendsMappings {
+	provider.Logger(ctx).Debugw("Fetch all backends in the group", map[string]interface{}{"group": group.GetID()})
+	backends := make([]string, len(group.GroupBackendsMappings))
+	for i, k := range group.GroupBackendsMappings {
 		backends[i] = k.BackendId
 	}
 
+	provider.Logger(ctx).Debugw("Filter active backends", map[string]interface{}{"group": group.GetID(), "backends": backends})
 	// Step 1: Filter Active backends
-	activeBackends, err := c.backendRepo.FindMany(ctx, map[string]interface{}{
-		"is_enabled": true,
-		"id in (?)":  backends,
-	})
+	activeBackends, err := c.backendRepo.GetAllActiveByIDs(ctx, backends)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(*activeBackends) == 0 {
+	if len(activeBackends) == 0 {
 		return nil, nil
 	}
 
 	// Step 2: Evaluate strategy
-	selectedBackendId := (*activeBackends)[0].ID
+	selectedBackendId := (activeBackends)[0].ID
+	provider.Logger(ctx).Debugw("Evaluate strategy for the group", map[string]interface{}{"group": group.GetID(), "strategy": *group.Strategy})
 	switch strategy := *group.Strategy; strategy {
 	case "ROUND_ROBIN":
-		activeBackendIds := make([]string, 0, len(*activeBackends))
-		for i, b := range *activeBackends {
+		activeBackendIds := make([]string, len(activeBackends))
+		for i, b := range activeBackends {
 			activeBackendIds[i] = b.GetID()
 		}
 		lastRoutedBackendId := *group.LastRoutedBackend
@@ -221,11 +223,11 @@ func (c *Core) findBackend(ctx context.Context, group models.Group) (*string, er
 		selectedBackendId = activeBackendIds[index]
 
 	case "LEAST_LOAD":
-		leastLoaded := (*activeBackends)[0]
+		leastLoaded := (activeBackends)[0]
 		load := func(b models.Backend) int {
 			return int(*b.RunningQueries) + int(*b.QueuedQueries)
 		}
-		for _, b := range *activeBackends {
+		for _, b := range activeBackends {
 			if load(b) < load(leastLoaded) {
 				leastLoaded = b
 			}
@@ -236,5 +238,6 @@ func (c *Core) findBackend(ctx context.Context, group models.Group) (*string, er
 	// case RANDOM: return any
 	// case ROUND_ROBIN: order by ascending and take next bck_id after last_routed_backend
 	// case LOAD_BASED: get metrics of each backend and choose one with lowest running+queued_queries
+	provider.Logger(ctx).Debugw("Backend evaluated for group", map[string]interface{}{"group": group.GetID(), "strategy": *group.Strategy, "backend": selectedBackendId})
 	return &selectedBackendId, nil
 }
