@@ -8,6 +8,26 @@ option go_package = "./rpc/gateway;gatewayv1";
 
 message Empty {}
 
+service HealthCheckAPI {
+    // Check returns HealthCheckResponse for the requested service.
+    rpc Check(HealthCheckRequest) returns (HealthCheckResponse);
+}
+
+message HealthCheckRequest {
+    string service = 1;
+}
+
+message HealthCheckResponse {
+    // ServingStatus denotes the status of the service.
+    enum ServingStatus {
+        SERVING_STATUS_INVALID = 0;
+        SERVING_STATUS_UNKNOWN = 1;
+        SERVING_STATUS_SERVING = 2;
+        SERVING_STATUS_NOT_SERVING = 3;
+    }
+    ServingStatus serving_status = 1;
+}
+
 service BackendApi {
     rpc CreateOrUpdateBackend (Backend) returns (Empty);
     rpc GetBackend (BackendGetRequest) returns (BackendGetResponse);

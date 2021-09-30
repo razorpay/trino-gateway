@@ -18,6 +18,7 @@ import (
 	backendapi "github.com/razorpay/trino-gateway/internal/gatewayserver/backendApi"
 	"github.com/razorpay/trino-gateway/internal/gatewayserver/database/dbRepo"
 	groupapi "github.com/razorpay/trino-gateway/internal/gatewayserver/groupApi"
+	healthapi "github.com/razorpay/trino-gateway/internal/gatewayserver/healthApi"
 	"github.com/razorpay/trino-gateway/internal/gatewayserver/hooks"
 	policyapi "github.com/razorpay/trino-gateway/internal/gatewayserver/policyApi"
 	queryapi "github.com/razorpay/trino-gateway/internal/gatewayserver/queryApi"
@@ -31,9 +32,9 @@ import (
 const (
 	appSwaggerUiPath = "/admin/swaggerui/"
 	// appApiPath       = "/api"
-	appHealthPath = "/health"
-	// appHealthPath  = healthv1.HealthCheckAPIPathPrefix
-	appTwirpqlPath = "/admin/twirpql"
+	//appHealthPath = "/health"
+	// appHealthPath = healthv1.HealthCheckAPIPathPrefix
+	// appTwirpqlPath = "/admin/twirpql"
 )
 
 func main() {
@@ -138,12 +139,11 @@ func startApiServer(ctx *context.Context) *http.Server {
 
 	// Init http and register servers to mux
 	mux := http.NewServeMux()
-	// mux.Handle(appHealthPath, healthServerHandler)
 
 	// // Define server handlers
-	// healthCore := health.NewCore(ctx)
-	// healthServer := health.NewServer(healthCore)
-	// healthServerHandler := healthv1.NewHealthCheckAPIServer(healthServer, nil)
+	healthCore := healthapi.NewCore(*ctx)
+	healthServer := healthapi.NewServer(healthCore)
+	healthServerHandler := gatewayv1.NewHealthCheckAPIServer(healthServer, nil)
 
 	gatewayDbRepo := dbRepo.NewDbRepo(*ctx, boot.DB)
 	gatewayBackendRepo := repo.NewBackendRepo(*ctx, gatewayDbRepo)
@@ -166,7 +166,8 @@ func startApiServer(ctx *context.Context) *http.Server {
 	gatewayPolicyServerHandler := gatewayv1.NewPolicyApiServer(gatewayPolicyServer, twirpHooks())
 	gatewayQueryServerHandler := gatewayv1.NewQueryApiServer(gatewayQueryServer, twirpHooks())
 
-	// // Ensure defaultRoutingGroup is present
+	// // Ensure defaultRoutingGroup is present in healthcheck
+	mux.Handle(gatewayv1.HealthCheckAPIPathPrefix, healthServerHandler)
 	// grp, gatewayGroupCore.GetGroup(*ctx, boot.Config.Gateway.DefaultRoutingGroup)
 
 	mux.Handle(gatewayv1.BackendApiPathPrefix, gatewayBackendServerHandler)

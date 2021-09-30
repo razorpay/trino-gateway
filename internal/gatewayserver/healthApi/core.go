@@ -1,4 +1,4 @@
-package health
+package healthapi
 
 import (
 	"context"
@@ -32,6 +32,9 @@ func (c *Core) RunHealthCheck(ctx context.Context) (bool, error) {
 	// err = c.repo.Alive(ctx)
 	if err != nil {
 		//logger.Ctx(ctx).Errorw("failed to execute select query on db connection", "error", err)
+
+		// Check fallback routing group exists & has atleast 1 active backend - IF NO set state to INVALID
+		//
 	}
 	isDbAlive := err == nil
 
