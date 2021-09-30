@@ -202,7 +202,7 @@ func (c *Core) findBackend(ctx context.Context, group models.Group) (*string, er
 	selectedBackendId := (activeBackends)[0].ID
 	provider.Logger(ctx).Debugw("Evaluate strategy for the group", map[string]interface{}{"group": group.GetID(), "strategy": *group.Strategy})
 	switch strategy := *group.Strategy; strategy {
-	case "ROUND_ROBIN":
+	case "round_robin":
 		activeBackendIds := make([]string, len(activeBackends))
 		for i, b := range activeBackends {
 			activeBackendIds[i] = b.GetID()
@@ -217,12 +217,13 @@ func (c *Core) findBackend(ctx context.Context, group models.Group) (*string, er
 				index = i
 			}
 		}
-		if index+1 >= len(activeBackendIds) {
+		index = index + 1
+		if index >= len(activeBackendIds) {
 			index = 0
 		}
 		selectedBackendId = activeBackendIds[index]
 
-	case "LEAST_LOAD":
+	case "least_load":
 		leastLoaded := (activeBackends)[0]
 		load := func(b models.Backend) int {
 			return int(*b.RunningQueries) + int(*b.QueuedQueries)
@@ -234,10 +235,16 @@ func (c *Core) findBackend(ctx context.Context, group models.Group) (*string, er
 		}
 		selectedBackendId = leastLoaded.ID
 	default:
+		provider.Logger(ctx).Debugw("Falling back to `random` strategy for group", map[string]interface{}{"group": group.GetID(), "strategy": *group.Strategy})
 	}
 	// case RANDOM: return any
 	// case ROUND_ROBIN: order by ascending and take next bck_id after last_routed_backend
 	// case LOAD_BASED: get metrics of each backend and choose one with lowest running+queued_queries
 	provider.Logger(ctx).Debugw("Backend evaluated for group", map[string]interface{}{"group": group.GetID(), "strategy": *group.Strategy, "backend": selectedBackendId})
+
+	updGrp := models.Group{LastRoutedBackend: &selectedBackendId}
+	updGrp.ID = group.ID
+	c.groupRepo.Update(ctx, &updGrp)
+
 	return &selectedBackendId, nil
 }

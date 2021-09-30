@@ -255,34 +255,47 @@ func (r *routerServer) processResponse(ctx *context.Context, resp *http.Response
 		resp.Header.Set("Location", newLoc)
 	}
 
-	func() {
+	isQuerySubmissionSuccessful := (resp.StatusCode >= 200) && (resp.StatusCode < 300)
+	if !isQuerySubmissionSuccessful {
 		provider.Logger(*ctx).Errorw(
-			fmt.Sprint(LOG_TAG, "HAKUNA MATATA"),
+			fmt.Sprint(LOG_TAG, "Query Submission unsuccessful"),
 			map[string]interface{}{
-				"resp": r.stringifyHttpResponse(ctx, resp)})
+				"serverResponse": r.stringifyHttpResponse(ctx, resp),
+			})
+		return nil
+	}
 
-		isQuerySubmissionSuccessful := true
-		if isQuerySubmissionSuccessful {
+	provider.Logger(*ctx).Debug(LOG_TAG + "Query Submission successful")
 
-			req := q
-			body, err := parseBody(ctx, &resp.Body)
-			if err != nil {
-				provider.Logger(*ctx).WithError(err).Error(fmt.Sprint(LOG_TAG, "unable to parse body of server response"))
-			}
-			req.Id = extractQueryIdFromServerResponse(ctx, body)
-			req.SubmittedAt = time.Now().Unix()
+	req := q
+	body, err := parseBody(ctx, &resp.Body)
+	if err != nil {
+		provider.Logger(*ctx).WithError(err).Error(fmt.Sprint(LOG_TAG, "unable to parse body of server response"))
+	}
 
-			_, err2 := r.gatewayApiClient.Query.CreateOrUpdateQuery(*ctx, req)
-			if err2 != nil {
-				provider.Logger(
-					*ctx).Errorw(
-					fmt.Sprint(LOG_TAG, "Unable to save query"),
-					map[string]interface{}{
-						"query_id": req.Id,
-						"error":    err2.Error()})
-			}
+	go func() {
+		req.Id = extractQueryIdFromServerResponse(ctx, body)
+		req.SubmittedAt = time.Now().Unix()
+
+		_, err = r.gatewayApiClient.Query.CreateOrUpdateQuery(*ctx, req)
+		if err != nil {
+			provider.Logger(
+				*ctx).WithError(err).Errorw(
+				fmt.Sprint(LOG_TAG, "Unable to save query"),
+				map[string]interface{}{
+					"query_id": req.Id,
+				})
 		}
-		return
+
+		// _, err = r.gatewayApiClient.Group.CreateOrUpdateGroup(*ctx, &gatewayv1.Group{Id: q.GetGroupId(), LastRoutedBackend: q.GetBackendId()})
+		// if err != nil {
+		// 	provider.Logger(
+		// 		*ctx).WithError(err).Errorw(
+		// 		fmt.Sprint(LOG_TAG, "Unable to update group's last routing info"),
+		// 		map[string]interface{}{
+		// 			"query_id": req.Id,
+		// 		})
+		// }
 	}()
 
 	return nil
