@@ -76,12 +76,12 @@ func (s *Server) ListAllGroups(ctx context.Context, req *gatewayv1.Empty) (*gate
 	}
 
 	groupsProto := make([]*gatewayv1.Group, len(groups))
-	for _, groupModel := range groups {
+	for i, groupModel := range groups {
 		group, err := toGroupResponseProto(&groupModel)
 		if err != nil {
 			return nil, err
 		}
-		groupsProto = append(groupsProto, group)
+		groupsProto[i] = group
 	}
 
 	response := gatewayv1.GroupListAllResponse{

@@ -75,12 +75,12 @@ func (s *Server) ListAllPolicies(ctx context.Context, req *gatewayv1.Empty) (*ga
 	}
 
 	policiesProto := make([]*gatewayv1.Policy, len(policies))
-	for _, policyModel := range policies {
+	for i, policyModel := range policies {
 		policy, err := toPolicyResponseProto(&policyModel)
 		if err != nil {
 			return nil, err
 		}
-		policiesProto = append(policiesProto, policy)
+		policiesProto[i] = policy
 	}
 
 	response := gatewayv1.PolicyListAllResponse{

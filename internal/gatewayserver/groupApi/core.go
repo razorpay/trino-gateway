@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"sort"
+	"time"
 
 	"github.com/fatih/structs"
 	"github.com/razorpay/trino-gateway/internal/boot"
@@ -225,11 +226,28 @@ func (c *Core) findBackend(ctx context.Context, group models.Group) (*string, er
 
 	case "least_load":
 		leastLoaded := (activeBackends)[0]
-		load := func(b models.Backend) int {
-			return int(*b.RunningQueries) + int(*b.QueuedQueries)
+		load := func(b *models.Backend) int {
+			curr := time.Now().Unix()
+			validityS := boot.Config.Monitor.StatsValiditySecs
+			if validityS == 0 || curr-*b.StatsUpdatedAt <= int64(validityS) {
+				provider.Logger(ctx).Debugw(
+					"ClusterLoad stats in valid time range",
+					map[string]interface{}{"backend": b.GetID(), "cluster_load": *b.ClusterLoad},
+				)
+				return int(*b.ClusterLoad)
+			}
+			provider.Logger(ctx).Infow(
+				"ClusterLoad stats too old to be valid, assuming load as 0",
+				map[string]interface{}{
+					"backend":          b.GetID(),
+					"validity_period":  validityS,
+					"stats_updated_at": *b.StatsUpdatedAt,
+				})
+			return 0
 		}
+		provider.Logger(ctx).Info("Selecting least loaded backend")
 		for _, b := range activeBackends {
-			if load(b) < load(leastLoaded) {
+			if load(&b) < load(&leastLoaded) {
 				leastLoaded = b
 			}
 		}

@@ -8,15 +8,14 @@ import (
 // backend model struct definition
 type Backend struct {
 	spine.Model
-	Hostname                string  `json:"hostname"`
-	Scheme                  string  `json:"scheme"`
-	ExternalUrl             *string `json:"external_url"`
-	IsEnabled               *bool   `json:"is_enabled"`
-	UptimeSchedule          *string `json:"uptime_schedule"`
-	RunningQueries          *int32  `json:"running_queries"`
-	QueuedQueries           *int32  `json:"queued_queries"`
-	ThresholdRunningQueries *int32  `json:"threshold_running_queries"`
-	ThresholdQueuedQueries  *int32  `json:"threshold_queued_queries"`
+	Hostname             string  `json:"hostname"`
+	Scheme               string  `json:"scheme"`
+	ExternalUrl          *string `json:"external_url"`
+	IsEnabled            *bool   `json:"is_enabled"`
+	UptimeSchedule       *string `json:"uptime_schedule" gorm:"default:'* * * * *';`
+	ClusterLoad          *int32  `json:"cluster_load"`
+	ThresholdClusterLoad *int32  `json:"threshold_cluster_load"`
+	StatsUpdatedAt       *int64  `json:"stats_updated_at"`
 }
 
 func (u *Backend) TableName() string {
@@ -32,6 +31,7 @@ func (u *Backend) SetDefaults() error {
 }
 
 func (u *Backend) Validate() error {
+	// fmt.Printf("{%v}\n", *u.StatsUpdatedAt)
 	err := validation.ValidateStruct(u,
 		// id, required, length non zero
 		validation.Field(&u.ID, validation.Required, validation.RuneLength(1, 50)),
@@ -44,6 +44,8 @@ func (u *Backend) Validate() error {
 
 		// first_name, required, string, length 1-30
 		validation.Field(&u.ExternalUrl, validation.Required, validation.RuneLength(1, 50)),
+
+		// validation.Field(&u.StatsUpdatedAt, validation.By(datatype.IsTimestamp)),
 
 		// status, required, string
 		// validation.Field(&u.IsEnabled, validation.Required, validation.In(true, false)),

@@ -7,6 +7,7 @@ import (
 	"github.com/razorpay/trino-gateway/internal/gatewayserver/database/dbRepo"
 	"github.com/razorpay/trino-gateway/internal/gatewayserver/models"
 	"github.com/razorpay/trino-gateway/internal/provider"
+	"github.com/razorpay/trino-gateway/pkg/spine"
 )
 
 type IBackendRepo interface {
@@ -39,7 +40,7 @@ func (r *BackendRepo) Create(ctx context.Context, backend *models.Backend) error
 		return err
 	}
 
-	provider.Logger(ctx).Infow("backend created", map[string]interface{}{"user_id": backend.ID})
+	provider.Logger(ctx).Infow("backend created", map[string]interface{}{"backend_id": backend.ID})
 
 	return nil
 }
@@ -47,11 +48,21 @@ func (r *BackendRepo) Create(ctx context.Context, backend *models.Backend) error
 func (r *BackendRepo) Update(ctx context.Context, backend *models.Backend) error {
 	err := r.repo.Update(ctx, backend)
 	if err != nil {
-		provider.Logger(ctx).WithError(err).Errorw("user update failed", map[string]interface{}{"user_id": backend.ID})
+		if err == spine.NoRowAffected {
+			provider.Logger(ctx).Debugw(
+				"no row affected by backend update",
+				map[string]interface{}{"backend_id": backend.ID},
+			)
+			return nil
+		}
+		provider.Logger(ctx).WithError(err).Errorw(
+			"backend update failed",
+			map[string]interface{}{"backend_id": backend.ID},
+		)
 		return err
 	}
 
-	provider.Logger(ctx).Infow("backend updated", map[string]interface{}{"user_id": backend.ID})
+	provider.Logger(ctx).Infow("backend updated", map[string]interface{}{"backend_id": backend.ID})
 
 	return nil
 }

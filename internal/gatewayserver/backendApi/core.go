@@ -33,29 +33,27 @@ func NewCore(ctx *context.Context, backend repo.IBackendRepo) *Core {
 
 // CreateParams has attributes that are required for backend.Create()
 type BackendCreateParams struct {
-	ID                      string
-	Hostname                string
-	Scheme                  string
-	ExternalUrl             string
-	IsEnabled               bool
-	UptimeSchedule          string
-	RunningQueries          int32
-	QueuedQueries           int32
-	ThresholdRunningQueries int32
-	ThresholdQueuedQueries  int32
+	ID                   string
+	Hostname             string
+	Scheme               string
+	ExternalUrl          string
+	IsEnabled            bool
+	UptimeSchedule       string
+	ClusterLoad          int32
+	ThresholdClusterLoad int32
+	StatsUpdatedAt       int64
 }
 
 func (c *Core) CreateOrUpdateBackend(ctx context.Context, params *BackendCreateParams) error {
 	backend := models.Backend{
-		Hostname:                params.Hostname,
-		Scheme:                  params.Scheme,
-		ExternalUrl:             &params.ExternalUrl,
-		IsEnabled:               &params.IsEnabled,
-		UptimeSchedule:          &params.UptimeSchedule,
-		RunningQueries:          &params.RunningQueries,
-		QueuedQueries:           &params.QueuedQueries,
-		ThresholdRunningQueries: &params.ThresholdRunningQueries,
-		ThresholdQueuedQueries:  &params.ThresholdQueuedQueries,
+		Hostname:             params.Hostname,
+		Scheme:               params.Scheme,
+		ExternalUrl:          &params.ExternalUrl,
+		IsEnabled:            &params.IsEnabled,
+		UptimeSchedule:       &params.UptimeSchedule,
+		ClusterLoad:          &params.ClusterLoad,
+		ThresholdClusterLoad: &params.ThresholdClusterLoad,
+		StatsUpdatedAt:       &params.StatsUpdatedAt,
 	}
 	backend.ID = params.ID
 

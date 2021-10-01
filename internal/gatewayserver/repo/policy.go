@@ -7,6 +7,7 @@ import (
 	"github.com/razorpay/trino-gateway/internal/gatewayserver/database/dbRepo"
 	"github.com/razorpay/trino-gateway/internal/gatewayserver/models"
 	"github.com/razorpay/trino-gateway/internal/provider"
+	"github.com/razorpay/trino-gateway/pkg/spine"
 )
 
 type IPolicyRepo interface {
@@ -46,7 +47,16 @@ func (r *PolicyRepo) Create(ctx context.Context, policy *models.Policy) error {
 func (r *PolicyRepo) Update(ctx context.Context, policy *models.Policy) error {
 	err := r.repo.Update(ctx, policy)
 	if err != nil {
-		provider.Logger(ctx).WithError(err).Errorw("policy update failed", map[string]interface{}{"policy_id": policy.ID})
+		if err == spine.NoRowAffected {
+			provider.Logger(ctx).Debugw(
+				"no row affected by policy update",
+				map[string]interface{}{"policy_id": policy.ID},
+			)
+			return nil
+		}
+		provider.Logger(ctx).WithError(err).Errorw(
+			"policy update failed",
+			map[string]interface{}{"policy_id": policy.ID})
 		return err
 	}
 

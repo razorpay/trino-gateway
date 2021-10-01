@@ -6,6 +6,7 @@ import (
 	"github.com/razorpay/trino-gateway/internal/gatewayserver/database/dbRepo"
 	"github.com/razorpay/trino-gateway/internal/gatewayserver/models"
 	"github.com/razorpay/trino-gateway/internal/provider"
+	"github.com/razorpay/trino-gateway/pkg/spine"
 )
 
 type IQueryRepo interface {
@@ -42,7 +43,16 @@ func (r *QueryRepo) Create(ctx context.Context, query *models.Query) error {
 func (r *QueryRepo) Update(ctx context.Context, query *models.Query) error {
 	err := r.repo.Update(ctx, query)
 	if err != nil {
-		provider.Logger(ctx).WithError(err).Errorw("query update failed", map[string]interface{}{"query_id": query.ID})
+		if err == spine.NoRowAffected {
+			provider.Logger(ctx).Debugw(
+				"no row affected by query update",
+				map[string]interface{}{"query_id": query.ID},
+			)
+			return nil
+		}
+		provider.Logger(ctx).WithError(err).Errorw(
+			"query update failed",
+			map[string]interface{}{"query_id": query.ID})
 		return err
 	}
 

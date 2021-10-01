@@ -33,16 +33,15 @@ func (s *Server) CreateOrUpdateBackend(ctx context.Context, req *gatewayv1.Backe
 	})
 
 	createParams := BackendCreateParams{
-		ID:                      req.GetId(),
-		Scheme:                  req.GetScheme().Enum().String(),
-		Hostname:                req.GetHostname(),
-		ExternalUrl:             req.GetExternalUrl(),
-		IsEnabled:               req.GetIsEnabled(),
-		UptimeSchedule:          req.GetUptimeSchedule(),
-		RunningQueries:          req.GetRunningQueries(),
-		QueuedQueries:           req.GetQueuedQueries(),
-		ThresholdRunningQueries: req.GetThresholdRunningQueries(),
-		ThresholdQueuedQueries:  req.GetThresholdQueuedQueries(),
+		ID:                   req.GetId(),
+		Scheme:               req.GetScheme().Enum().String(),
+		Hostname:             req.GetHostname(),
+		ExternalUrl:          req.GetExternalUrl(),
+		IsEnabled:            req.GetIsEnabled(),
+		UptimeSchedule:       req.GetUptimeSchedule(),
+		ClusterLoad:          req.GetClusterLoad(),
+		ThresholdClusterLoad: req.GetThresholdClusterLoad(),
+		StatsUpdatedAt:       req.GetStatsUpdatedAt(),
 	}
 
 	err := s.core.CreateOrUpdateBackend(ctx, &createParams)
@@ -81,12 +80,12 @@ func (s *Server) ListAllBackends(ctx context.Context, req *gatewayv1.Empty) (*ga
 	}
 
 	backendsProto := make([]*gatewayv1.Backend, len(backends))
-	for _, backendModel := range backends {
+	for i, backendModel := range backends {
 		backend, err := toBackendResponseProto(&backendModel)
 		if err != nil {
 			return nil, err
 		}
-		backendsProto = append(backendsProto, backend)
+		backendsProto[i] = backend
 	}
 
 	response := gatewayv1.BackendListAllResponse{
@@ -144,12 +143,15 @@ func toBackendResponseProto(backend *models.Backend) (*gatewayv1.Backend, error)
 		return nil, errors.New(fmt.Sprint("error encoding response: invalid scheme ", backend.Scheme))
 	}
 	response := gatewayv1.Backend{
-		Id:             backend.ID,
-		Hostname:       backend.Hostname,
-		Scheme:         *gatewayv1.Backend_Scheme(scheme).Enum(),
-		ExternalUrl:    *backend.ExternalUrl,
-		IsEnabled:      *backend.IsEnabled,
-		UptimeSchedule: *backend.UptimeSchedule,
+		Id:                   backend.ID,
+		Hostname:             backend.Hostname,
+		Scheme:               *gatewayv1.Backend_Scheme(scheme).Enum(),
+		ExternalUrl:          *backend.ExternalUrl,
+		IsEnabled:            *backend.IsEnabled,
+		UptimeSchedule:       *backend.UptimeSchedule,
+		ClusterLoad:          *backend.ClusterLoad,
+		ThresholdClusterLoad: *backend.ThresholdClusterLoad,
+		StatsUpdatedAt:       *backend.StatsUpdatedAt,
 	}
 
 	return &response, nil

@@ -7,6 +7,7 @@ import (
 	"github.com/razorpay/trino-gateway/internal/gatewayserver/database/dbRepo"
 	"github.com/razorpay/trino-gateway/internal/gatewayserver/models"
 	"github.com/razorpay/trino-gateway/internal/provider"
+	"github.com/razorpay/trino-gateway/pkg/spine"
 	"gorm.io/gorm/clause"
 )
 
@@ -49,7 +50,16 @@ func (r *GroupRepo) Create(ctx context.Context, group *models.Group) error {
 func (r *GroupRepo) Update(ctx context.Context, group *models.Group) error {
 	err := r.repo.Update(ctx, group)
 	if err != nil {
-		provider.Logger(ctx).WithError(err).Errorw("group update failed", map[string]interface{}{"group_id": group.ID})
+		if err == spine.NoRowAffected {
+			provider.Logger(ctx).Debugw(
+				"no row affected by group update",
+				map[string]interface{}{"group_id": group.ID},
+			)
+			return nil
+		}
+		provider.Logger(ctx).WithError(err).Errorw(
+			"group update failed",
+			map[string]interface{}{"group_id": group.ID})
 		return err
 	}
 
