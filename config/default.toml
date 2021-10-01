@@ -35,5 +35,8 @@
     defaultRoutingGroup   = "adhoc"
 
 [monitor]
-    intervalSecs          = 60
-    threshold             = 1
+    interval              = "10m"
+    statsValiditySecs     = 0
+    [monitor.trino]
+        user              = "trino-gateway"
+        password          = ""

@@ -9,6 +9,7 @@ type Config struct {
 	Auth    Auth
 	Db      db.Config
 	Gateway Gateway
+	Monitor Monitor
 }
 
 // App contains application-specific config values
@@ -37,6 +38,10 @@ type Gateway struct {
 }
 
 type Monitor struct {
-	IntervalSecs int
-	Threshold    int
+	Interval          string
+	StatsValiditySecs int
+	Trino             struct {
+		User     string
+		Password string
+	}
 }

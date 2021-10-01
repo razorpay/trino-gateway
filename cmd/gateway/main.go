@@ -23,6 +23,7 @@ import (
 	policyapi "github.com/razorpay/trino-gateway/internal/gatewayserver/policyApi"
 	queryapi "github.com/razorpay/trino-gateway/internal/gatewayserver/queryApi"
 	"github.com/razorpay/trino-gateway/internal/gatewayserver/repo"
+	"github.com/razorpay/trino-gateway/internal/monitor"
 	"github.com/razorpay/trino-gateway/internal/provider"
 	"github.com/razorpay/trino-gateway/internal/router"
 	gatewayv1 "github.com/razorpay/trino-gateway/rpc/gateway"
@@ -70,7 +71,7 @@ func main() {
 	metricServer := startMetricsServer(&ctx)
 
 	// start backend health monitor
-	startMonitor()
+	startMonitor(&ctx)
 
 	c := make(chan os.Signal, 1)
 
@@ -119,9 +120,19 @@ func listenHttp(ctx *context.Context, server *http.Server, port int) {
 	}
 }
 
-func startMonitor() {
+func startMonitor(ctx *context.Context) {
 	// Start backend health check monitors
+	gatewayApiUrl := fmt.Sprint("http://localhost:", boot.Config.App.Port)
+	client := gatewayv1.NewBackendApiProtobufClient(gatewayApiUrl, &http.Client{})
+	core := monitor.NewCore(client)
 
+	m := monitor.NewMonitor(core)
+	err := m.Schedule(ctx, boot.Config.Monitor.Interval)
+	if err != nil {
+		provider.Logger(*ctx).WithError(err).Fatal(
+			"Unable to start Monitoring module",
+		)
+	}
 }
 
 func startGuiServer(ctx *context.Context) *http.Server {
