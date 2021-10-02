@@ -1,0 +1,46 @@
+package monitor
+
+import (
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/razorpay/trino-gateway/internal/boot"
+)
+
+type Metrics struct {
+	env                string
+	executionsTotal    *prometheus.CounterVec
+	executionlastRunAt *prometheus.GaugeVec
+	executionDurations *prometheus.HistogramVec
+}
+
+var metrics *Metrics
+
+func initMetrics() {
+	metrics = &Metrics{
+		env: boot.Config.App.Env,
+	}
+	metrics.executionsTotal = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "monitor_executions_total",
+			Help: "Number of executions triggered for monitor task.",
+		},
+		[]string{"env"},
+	)
+
+	metrics.executionlastRunAt = promauto.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "monitor_execution_last_run_at",
+			Help: "Monitor task last run epoch ts.",
+		},
+		[]string{"env"},
+	)
+
+	metrics.executionDurations = promauto.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name:    "monitor_execution_durations_s_histogram",
+			Help:    "Monitor task execution time distributions histogram.",
+			Buckets: []float64{1, 5, 10, 15, 20, 30, 40, 60, 100, 150},
+		},
+		[]string{"env"},
+	)
+}

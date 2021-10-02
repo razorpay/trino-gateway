@@ -3,11 +3,11 @@ package hooks
 import (
 	"context"
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/razorpay/trino-gateway/internal/boot"
 	"github.com/twitchtv/twirp"
 )
 
@@ -44,7 +44,7 @@ func init() {
 		[]string{"package", "server", "method", "code", "env"},
 	)
 
-	env = os.Getenv("APP_ENV")
+	env = boot.Config.App.Env
 }
 
 // Metric returns function which puts unique request id into context.

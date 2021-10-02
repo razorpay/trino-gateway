@@ -15,6 +15,10 @@ type Monitor struct {
 	core ICore
 }
 
+func init() {
+	initMetrics()
+}
+
 func NewMonitor(core ICore) *Monitor {
 	return &Monitor{
 		core: core,
@@ -41,6 +45,20 @@ func (m *Monitor) Schedule(ctx *context.Context, interval string) error {
 
 func (m *Monitor) Execute(ctx *context.Context) {
 	provider.Logger(*ctx).Info("Executing monitoring task")
+
+	metrics.executionsTotal.
+		WithLabelValues(metrics.env).
+		Inc()
+	defer func(st time.Time) {
+		duration := float64(time.Since(st).Seconds())
+		metrics.executionDurations.
+			WithLabelValues(metrics.env).
+			Observe(duration)
+
+		metrics.executionlastRunAt.
+			WithLabelValues(metrics.env).
+			SetToCurrentTime()
+	}(time.Now())
 
 	provider.Logger(*ctx).Info("Enabling/Disabling backends based on uptime schedules")
 	err := m.core.EvaluateUptimeSchedules(ctx)
