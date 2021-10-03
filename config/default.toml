@@ -3,7 +3,8 @@
     gitCommitHash                = "nil"
     logLevel                     = "info"
     metricsPort                  = 8002
-    guiPort                      = 8001
+    # gui & twirp app need to be on same port for now, check frontend README for more details
+    # guiPort                      = 8000
     port                         = 8000
     serviceExternalHostname      = "localhost:8080"
     serviceHostname              = "$$internalHost"

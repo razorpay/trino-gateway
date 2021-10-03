@@ -65,7 +65,8 @@ func main() {
 	gatewayServers := startGatewayServers(&ctx)
 
 	// Start GUI Server
-	guiServer := startGuiServer(&ctx)
+	// gui server will be on same port as of apiServer till the frontend is client sided
+	// guiServer := startGuiServer(&ctx)
 
 	// App metrics server
 	metricServer := startMetricsServer(&ctx)
@@ -82,7 +83,7 @@ func main() {
 	// Block until signal is received.
 	<-c
 	// shutDown(ctx, httpServers, healthCore)
-	shutDown(ctx, append(append(append(gatewayServers, apiServer), guiServer), metricServer)...)
+	shutDown(ctx, append(append(gatewayServers, apiServer), metricServer)...)
 
 }
 
@@ -135,16 +136,17 @@ func startMonitor(ctx *context.Context) {
 	}
 }
 
-func startGuiServer(ctx *context.Context) *http.Server {
-	mux := http.NewServeMux()
-	// mux.HandleFunc("/", gatewayui.HttpHandler)
-	fs := http.FileServer(http.Dir("./web/frontend"))
-	appFrontendPath := "/"
-	mux.Handle(appFrontendPath, http.StripPrefix(appFrontendPath, fs))
-	httpServer := http.Server{Handler: mux}
-	go listenHttp(ctx, &httpServer, boot.Config.App.GuiPort)
-	return &httpServer
-}
+// Unused, gui is launched from apiServer, till frontend is fixed
+// func startGuiServer(ctx *context.Context) *http.Server {
+// 	mux := http.NewServeMux()
+// 	// mux.HandleFunc("/", gatewayui.HttpHandler)
+// 	fs := http.FileServer(http.Dir("./web/frontend"))
+// 	appFrontendPath := "/"
+// 	mux.Handle(appFrontendPath, http.StripPrefix(appFrontendPath, fs))
+// 	httpServer := http.Server{Handler: mux}
+// 	go listenHttp(ctx, &httpServer, boot.Config.App.GuiPort)
+// 	return &httpServer
+// }
 
 func startApiServer(ctx *context.Context) *http.Server {
 
@@ -193,6 +195,10 @@ func startApiServer(ctx *context.Context) *http.Server {
 
 	fs := http.FileServer(http.Dir("./third_party/swaggerui"))
 	mux.Handle(appSwaggerUiPath, http.StripPrefix(appSwaggerUiPath, fs))
+
+	guiFs := http.FileServer(http.Dir("./web/frontend"))
+	appFrontendPath := "/"
+	mux.Handle(appFrontendPath, http.StripPrefix(appFrontendPath, guiFs))
 
 	// mux.Handle("/twirpql", twirpql.Handler(gatewayServer, nil))
 	// mux.Handle("/admin/twirpql/play", twirpql.Playground("my service", "/twirpql"))
