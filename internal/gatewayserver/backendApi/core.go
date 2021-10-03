@@ -17,13 +17,10 @@ type ICore interface {
 	GetBackend(ctx context.Context, id string) (*models.Backend, error)
 	GetAllBackends(ctx context.Context) ([]models.Backend, error)
 	GetAllActiveBackends(ctx context.Context) ([]models.Backend, error)
+	UpdateBackend(ctx context.Context, b *models.Backend) error
 	DeleteBackend(ctx context.Context, id string) error
 	EnableBackend(ctx context.Context, id string) error
 	DisableBackend(ctx context.Context, id string) error
-
-	EvaluateRoutingGroup(ctx context.Context, c *EvaluateClientParams) (string, error)
-	EvaluateBackend(ctx context.Context, group string) (string, error)
-	FindBackendForQuery(ctx context.Context, q string) (string, error)
 }
 
 func NewCore(ctx *context.Context, backend repo.IBackendRepo) *Core {
@@ -70,6 +67,14 @@ func (c *Core) GetBackend(ctx context.Context, id string) (*models.Backend, erro
 	return backend, err
 }
 
+func (c *Core) UpdateBackend(ctx context.Context, b *models.Backend) error {
+	_, exists := c.backendRepo.Find(ctx, b.ID)
+	if exists != nil {
+		return exists
+	}
+	return c.backendRepo.Update(ctx, b)
+}
+
 func (c *Core) GetAllBackends(ctx context.Context) ([]models.Backend, error) {
 	backends, err := c.backendRepo.FindMany(ctx, make(map[string]interface{}))
 	return backends, err
@@ -101,7 +106,6 @@ func (p *FindManyParams) GetIsEnabled() bool {
 }
 
 func (c *Core) FindMany(ctx context.Context, params IFindManyParams) ([]models.Backend, error) {
-
 	conditionStr := structs.New(params)
 	// use the json tag name, so we can respect omitempty tags
 	conditionStr.TagName = "json"
@@ -129,14 +133,4 @@ func (c *Core) DisableBackend(ctx context.Context, id string) error {
 
 type EvaluateClientParams struct {
 	ListeningPort int32
-}
-
-func (c *Core) EvaluateRoutingGroup(ctx context.Context, params *EvaluateClientParams) (string, error) {
-	return "", nil
-}
-func (c *Core) EvaluateBackend(ctx context.Context, group string) (string, error) {
-	return "", nil
-}
-func (c *Core) FindBackendForQuery(ctx context.Context, q string) (string, error) {
-	return "", nil
 }

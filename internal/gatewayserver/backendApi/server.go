@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	_ "github.com/twitchtv/twirp"
 
@@ -115,6 +116,28 @@ func (s *Server) DisableBackend(ctx context.Context, req *gatewayv1.BackendDisab
 	})
 	err := s.core.DisableBackend(ctx, req.GetId())
 	if err != nil {
+		return nil, err
+	}
+
+	return &gatewayv1.Empty{}, nil
+}
+
+func (s *Server) UpdateClusterLoadBackend(
+	ctx context.Context,
+	req *gatewayv1.BackendUpdateClusterLoadRequest,
+) (*gatewayv1.Empty, error) {
+
+	provider.Logger(ctx).Debugw("UpdateClusterLoadBackend", map[string]interface{}{
+		"request": req.String(),
+	})
+	b, err := s.core.GetBackend(ctx, req.GetId())
+	if err != nil {
+		return nil, err
+	}
+	*b.ClusterLoad = req.GetClusterLoad()
+	*b.StatsUpdatedAt = time.Now().Unix()
+
+	if err := s.core.UpdateBackend(ctx, b); err != nil {
 		return nil, err
 	}
 

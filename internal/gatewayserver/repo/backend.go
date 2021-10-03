@@ -2,7 +2,6 @@ package repo
 
 import (
 	"context"
-	"errors"
 
 	"github.com/razorpay/trino-gateway/internal/gatewayserver/database/dbRepo"
 	"github.com/razorpay/trino-gateway/internal/gatewayserver/models"
@@ -132,8 +131,8 @@ func (r *BackendRepo) Enable(ctx context.Context, id string) error {
 	}
 
 	if *backend.IsEnabled {
-		provider.Logger(ctx).Error("backend activation failed. Already active")
-		return errors.New("Already active")
+		provider.Logger(ctx).Info("backend activation failed. Already active")
+		return nil
 	}
 
 	*backend.IsEnabled = true
@@ -146,17 +145,17 @@ func (r *BackendRepo) Enable(ctx context.Context, id string) error {
 }
 
 func (r *BackendRepo) Disable(ctx context.Context, id string) error {
-	provider.Logger(ctx).Infow("backend activation triggered", map[string]interface{}{"backend_id": id})
+	provider.Logger(ctx).Infow("backend deactivation triggered", map[string]interface{}{"backend_id": id})
 
 	backend, err := r.Find(ctx, id)
 	if err != nil {
-		provider.Logger(ctx).Error("backend activation failed: " + err.Error())
+		provider.Logger(ctx).Error("backend deactivation failed: " + err.Error())
 		return err
 	}
 
 	if !*backend.IsEnabled {
-		provider.Logger(ctx).Error("backend activation failed. Already active")
-		return errors.New("Already active")
+		provider.Logger(ctx).Info("backend deactivation failed. Already inactive")
+		return nil
 	}
 
 	*backend.IsEnabled = false

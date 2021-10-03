@@ -1,7 +1,7 @@
 [app]
     env                          = "default"
     gitCommitHash                = "nil"
-    logLevel                     = "debug"
+    logLevel                     = "info"
     metricsPort                  = 8002
     guiPort                      = 8001
     port                         = 8000

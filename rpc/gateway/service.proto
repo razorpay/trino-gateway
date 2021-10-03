@@ -35,6 +35,7 @@ service BackendApi {
     rpc DeleteBackend (BackendDeleteRequest) returns (Empty);
     rpc EnableBackend (BackendEnableRequest) returns (Empty);
     rpc DisableBackend (BackendDisableRequest) returns (Empty);
+    rpc UpdateClusterLoadBackend (BackendUpdateClusterLoadRequest) returns (Empty);
 }
 
 message Backend {
@@ -79,6 +80,11 @@ message BackendEnableRequest {
 
 message BackendDisableRequest {
     string id = 1; // required
+}
+
+message BackendUpdateClusterLoadRequest {
+    string id = 1; // required
+    int32 cluster_load = 2; //required
 }
 
 service GroupApi {
