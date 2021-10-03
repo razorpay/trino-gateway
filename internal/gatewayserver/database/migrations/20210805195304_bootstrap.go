@@ -88,7 +88,7 @@ func Up20210805195304(tx *sql.Tx) error {
 			group_id varchar(255) NULL,
 			backend_id varchar(255) NULL,
 			username varchar(255),
-			received_at int(11),
+			server_host varchar(255),
 			submitted_at int(11),
 			created_at int(11),
 			updated_at int(11),

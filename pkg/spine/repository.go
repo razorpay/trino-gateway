@@ -108,8 +108,7 @@ func (repo Repo) Preload(ctx context.Context, query string, args ...interface{})
 // Transaction will manage the execution inside a transactions
 // adds the txn db in the context for downstream use case
 func (repo Repo) Transaction(ctx context.Context, fc func(ctx context.Context) error) error {
-	var err = repo.DBInstance(ctx).Transaction(func(tx *gorm.DB) error {
-
+	err := repo.DBInstance(ctx).Transaction(func(tx *gorm.DB) error {
 		// This will ensure that when db.Instance(context) we return the txn on the context
 		// & all repo queries are done on this txn. Refer usage in test.
 		if err := fc(context.WithValue(ctx, db.ContextKeyDatabase, tx)); err != nil {

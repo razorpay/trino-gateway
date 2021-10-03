@@ -2,6 +2,7 @@ package router
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"regexp"
@@ -67,4 +68,14 @@ func (r *RouterServer) processResponse(
 	}()
 
 	return nil
+}
+
+func extractQueryIdFromServerResponse(ctx *context.Context, body string) string {
+	provider.Logger(*ctx).Debugw(fmt.Sprint(LOG_TAG, "extracting queryId from server response"),
+		map[string]interface{}{
+			"body": body,
+		})
+	var resp struct{ Id string }
+	json.Unmarshal([]byte(body), &resp)
+	return resp.Id
 }

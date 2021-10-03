@@ -220,12 +220,12 @@ service QueryApi {
 message Query {
     string id = 1; // required
     string text = 2; // required
-    int64 received_at = 3; // required
+    int64 submitted_at = 3; // required
     string client_ip = 4;
     string group_id = 5; // required
     string backend_id = 6; // required
     string username = 7;
-    int64 submitted_at = 8;
+    string server_host = 8;
 }
 
 message QueryGetRequest {
@@ -253,11 +253,12 @@ message QueriesListRequest {
     string username = 11;
     string backend_id = 12;
     string group_id = 13;
-    bool successful_submission = 14;
+    int64 submitted_at = 14;
 }
 
 message QueriesListResponse {
-    repeated Query items = 1;
+    int32 Count = 1; // required
+    repeated Query items = 2;
 }
 
 message FindBackendForQueryRequest {

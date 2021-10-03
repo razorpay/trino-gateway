@@ -3,7 +3,6 @@ package router
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -12,16 +11,6 @@ import (
 
 	"github.com/razorpay/trino-gateway/internal/provider"
 )
-
-func extractQueryIdFromServerResponse(ctx *context.Context, body string) string {
-	provider.Logger(*ctx).Debugw(fmt.Sprint(LOG_TAG, "extracting queryId from server response"),
-		map[string]interface{}{
-			"body": body,
-		})
-	var resp struct{ Id string }
-	json.Unmarshal([]byte(body), &resp)
-	return resp.Id
-}
 
 func stringifyHttpRequest(ctx *context.Context, req *http.Request) string {
 	requestDump, err := httputil.DumpRequest(req, true)
@@ -48,7 +37,7 @@ func stringifyHttpResponse(ctx *context.Context, req *http.Response) string {
 }
 
 func parseBody(ctx *context.Context, body *io.ReadCloser) (string, error) {
-	//b := req.Body
+	// b := req.Body
 
 	bodyBytes, err := io.ReadAll(*body)
 	if err != nil {

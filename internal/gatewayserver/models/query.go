@@ -10,8 +10,8 @@ type Query struct {
 	GroupId     string `json:"group_id"`
 	BackendId   string `json:"backend_id"`
 	Username    string `json:"username"`
-	ReceivedAt  int64  `json:"received_at"`
 	SubmittedAt int64  `json:"submitted_at"`
+	ServerHost  string `json:"server_host"`
 }
 
 func (u *Query) TableName() string {

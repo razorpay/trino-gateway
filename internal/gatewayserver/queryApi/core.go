@@ -16,8 +16,6 @@ type ICore interface {
 	CreateOrUpdateQuery(ctx context.Context, params *QueryCreateParams) error
 	GetQuery(ctx context.Context, id string) (*models.Query, error)
 	FindMany(ctx context.Context, params IFindManyParams) ([]models.Query, error)
-
-	FindBackendForQuery(ctx context.Context, q string) (string, error)
 }
 
 func NewCore(ctx *context.Context, query repo.IQueryRepo) *Core {
@@ -33,7 +31,7 @@ type QueryCreateParams struct {
 	BackendId   string
 	Username    string
 	GroupId     string
-	ReceivedAt  int64
+	ServerHost  string
 	SubmittedAt int64
 }
 
@@ -44,7 +42,7 @@ func (c *Core) CreateOrUpdateQuery(ctx context.Context, params *QueryCreateParam
 		BackendId:   params.BackendId,
 		Username:    params.Username,
 		GroupId:     params.GroupId,
-		ReceivedAt:  params.ReceivedAt,
+		ServerHost:  params.ServerHost,
 		SubmittedAt: params.SubmittedAt,
 	}
 	query.ID = params.ID
@@ -66,55 +64,36 @@ type IFindManyParams interface {
 	GetSkip() int32
 	GetFrom() int32
 	GetTo() int32
-	GetOrderBy() string
+	// GetOrderBy() string
 
 	// custom
 	GetUsername() string
 	GetBackendId() string
-	GetGroup() string
-	// GetSuccessfulSubmission() bool
+	GetGroupId() string
+	GetSubmittedAt() int64
 }
 
 type FindManyParams struct {
 	// pagination
-	// Count   int32
-	// Skip    int32
-	// From    int32
-	// To      int32
+	Count int32
+	Skip  int32
+	From  int32
+	To    int32
 	// OrderBy string
 
 	// custom
-	Username  string `json:"username"`
-	BackendId string `json:"backend_id"`
-	Group     string `json:"group_id"`
-	// SuccessfulSubmission bool   `json:"rule_type"`
+	Username    string `json:"username"`
+	BackendId   string `json:"backend_id"`
+	GroupId     string `json:"group_id"`
+	SubmittedAt int64  `json:"submitted_at"`
 }
 
-func (p *FindManyParams) GetUsername() string {
-	return p.Username
-}
-func (p *FindManyParams) GetBackendId() string {
-	return p.BackendId
-}
-func (p *FindManyParams) GetGroup() string {
-	return p.Group
-}
-
-// func (p *FindManyParams) GetSuccessfulSubmission() bool {
-// 	return p.SuccessfulSubmission
-// }
-
+// TODO - https://github.com/razorpay/capital-loc/blob/10aa9a664b9eccaf68ac11f2b55ca93faba16fc2/internal/dashboard/core.go#L150
 func (c *Core) FindMany(ctx context.Context, params IFindManyParams) ([]models.Query, error) {
-
 	conditionStr := structs.New(params)
 	// use the json tag name, so we can respect omitempty tags
 	conditionStr.TagName = "json"
 	conditions := conditionStr.Map()
 
 	return c.queryRepo.FindMany(ctx, conditions)
-}
-
-func (c *Core) FindBackendForQuery(ctx context.Context, qid string) (string, error) {
-	// TODO
-	return "", nil
 }

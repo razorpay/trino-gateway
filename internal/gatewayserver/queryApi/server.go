@@ -29,11 +29,11 @@ func (s *Server) CreateOrUpdateQuery(ctx context.Context, req *gatewayv1.Query) 
 	createParams := QueryCreateParams{
 		ID:          req.GetId(),
 		Text:        req.GetText(),
-		ReceivedAt:  req.GetReceivedAt(),
 		ClientIp:    req.GetClientIp(),
 		GroupId:     req.GetGroupId(),
 		BackendId:   req.GetBackendId(),
 		Username:    req.GetUsername(),
+		ServerHost:  req.GetServerHost(),
 		SubmittedAt: req.GetSubmittedAt(),
 	}
 
@@ -65,7 +65,26 @@ func (s *Server) ListQueries(ctx context.Context, req *gatewayv1.QueriesListRequ
 		"request": req.String(),
 	})
 	// TODO
-	return nil, nil
+	queries, err := s.core.FindMany(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	queriesProto := make([]*gatewayv1.Query, len(queries))
+	for i, queryModel := range queries {
+		query, err := toQueryResponseProto(&queryModel)
+		if err != nil {
+			return nil, err
+		}
+		queriesProto[i] = query
+	}
+
+	response := gatewayv1.QueriesListResponse{
+		Items: queriesProto,
+		Count: int32(len(queriesProto)),
+	}
+
+	return &response, nil
 }
 
 func toQueryResponseProto(query *models.Query) (*gatewayv1.Query, error) {
@@ -75,7 +94,7 @@ func toQueryResponseProto(query *models.Query) (*gatewayv1.Query, error) {
 	return &gatewayv1.Query{
 		Id:          query.ID,
 		Text:        query.Text,
-		ReceivedAt:  query.ReceivedAt,
+		ServerHost:  query.ServerHost,
 		ClientIp:    query.ClientIp,
 		GroupId:     query.GroupId,
 		BackendId:   query.BackendId,
@@ -89,10 +108,9 @@ func (s *Server) FindBackendForQuery(ctx context.Context, req *gatewayv1.FindBac
 		"request": req.String(),
 	})
 
-	backend_id, err := s.core.FindBackendForQuery(ctx, req.QueryId)
-
+	query, err := s.core.GetQuery(ctx, req.QueryId)
 	if err != nil {
-		return &gatewayv1.FindBackendForQueryResponse{BackendId: backend_id}, nil
+		return nil, err
 	}
-	return nil, err
+	return &gatewayv1.FindBackendForQueryResponse{BackendId: query.BackendId}, nil
 }

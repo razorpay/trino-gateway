@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"time"
+	"regexp"
 
 	"github.com/razorpay/trino-gateway/internal/provider"
 	"github.com/razorpay/trino-gateway/internal/router/trinoheaders"
@@ -24,7 +24,45 @@ type ClientRequest struct {
 }
 
 func extractQueryId(ctx *context.Context, body string) string {
-	// TODO
+	isKillQuery := func() bool {
+		regex := regexp.MustCompile(`(?:call|CALL)[\ ]+(?:(?:system|"system").(?:runtime|"runtime").(?:kill_query|"kill_query"))`)
+
+		if regex.FindString(body) != "" {
+			provider.Logger(*ctx).Debugw(" kill_query procedure deteccted", map[string]interface{}{
+				"query": body,
+			})
+			return true
+		}
+		return false
+	}
+
+	if isKillQuery() {
+		regex := regexp.MustCompile(`(?:(?:kill_query|"kill_query")[\ ]*\([\ ]*'([\w_-]*)'|(?:query_id[\ ]*=>[\ ]*'([\w_-]*)'))`)
+
+		match := regex.FindStringSubmatch(body)
+		if len(match) != 3 {
+			provider.Logger(*ctx).Errorw("unable to extract queryId from kill_query procedure", map[string]interface{}{
+				"query":      body,
+				"regexMatch": match,
+			})
+
+			return ""
+		}
+
+		qId := match[1]
+		if qId == "" {
+			qId = match[2] // Exactly one of them will be empty
+		}
+
+		provider.Logger(*ctx).Debugw("Extracted queryId from kill_query procedure", map[string]interface{}{
+			"query":      body,
+			"regexMatch": match,
+			"queryId":    qId,
+		})
+
+		return qId
+	}
+
 	return ""
 }
 
@@ -88,11 +126,10 @@ func (r *RouterServer) processRequest(
 		return nil, errors.New("invalid Request - not a valid Trino request")
 	}
 	querySaveReq := &gatewayv1.Query{
-		Id:         clientReq.queryId,
-		Text:       clientReq.queryText,
-		Username:   clientReq.username,
-		ClientIp:   clientReq.clientIp,
-		ReceivedAt: time.Now().Unix(),
+		Id:       clientReq.queryId,
+		Text:     clientReq.queryText,
+		Username: clientReq.username,
+		ClientIp: clientReq.clientIp,
 	}
 
 	if clientReq.queryId != "" {
@@ -100,28 +137,24 @@ func (r *RouterServer) processRequest(
 			*ctx,
 			&gatewayv1.FindBackendForQueryRequest{QueryId: clientReq.queryId},
 		)
-		if err != nil {
-			provider.Logger(*ctx).WithError(err).
-				Errorw("Backend Unresolvable for meta query",
-					map[string]interface{}{"queryId": clientReq.queryId})
-			return nil, err
-		}
-		bId := findBackendIdResp.BackendId
-		r.prepareReqForRouting(ctx, req, bId)
-		if err != nil {
-			provider.Logger(*ctx).WithError(err).
-				Errorw("Backend Unresolvable for meta query",
-					map[string]interface{}{"queryId": clientReq.queryId})
-			return nil, err
-		}
-		querySaveReq.BackendId = bId
+		if err == nil {
+			bId := findBackendIdResp.BackendId
+			err = r.prepareReqForRouting(ctx, req, querySaveReq, bId)
+			if err != nil {
+				return nil, err
+			}
+			querySaveReq.BackendId = bId
 
-		return querySaveReq, nil
+			return querySaveReq, nil
+		}
+		provider.Logger(*ctx).WithError(err).
+			Errorw("Backend Unresolvable for query metadata procedure. Ignoring extracted query_id",
+				map[string]interface{}{"queryId": clientReq.queryId})
 	}
 
 	provider.Logger(*ctx).Debug(fmt.Sprint(LOG_TAG, "evaluating groups for client request"))
 	bId, gId, err := r.evaluateRoutingBackend(ctx, clientReq)
-	r.prepareReqForRouting(ctx, req, bId)
+	r.prepareReqForRouting(ctx, req, querySaveReq, bId)
 	if err != nil {
 		return nil, err
 	}
@@ -171,7 +204,7 @@ func (r *RouterServer) evaluateRoutingBackend(ctx *context.Context, clientReq *C
 	return backendId, groupId, nil
 }
 
-func (r *RouterServer) prepareReqForRouting(ctx *context.Context, req *http.Request, backend_id string) error {
+func (r *RouterServer) prepareReqForRouting(ctx *context.Context, req *http.Request, qSaveReq *gatewayv1.Query, backend_id string) error {
 	provider.Logger(*ctx).Debug(fmt.Sprint(LOG_TAG, "fetching details of resolved backend"))
 	findBackendResp, err := r.gatewayApiClient.Backend.GetBackend(
 		*ctx,
@@ -194,5 +227,9 @@ func (r *RouterServer) prepareReqForRouting(ctx *context.Context, req *http.Requ
 		map[string]interface{}{
 			"request": stringifyHttpRequest(ctx, req),
 		})
+
+	qSaveReq.ServerHost = fmt.
+		Sprintf("%s://%s", backend.GetScheme().Enum().String(), backend.GetExternalUrl())
+
 	return nil
 }
