@@ -14,6 +14,7 @@ require (
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/gobuffalo/nulls v0.4.0
 	github.com/golang/protobuf v1.5.2
+	github.com/gopherjs/gopherjs v0.0.0-20211002144500-51d3295ec039
 	github.com/hexops/vecty v0.6.0
 	github.com/lib/pq v1.10.3
 	github.com/pkg/errors v0.9.1
