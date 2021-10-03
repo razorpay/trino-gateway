@@ -28,7 +28,6 @@ func NewMonitor(core ICore) *Monitor {
 func (m *Monitor) Schedule(ctx *context.Context, interval string) error {
 	s := gocron.NewScheduler(time.UTC)
 	j, err := s.Every(interval).Do(m.Execute, ctx)
-
 	if err != nil {
 		return err
 	}
@@ -60,33 +59,19 @@ func (m *Monitor) Execute(ctx *context.Context) {
 			SetToCurrentTime()
 	}(time.Now())
 
-	provider.Logger(*ctx).Info("Enabling/Disabling backends based on uptime schedules")
-	err := m.core.EvaluateUptimeSchedules(ctx)
+	provider.Logger(*ctx).Info("Evaluating new state for backends")
+	newSts, err := m.core.EvaluateBackendNewState(ctx)
 	if err != nil {
-		provider.Logger(*ctx).WithError(err).Error("Error evaluating backend uptime schedules")
+		provider.Logger(*ctx).WithError(err).Error("Error evaluating new states for backends")
 	}
 
-	provider.Logger(*ctx).Info("Enabling/Disabling backends based on cluster load")
-	provider.Logger(*ctx).Debug("Fetching all currently active backends")
-	active, err := m.core.GetActiveBackends(ctx)
-	if err != nil {
-		provider.Logger(*ctx).WithError(err).Error("Unable to fetch all currently active backends")
-		return
-	}
-	if len(active) == 0 {
-		provider.Logger(*ctx).Error("No Active Backends detected")
-	}
+	provider.Logger(*ctx).Debug("Deactivating backends")
 	var wg sync.WaitGroup
-	for _, b := range active {
-		provider.Logger(*ctx).Debugw(
-			"Updating backend as per its health & clusterLoad",
-			map[string]interface{}{"backend": b})
-
+	for _, b := range newSts.Inactive {
 		wg.Add(1)
 		go func(x *gatewayv1.Backend) {
 			defer wg.Done()
-			x = m.checkBackendStatus(ctx, x)
-			err = m.core.UpdateBackend(ctx, x)
+			err = m.core.DeactivateBackend(ctx, x)
 			if err != nil {
 				provider.Logger(*ctx).WithError(err).Errorw(
 					"Failure updating backend",
@@ -95,43 +80,47 @@ func (m *Monitor) Execute(ctx *context.Context) {
 		}(b)
 
 	}
+
+	if len(newSts.Active) == 0 {
+		provider.Logger(*ctx).Error("No Backends eligible for active state")
+	}
+
+	provider.Logger(*ctx).Info("Activating/Deactivating backends based on cluster load")
+	for _, b := range newSts.Active {
+		wg.Add(1)
+		go func(x *gatewayv1.Backend) {
+			defer wg.Done()
+			provider.Logger(*ctx).Debugw(
+				"Evaluating health of backend",
+				map[string]interface{}{"backend": b})
+
+			isHealthy, err := m.core.IsBackendHealthy(ctx, x)
+			if err != nil {
+				provider.Logger(*ctx).WithError(err).Errorw(
+					"Failure checking backend health",
+					map[string]interface{}{"backend": x})
+			}
+
+			if isHealthy {
+				err := m.core.ActivateBackend(ctx, x)
+				if err != nil {
+					provider.Logger(*ctx).WithError(err).Errorw(
+						"Failure activating backend",
+						map[string]interface{}{"backend": x})
+				}
+			} else {
+
+				err = m.core.DeactivateBackend(ctx, x)
+				if err != nil {
+					provider.Logger(*ctx).WithError(err).Errorw(
+						"Failure deactivating backend",
+						map[string]interface{}{"backend": x})
+				}
+			}
+		}(b)
+
+	}
+
 	// Wait for all backend status checks to complete.
 	wg.Wait()
-}
-
-func (m *Monitor) checkBackendStatus(ctx *context.Context, b *gatewayv1.Backend) *gatewayv1.Backend {
-	isHealthy, err := m.core.IsBackendHealthy(ctx, b)
-	if err != nil {
-		b.IsEnabled = false
-		provider.Logger(*ctx).WithError(err).Errorw(
-			"Failure fetching backend health, marked as inactive",
-			map[string]interface{}{"backend": b})
-	} else {
-		if isHealthy {
-			load, err := m.core.GetBackendLoad(ctx, b)
-			if err != nil {
-				b.IsEnabled = false
-				provider.Logger(*ctx).WithError(err).Errorw(
-					"Failure evaluating current backend load, marked as inactive",
-					map[string]interface{}{"backend": b})
-
-			}
-			b.ClusterLoad = load
-			curr := time.Now().Unix()
-			b.StatsUpdatedAt = curr
-
-			if b.ThresholdClusterLoad == 0 || b.ClusterLoad <= b.ThresholdClusterLoad {
-				b.IsEnabled = true
-				provider.Logger(*ctx).Debugw(
-					"Cluster load below threshold, marked as active",
-					map[string]interface{}{"backend": b})
-			}
-		} else {
-			b.IsEnabled = false
-			provider.Logger(*ctx).Debugw(
-				"Cluster unhealthy, marked as inactive",
-				map[string]interface{}{"backend": b})
-		}
-	}
-	return b
 }

@@ -18,40 +18,54 @@ type Core struct {
 }
 
 type ICore interface {
-	EvaluateUptimeSchedules(ctx *context.Context) error
-	UpdateBackend(ctx *context.Context, b *gatewayv1.Backend) error
-	GetAllBackends(ctx *context.Context) ([]*gatewayv1.Backend, error)
-	GetActiveBackends(ctx *context.Context) ([]*gatewayv1.Backend, error)
-	GetBackendLoad(ctx *context.Context, b *gatewayv1.Backend) (int32, error)
+	EvaluateBackendNewState(ctx *context.Context) (*BackendsNewState, error)
+	ActivateBackend(ctx *context.Context, b *gatewayv1.Backend) error
+	DeactivateBackend(ctx *context.Context, b *gatewayv1.Backend) error
 	IsBackendHealthy(ctx *context.Context, b *gatewayv1.Backend) (bool, error)
-	computeClusterLoad(ctx *context.Context, stats *clusterLoadStats) int32
 }
 
 func NewCore(b gatewayv1.BackendApi) *Core {
 	return &Core{gatewayBackendClient: b}
 }
 
-func (c *Core) EvaluateUptimeSchedules(ctx *context.Context) error {
+type BackendsNewState struct {
+	Active   []*gatewayv1.Backend
+	Inactive []*gatewayv1.Backend
+}
+
+func (c *Core) EvaluateBackendNewState(ctx *context.Context) (*BackendsNewState, error) {
+	provider.Logger(*ctx).Debug("Evaluating new state for backends based on uptime schedules")
 	provider.Logger(*ctx).Debug("Fetching all backends")
-	backends, err := c.GetAllBackends(ctx)
+	backends, err := c.getAllBackends(ctx)
 	if err != nil {
-		return err
+		return nil, err
 	}
+	var toActivate []*gatewayv1.Backend
+	var toDeactivate []*gatewayv1.Backend
 	for _, b := range backends {
 		if b == nil {
-			return errors.New("nil pointer reference in twirp response")
+			return nil, errors.New("nil pointer reference in twirp response")
 		}
-		b.IsEnabled, err = c.isCurrentTimeInCron(ctx, b.UptimeSchedule)
+		isEligibleToActivate, err := c.isCurrentTimeInCron(ctx, b.UptimeSchedule)
 		if err != nil {
 			provider.Logger(*ctx).WithError(err).Errorw(
 				"Unable to parse cron expression in uptime schedule, skipping",
 				map[string]interface{}{"backend": b},
 			)
+			toDeactivate = append(toDeactivate, b)
 			continue
 		}
-		c.UpdateBackend(ctx, b)
+		if isEligibleToActivate {
+			toActivate = append(toActivate, b)
+		} else {
+			toDeactivate = append(toDeactivate, b)
+		}
 	}
-	return nil
+
+	return &BackendsNewState{
+		Active:   toActivate,
+		Inactive: toDeactivate,
+	}, nil
 }
 
 func (c *Core) isCurrentTimeInCron(ctx *context.Context, sched string) (bool, error) {
@@ -73,12 +87,7 @@ func (c *Core) isCurrentTimeInCron(ctx *context.Context, sched string) (bool, er
 	return nextRun.Sub(curr).Minutes() <= 1, nil
 }
 
-func (c *Core) UpdateBackend(ctx *context.Context, b *gatewayv1.Backend) error {
-	_, err := c.gatewayBackendClient.CreateOrUpdateBackend(*ctx, b)
-	return err
-}
-
-func (c *Core) GetAllBackends(ctx *context.Context) ([]*gatewayv1.Backend, error) {
+func (c *Core) getAllBackends(ctx *context.Context) ([]*gatewayv1.Backend, error) {
 	provider.Logger(*ctx).Debug("fetching all backends")
 	resp, err := c.gatewayBackendClient.ListAllBackends(*ctx, &gatewayv1.Empty{})
 	if err != nil {
@@ -95,23 +104,68 @@ func (c *Core) GetAllBackends(ctx *context.Context) ([]*gatewayv1.Backend, error
 	return resp.GetItems(), nil
 }
 
-func (c *Core) GetActiveBackends(ctx *context.Context) ([]*gatewayv1.Backend, error) {
-	backends, err := c.GetAllBackends(ctx)
-	if err != nil {
-		return nil, err
-	}
-	provider.Logger(*ctx).Debug("filter active backends")
-	var res []*gatewayv1.Backend
-	for _, b := range backends {
-		if b.GetIsEnabled() {
-			res = append(res, b)
-		}
-	}
+func (c *Core) ActivateBackend(ctx *context.Context, b *gatewayv1.Backend) error {
+	_, err := c.gatewayBackendClient.
+		EnableBackend(*ctx, &gatewayv1.BackendEnableRequest{
+			Id: b.GetId(),
+		})
+	return err
+}
 
-	return res, nil
+func (c *Core) DeactivateBackend(ctx *context.Context, b *gatewayv1.Backend) error {
+	_, err := c.gatewayBackendClient.
+		DisableBackend(*ctx, &gatewayv1.BackendDisableRequest{
+			Id: b.GetId(),
+		})
+	return err
 }
 
 func (c *Core) IsBackendHealthy(ctx *context.Context, b *gatewayv1.Backend) (bool, error) {
+	isUp, err := c.isBackendUp(ctx, b)
+	if err != nil {
+		provider.Logger(*ctx).WithError(err).Errorw(
+			"Failure fetching cluster ready state, assuming unhealthy",
+			map[string]interface{}{"backend": b})
+		return false, err
+	} else if isUp {
+		provider.Logger(*ctx).Debugw(
+			"Cluster is up",
+			map[string]interface{}{"backend": b})
+		load, err := c.getBackendLoad(ctx, b)
+		if err != nil {
+			provider.Logger(*ctx).WithError(err).Errorw(
+				"Failure evaluating current backend load, assuming unhealthy",
+				map[string]interface{}{"backend": b})
+			return false, err
+		}
+
+		if err = c.updateBackendClusterLoad(ctx, b.GetId(), load); err != nil {
+			provider.Logger(*ctx).WithError(err).Errorw(
+				"Error updating cluster load stats for backend",
+				map[string]interface{}{"backend_id": b.GetId(), "load": load})
+		}
+
+		threshold := b.ThresholdClusterLoad
+
+		if threshold == 0 || load <= threshold {
+			provider.Logger(*ctx).Debugw(
+				"Cluster load below threshold, assuming healthy",
+				map[string]interface{}{"backend": b})
+			return true, nil
+		} else {
+			provider.Logger(*ctx).Infow(
+				"Cluster load above threshold",
+				map[string]interface{}{"backend": b, "load": load, "threshold": threshold})
+		}
+	}
+	provider.Logger(*ctx).Infow(
+		"Cluster unhealthy, marked as inactive",
+		map[string]interface{}{"backend": b})
+
+	return false, nil
+}
+
+func (c *Core) isBackendUp(ctx *context.Context, b *gatewayv1.Backend) (bool, error) {
 	provider.Logger(*ctx).Debugw(
 		"Checking if backend is healthy",
 		map[string]interface{}{"backend": b})
@@ -119,7 +173,7 @@ func (c *Core) IsBackendHealthy(ctx *context.Context, b *gatewayv1.Backend) (boo
 		user: boot.Config.Monitor.Trino.User,
 		url:  url.URL{Scheme: b.GetScheme().Enum().String(), Host: b.GetHostname()},
 	}
-	h, err := trinoClient.IsClusterHealthy(ctx)
+	h, err := trinoClient.IsClusterUp(ctx)
 	if err != nil {
 		provider.Logger(*ctx).WithError(err).Errorw(
 			"error checking trinocluster health",
@@ -127,6 +181,15 @@ func (c *Core) IsBackendHealthy(ctx *context.Context, b *gatewayv1.Backend) (boo
 		return false, err
 	}
 	return h, nil
+}
+
+func (c *Core) updateBackendClusterLoad(ctx *context.Context, b_id string, load int32) error {
+	_, err := c.gatewayBackendClient.
+		UpdateClusterLoadBackend(*ctx, &gatewayv1.BackendUpdateClusterLoadRequest{
+			Id:          b_id,
+			ClusterLoad: load,
+		})
+	return err
 }
 
 type clusterLoadStats struct {
@@ -142,7 +205,7 @@ type clusterLoadStats struct {
 	ActiveNodes         int32
 }
 
-func (c *Core) GetBackendLoad(ctx *context.Context, b *gatewayv1.Backend) (int32, error) {
+func (c *Core) getBackendLoad(ctx *context.Context, b *gatewayv1.Backend) (int32, error) {
 	trinoClient := &TrinoClient{
 		user: boot.Config.Monitor.Trino.User,
 		url:  url.URL{Scheme: b.GetScheme().Enum().String(), Host: b.GetHostname()},

@@ -17,7 +17,7 @@ import (
 )
 
 type ITrinoClient interface {
-	IsClusterHealthy(ctx *context.Context) (bool, error)
+	IsClusterUp(ctx *context.Context) (bool, error)
 	RunQuery(ctx *context.Context, query string) (*sql.Rows, error)
 }
 
@@ -40,12 +40,12 @@ func (t *TrinoClient) httpClient(ctx *context.Context) *http.Client {
 		Transport: &http.Transport{
 			Proxy: http.ProxyFromEnvironment,
 			DialContext: (&net.Dialer{
-				Timeout:   10 * time.Second,
-				KeepAlive: 10 * time.Second,
+				Timeout:   5 * time.Second,
+				KeepAlive: 5 * time.Second,
 			}).DialContext,
 			MaxIdleConns:          3,
-			IdleConnTimeout:       30 * time.Second,
-			TLSHandshakeTimeout:   10 * time.Second,
+			IdleConnTimeout:       10 * time.Second,
+			TLSHandshakeTimeout:   5 * time.Second,
 			ExpectContinueTimeout: 2 * time.Second,
 		},
 	}
@@ -87,7 +87,7 @@ func (t *TrinoClient) generateDsn(ctx *context.Context, key string) string {
 		key)
 }
 
-func (t *TrinoClient) IsClusterHealthy(ctx *context.Context) (bool, error) {
+func (t *TrinoClient) IsClusterUp(ctx *context.Context) (bool, error) {
 
 	client := t.httpClient(ctx)
 
