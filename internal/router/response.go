@@ -13,6 +13,8 @@ import (
 )
 
 func (r *RouterServer) handleRedirect(ctx *context.Context, resp *http.Response) error {
+	// This needs more testing with looker
+
 	// Handle Redirects
 	// TODO: Clean it up
 	// TODO - validate its working for all use cases
@@ -66,6 +68,10 @@ func (r *RouterServer) processResponse(
 				})
 		}
 	}()
+
+	provider.Logger(*ctx).Debugw("Server Response Processed", map[string]interface{}{
+		"resp": stringifyHttpResponse(ctx, resp),
+	})
 
 	return nil
 }

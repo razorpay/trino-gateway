@@ -222,6 +222,8 @@ func (r *RouterServer) prepareReqForRouting(ctx *context.Context, req *http.Requ
 	req.URL.Host = backend.Hostname
 	req.URL.Scheme = backend.Scheme.Enum().String()
 	req.Host = backend.Hostname
+	// TODO - validate and refine parsing of X-Forwarded headers
+	req.Header.Set("X-Forwarded-Host", backend.Hostname)
 	provider.Logger(*ctx).Infow(
 		fmt.Sprint(LOG_TAG, "Request modified, ready to be forwarded"),
 		map[string]interface{}{
