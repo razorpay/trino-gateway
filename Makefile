@@ -24,7 +24,7 @@ build-frontend: web/frontend/js/frontend.js
 
 web/frontend/js/frontend.js:
 	echo "Compiling frontend"
-	gopherjs build ./internal/frontend --output "./web/frontend/js/frontend.js" --verbose
+	gopherjs build ./internal/frontend --output "./web/frontend/js/frontend.js" --minify --verbose
 
 # .PHONY: dev-build
 # dev-build:

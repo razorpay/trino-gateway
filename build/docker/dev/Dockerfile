@@ -4,7 +4,7 @@ WORKDIR /app
 
 
 RUN apk update \
-    && apk add --no-cache bash make protobuf git
+    && apk add --no-cache bash make protobuf git gzip curl
 
 # COPY ./ /app
 # RUN go mod download

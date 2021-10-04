@@ -1,0 +1,4 @@
+[app]
+    logLevel              = "info"
+[monitor]
+    interval              = "1m"
