@@ -82,6 +82,9 @@ func Server(ctx *context.Context, port int, apiClient *GatewayApiClient, routerH
 			defer func(st time.Time) {
 				post_d := time.Since(st).Milliseconds()
 				tot_d := time.Since(*ctxSharedObj.timerSt).Milliseconds()
+				metrics.responsesSentTotal.
+					WithLabelValues(metrics.env, req.Method, fmt.Sprint(status)).
+					Inc()
 				metrics.requestPostRoutingDelays.
 					WithLabelValues(metrics.env, req.Method, fmt.Sprint(status)).
 					Observe(float64(post_d))
@@ -121,6 +124,8 @@ func (r *RouterServer) extractSharedRequestCtxObject(ctx *context.Context, req *
 func (r *RouterServer) handleClientRequest(ctx *context.Context, req *http.Request) {
 	var err error
 	st := time.Now()
+	metrics.requestsReceivedTotal.
+		WithLabelValues(metrics.env, req.Method, fmt.Sprint(r.port))
 	defer func(st time.Time) {
 		duration := time.Since(st).Milliseconds()
 		metrics.requestPreRoutingDelays.
@@ -131,6 +136,10 @@ func (r *RouterServer) handleClientRequest(ctx *context.Context, req *http.Reque
 	q, err := r.processRequest(ctx, req)
 	if err != nil {
 		r.handleClientRequestRoutingError(ctx, req, err)
+	} else {
+		metrics.requestsRoutedTotal.
+			WithLabelValues(metrics.env, req.Method, fmt.Sprint(r.port), q.GroupId, q.BackendId).
+			Inc()
 	}
 
 	provider.Logger(*ctx).Debugw(
@@ -186,6 +195,9 @@ func (r *RouterServer) handleServerResponse(ctx *context.Context, resp *http.Res
 		defer func(st time.Time) {
 			post_d := time.Since(st).Milliseconds()
 			tot_d := time.Since(*ctxSharedObj.timerSt).Milliseconds()
+			metrics.responsesSentTotal.
+				WithLabelValues(metrics.env, resp.Request.Method, fmt.Sprint(200)).
+				Inc()
 			metrics.requestPostRoutingDelays.
 				WithLabelValues(metrics.env, resp.Request.Method, fmt.Sprint(200)).
 				Observe(float64(post_d))

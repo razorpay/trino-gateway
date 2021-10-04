@@ -184,6 +184,10 @@ func (c *Core) isBackendUp(ctx *context.Context, b *gatewayv1.Backend) (bool, er
 }
 
 func (c *Core) updateBackendClusterLoad(ctx *context.Context, b_id string, load int32) error {
+	defer func() {
+		metrics.backendLoad.WithLabelValues(metrics.env, b_id).
+			Set(float64(load))
+	}()
 	_, err := c.gatewayBackendClient.
 		UpdateClusterLoadBackend(*ctx, &gatewayv1.BackendUpdateClusterLoadRequest{
 			Id:          b_id,
@@ -284,14 +288,13 @@ func (c *Core) getBackendLoad(ctx *context.Context, b *gatewayv1.Backend) (int32
 
 	res.AvgQueueTimeMs = 0 // TODO - via system.runtime.queries
 	res.AvgCpuLoad = 0     // TODO - ideally via Prom/VictoriaDb Trino connector
-	res.ActiveNodes = 0    //TODO - via system.runtime.nodes
+	res.ActiveNodes = 0    // TODO - via system.runtime.nodes
 
 	load := c.computeClusterLoad(ctx, res)
 	return load, nil
 }
 
 func (c *Core) computeClusterLoad(ctx *context.Context, stats *clusterLoadStats) int32 {
-
 	running := stats.Running + stats.Planning + stats.Finishing + stats.Dispatching
 	queued := stats.Queued + stats.Starting
 

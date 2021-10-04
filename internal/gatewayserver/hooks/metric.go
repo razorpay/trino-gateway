@@ -21,7 +21,7 @@ var (
 func init() {
 	requestsReceivedTotal = promauto.NewCounterVec(
 		prometheus.CounterOpts{
-			Name: "http_requests_total",
+			Name: "trino_gateway_http_requests_total",
 			Help: "Number of HTTP requests received.",
 		},
 		[]string{"package", "server", "method", "env"},
@@ -29,7 +29,7 @@ func init() {
 
 	responsesSentTotal = promauto.NewCounterVec(
 		prometheus.CounterOpts{
-			Name: "http_responses_total",
+			Name: "trino_gateway_http_responses_total",
 			Help: "Number of HTTP responses sent.",
 		},
 		[]string{"package", "server", "method", "code", "env"},
@@ -37,7 +37,7 @@ func init() {
 
 	responseDurations = promauto.NewHistogramVec(
 		prometheus.HistogramOpts{
-			Name:    "http_durations_ms_histogram",
+			Name:    "trino_gateway_http_durations_ms_histogram",
 			Help:    "HTTP latency distributions histogram.",
 			Buckets: []float64{2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096},
 		},

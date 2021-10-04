@@ -11,6 +11,7 @@ type Metrics struct {
 	executionsTotal    *prometheus.CounterVec
 	executionlastRunAt *prometheus.GaugeVec
 	executionDurations *prometheus.HistogramVec
+	backendLoad        *prometheus.GaugeVec
 }
 
 var metrics *Metrics
@@ -21,7 +22,7 @@ func initMetrics() {
 	}
 	metrics.executionsTotal = promauto.NewCounterVec(
 		prometheus.CounterOpts{
-			Name: "monitor_executions_total",
+			Name: "trino_gateway_monitor_executions_total",
 			Help: "Number of executions triggered for monitor task.",
 		},
 		[]string{"env"},
@@ -29,7 +30,7 @@ func initMetrics() {
 
 	metrics.executionlastRunAt = promauto.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name: "monitor_execution_last_run_at",
+			Name: "trino_gateway_monitor_execution_last_run_at",
 			Help: "Monitor task last run epoch ts.",
 		},
 		[]string{"env"},
@@ -37,10 +38,18 @@ func initMetrics() {
 
 	metrics.executionDurations = promauto.NewHistogramVec(
 		prometheus.HistogramOpts{
-			Name:    "monitor_execution_durations_s_histogram",
+			Name:    "trino_gateway_monitor_execution_durations_s_histogram",
 			Help:    "Monitor task execution time distributions histogram.",
 			Buckets: []float64{1, 5, 10, 15, 20, 30, 40, 60, 100, 150},
 		},
 		[]string{"env"},
+	)
+
+	metrics.backendLoad = promauto.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "trino_gateway_monitor_backend_load",
+			Help: "Backend Load computed by last run of monitor task.",
+		},
+		[]string{"env", "backend"},
 	)
 }
