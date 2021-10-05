@@ -15,6 +15,7 @@ import (
 	"github.com/twitchtv/twirp"
 
 	"github.com/razorpay/trino-gateway/internal/boot"
+	guiserver "github.com/razorpay/trino-gateway/internal/frontend/server"
 	backendapi "github.com/razorpay/trino-gateway/internal/gatewayserver/backendApi"
 	"github.com/razorpay/trino-gateway/internal/gatewayserver/database/dbRepo"
 	groupapi "github.com/razorpay/trino-gateway/internal/gatewayserver/groupApi"
@@ -33,7 +34,7 @@ import (
 const (
 	appSwaggerUiPath = "/admin/swaggerui/"
 	// appApiPath       = "/api"
-	//appHealthPath = "/health"
+	// appHealthPath = "/health"
 	// appHealthPath = healthv1.HealthCheckAPIPathPrefix
 	// appTwirpqlPath = "/admin/twirpql"
 )
@@ -84,11 +85,9 @@ func main() {
 	<-c
 	// shutDown(ctx, httpServers, healthCore)
 	shutDown(ctx, append(append(gatewayServers, apiServer), metricServer)...)
-
 }
 
 func startGatewayServers(ctx *context.Context) []*http.Server {
-
 	// Start trino gateway reverse proxy servers on ports
 
 	gatewayApiUrl := fmt.Sprint("http://localhost:", boot.Config.App.Port)
@@ -111,7 +110,6 @@ func startGatewayServers(ctx *context.Context) []*http.Server {
 
 func listenHttp(ctx *context.Context, server *http.Server, port int) {
 	listener, err := net.Listen("tcp4", fmt.Sprint(":", port))
-
 	if err != nil {
 		panic(err)
 	}
@@ -149,7 +147,6 @@ func startMonitor(ctx *context.Context) {
 // }
 
 func startApiServer(ctx *context.Context) *http.Server {
-
 	// Init http and register servers to mux
 	mux := http.NewServeMux()
 
@@ -196,9 +193,7 @@ func startApiServer(ctx *context.Context) *http.Server {
 	fs := http.FileServer(http.Dir("./third_party/swaggerui"))
 	mux.Handle(appSwaggerUiPath, http.StripPrefix(appSwaggerUiPath, fs))
 
-	guiFs := http.FileServer(http.Dir("./web/frontend"))
-	appFrontendPath := "/"
-	mux.Handle(appFrontendPath, http.StripPrefix(appFrontendPath, guiFs))
+	mux.Handle("/", *guiserver.NewServerHandler(ctx))
 
 	// mux.Handle("/twirpql", twirpql.Handler(gatewayServer, nil))
 	// mux.Handle("/admin/twirpql/play", twirpql.Playground("my service", "/twirpql"))
@@ -231,7 +226,7 @@ func twirpHooks() *twirp.ServerHooks {
 func shutDown(ctx context.Context, servers ...*http.Server) {
 	// send unhealthy status to the healthcheck probe and let
 	// it mark this pod OOR first before shutting the server down
-	//logger.Ctx(ctx).Info("Marking server unhealthy")
+	// logger.Ctx(ctx).Info("Marking server unhealthy")
 	// healthCore.MarkUnhealthy()
 
 	// wait for ShutdownDelay seconds
