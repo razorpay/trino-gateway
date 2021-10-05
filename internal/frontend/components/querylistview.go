@@ -104,6 +104,9 @@ func (p *QueryListView) renderHeader() vecty.ComponentOrHTML {
 	)
 }
 
+func (p *QueryListView) onEditSearchbox(e vecty.Event) {
+}
+
 func (p *QueryListView) renderItems() vecty.ComponentOrHTML {
 	return elem.OrderedList(p.items)
 }

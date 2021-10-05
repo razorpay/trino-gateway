@@ -6,6 +6,7 @@ import (
 
 	"github.com/hexops/vecty"
 	"github.com/hexops/vecty/elem"
+	"github.com/hexops/vecty/event"
 	"github.com/hexops/vecty/prop"
 	"github.com/hexops/vecty/style"
 	gatewayv1 "github.com/razorpay/trino-gateway/rpc/gateway"
@@ -16,7 +17,8 @@ type QueryView struct {
 	vecty.Core
 	// core core.ICore
 
-	Query *gatewayv1.Query
+	Query   *gatewayv1.Query
+	classes vecty.ClassMap
 }
 
 /*
@@ -31,7 +33,7 @@ Text
 func (p *QueryView) Render() vecty.ComponentOrHTML {
 	return elem.Div(
 		vecty.Markup(
-			vecty.Class("box", "tile", "is-parent"),
+			vecty.Class("box", "tile", "is-parent", "notification", "is-light"),
 			vecty.Style("display", "flex"),
 			vecty.Style("flex-direction", "row"),
 		),
@@ -46,11 +48,16 @@ type QueryMetaItem struct {
 	v string
 }
 
+// TODO : FIX it
+var classes = vecty.ClassMap{
+	"is-info":  true,
+	"is-light": true,
+	"is-link":  false,
+}
+
 func (q *QueryMetaItem) Render() vecty.ComponentOrHTML {
 	return vecty.Text(q.v)
 }
-
-func (q *QueryMetaItem) onHover() {}
 
 func (p *QueryView) renderMeta() *vecty.HTML {
 	// https://trino-gateway.de.razorpay.com/ui/query.html?20211003_083931_06657_n3mb3
@@ -75,12 +82,17 @@ func (p *QueryView) renderMeta() *vecty.HTML {
 		items = append(items, item)
 	}
 
+	p.classes = classes
+
 	return elem.Div(
 		vecty.Markup(
-			vecty.Class("tile", "is-child"),
+			p.classes,
+			vecty.Class("tile", "is-child", "notification"),
 			style.Width("30%"),
 			vecty.Style("display", "flex"),
 			vecty.Style("flex-direction", "column"),
+			event.PointerEnter(p.onPointerEnter),
+			event.PointerLeave(p.onPointerLeave),
 		),
 		elem.Bold(
 			vecty.Markup(
@@ -107,7 +119,20 @@ func (p *QueryView) renderText() *vecty.HTML {
 			style.Overflow(style.OverflowHidden),
 			vecty.Style("text-overflow", "ellipsis"),
 			vecty.Style("resize", "vertical"),
+			vecty.Style("text-align", "center"),
 		),
 		vecty.Text(p.Query.GetText()),
 	)
+}
+
+func (p *QueryView) onPointerEnter(e *vecty.Event) {
+	p.classes["is-info"] = false
+	p.classes["is-link"] = true
+	vecty.Rerender(p)
+}
+
+func (p *QueryView) onPointerLeave(e *vecty.Event) {
+	p.classes["is-info"] = true
+	p.classes["is-link"] = false
+	vecty.Rerender(p)
 }
