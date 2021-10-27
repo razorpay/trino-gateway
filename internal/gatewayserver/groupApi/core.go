@@ -30,8 +30,7 @@ type ICore interface {
 	EvaluateBackendForGroups(ctx context.Context, groups []string) (string, string, error)
 }
 
-func NewCore(ctx *context.Context, group repo.IGroupRepo, backend repo.IBackendRepo) *Core {
-	_ = ctx
+func NewCore(group repo.IGroupRepo, backend repo.IBackendRepo) *Core {
 	return &Core{groupRepo: group, backendRepo: backend}
 }
 
@@ -45,7 +44,6 @@ type GroupCreateParams struct {
 }
 
 func (c *Core) CreateOrUpdateGroup(ctx context.Context, params *GroupCreateParams) error {
-
 	var backendMappings []models.GroupBackendsMapping
 	for _, backend := range params.Backends {
 		backendMappings = append(backendMappings, models.GroupBackendsMapping{
@@ -105,7 +103,6 @@ func (p *FindManyParams) GetIsEnabled() bool {
 }
 
 func (c *Core) FindMany(ctx context.Context, params IFindManyParams) ([]models.Group, error) {
-
 	conditionStr := structs.New(params)
 	// use the json tag name, so we can respect omitempty tags
 	conditionStr.TagName = "json"
@@ -180,7 +177,7 @@ func (c *Core) findBackend(ctx context.Context, group models.Group) (*string, er
 	provider.Logger(ctx).Infow("Choose a backend for group", map[string]interface{}{"group": group.GetID()})
 
 	// Step 0: get all backends
-	//var backends := (*group.GroupBackendsMappings)[0].BackendId
+	// var backends := (*group.GroupBackendsMappings)[0].BackendId
 
 	provider.Logger(ctx).Debugw("Fetch all backends in the group", map[string]interface{}{"group": group.GetID()})
 	backends := make([]string, len(group.GroupBackendsMappings))

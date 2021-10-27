@@ -13,7 +13,7 @@ type Core struct {
 }
 
 // NewCore creates Core.
-func NewCore(_ context.Context) *Core {
+func NewCore() *Core {
 	return &Core{
 		isHealthy: true,
 	}
@@ -31,7 +31,7 @@ func (c *Core) RunHealthCheck(ctx context.Context) (bool, error) {
 	// Checks the DB connection exists and is alive by executing a select query.
 	// err = c.repo.Alive(ctx)
 	if err != nil {
-		//logger.Ctx(ctx).Errorw("failed to execute select query on db connection", "error", err)
+		// logger.Ctx(ctx).Errorw("failed to execute select query on db connection", "error", err)
 
 		// Check fallback routing group exists & has atleast 1 active backend - IF NO set state to INVALID
 		//

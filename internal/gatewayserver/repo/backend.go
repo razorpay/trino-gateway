@@ -27,8 +27,7 @@ type BackendRepo struct {
 }
 
 // NewBackendRepo returns a new instance of *BackendRepo
-func NewBackendRepo(ctx context.Context, repo dbRepo.IDbRepo) *BackendRepo {
-	_ = ctx
+func NewBackendRepo(repo dbRepo.IDbRepo) *BackendRepo {
 	return &BackendRepo{repo: repo}
 }
 

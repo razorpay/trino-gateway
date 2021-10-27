@@ -244,8 +244,8 @@ message QueriesListRequest {
         DESC = 1;
     }
     Order order_by = 2;
-    int32 from = 3;
-    int32 to = 4;
+    int64 from = 3;
+    int64 to = 4;
     int32 skip = 5;
     reserved 6 to 10;
 
@@ -253,7 +253,6 @@ message QueriesListRequest {
     string username = 11;
     string backend_id = 12;
     string group_id = 13;
-    int64 submitted_at = 14;
 }
 
 message QueriesListResponse {

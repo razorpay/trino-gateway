@@ -6,10 +6,14 @@ import (
 	"github.com/fatih/structs"
 	"github.com/razorpay/trino-gateway/internal/gatewayserver/models"
 	"github.com/razorpay/trino-gateway/internal/gatewayserver/repo"
+	fetcherPkg "github.com/razorpay/trino-gateway/pkg/fetcher"
 )
+
+var entityName string = (&models.Query{}).EntityName()
 
 type Core struct {
 	queryRepo repo.IQueryRepo
+	fetcher   fetcherPkg.IClient
 }
 
 type ICore interface {
@@ -18,9 +22,14 @@ type ICore interface {
 	FindMany(ctx context.Context, params IFindManyParams) ([]models.Query, error)
 }
 
-func NewCore(ctx *context.Context, query repo.IQueryRepo) *Core {
-	_ = ctx
-	return &Core{queryRepo: query}
+func NewCore(query repo.IQueryRepo, fetcher fetcherPkg.IClient) *Core {
+	if !fetcher.IsEntityRegistered(entityName) {
+		fetcher.Register(entityName, &models.Query{}, &[]models.Query{})
+	}
+	return &Core{
+		queryRepo: query,
+		fetcher:   fetcher,
+	}
 }
 
 // CreateParams has attributes that are required for query.Create()
@@ -62,38 +71,62 @@ func (c *Core) GetQuery(ctx context.Context, id string) (*models.Query, error) {
 type IFindManyParams interface {
 	GetCount() int32
 	GetSkip() int32
-	GetFrom() int32
-	GetTo() int32
+	GetFrom() int64
+	GetTo() int64
 	// GetOrderBy() string
 
 	// custom
 	GetUsername() string
 	GetBackendId() string
 	GetGroupId() string
-	GetSubmittedAt() int64
 }
 
-type FindManyParams struct {
-	// pagination
-	Count int32
-	Skip  int32
-	From  int32
-	To    int32
-	// OrderBy string
-
+type Filters struct {
 	// custom
-	Username    string `json:"username"`
-	BackendId   string `json:"backend_id"`
-	GroupId     string `json:"group_id"`
-	SubmittedAt int64  `json:"submitted_at"`
+	Username  string `json:"username,omitempty"`
+	BackendId string `json:"backend_id,omitempty"`
+	GroupId   string `json:"group_id,omitempty"`
 }
 
-// TODO - https://github.com/razorpay/capital-loc/blob/10aa9a664b9eccaf68ac11f2b55ca93faba16fc2/internal/dashboard/core.go#L150
 func (c *Core) FindMany(ctx context.Context, params IFindManyParams) ([]models.Query, error) {
-	conditionStr := structs.New(params)
+	conditionStr := structs.New(Filters{
+		Username:  params.GetUsername(),
+		BackendId: params.GetBackendId(),
+		GroupId:   params.GetGroupId(),
+	})
 	// use the json tag name, so we can respect omitempty tags
 	conditionStr.TagName = "json"
 	conditions := conditionStr.Map()
 
-	return c.queryRepo.FindMany(ctx, conditions)
+	// return c.queryRepo.FindMany(ctx, conditions)
+
+	pagination := fetcherPkg.Pagination{}
+
+	pagination.Skip = int(params.GetSkip())
+	pagination.Limit = int(params.GetCount())
+
+	t := params
+	timeRange := fetcherPkg.TimeRange{}
+	if params.GetFrom() != int64(0) && params.GetTo() != int64(0) {
+		timeRange.From = t.GetFrom()
+		timeRange.To = t.GetTo()
+	}
+
+	fetchRequest := fetcherPkg.FetchMultipleRequest{
+		EntityName:   entityName,
+		Filter:       conditions,
+		Pagination:   pagination,
+		TimeRange:    timeRange,
+		IsTrashed:    false,
+		HasCreatedAt: true,
+	}
+
+	resp, err := c.fetcher.FetchMultiple(ctx, fetchRequest)
+	if err != nil {
+		return nil, err
+	}
+
+	queries := (resp.GetEntities().(map[string]interface{})[entityName]).(*[]models.Query)
+
+	return *queries, nil
 }

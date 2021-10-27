@@ -2,33 +2,68 @@ package components
 
 import (
 	"fmt"
+	"math"
 
 	"github.com/hexops/vecty"
 	"github.com/hexops/vecty/elem"
+	"github.com/hexops/vecty/event"
 	"github.com/hexops/vecty/prop"
 	"github.com/razorpay/trino-gateway/internal/frontend/core"
 )
 
 // QueryListView is a vecty.Component which represents the query history section
-type QueryListView struct {
+type queryListView struct {
 	vecty.Core
-	core  core.ICore
-	items vecty.List
+	core   core.ICore
+	items  vecty.List
+	params queryListViewParams
 }
 
-func (p *QueryListView) Render() vecty.ComponentOrHTML {
-	queries, err := p.core.GetAllQueries()
-	if err != nil {
-		fmt.Println(err.Error())
-		return vecty.Text(fmt.Sprintf("%s: %s", "Unable to fetch list of queries.", err.Error()))
+type queryListViewParams struct {
+	Username     string
+	MaxItems     int
+	TotalItems   int
+	PageIndex    int
+	ItemsPerPage int
+}
+
+func NewQueryListView(core core.ICore) *queryListView {
+	p := &queryListView{
+		core: core,
+		params: queryListViewParams{
+			PageIndex:    0,
+			ItemsPerPage: 100,
+			MaxItems:     1000,
+		},
 	}
+
+	if err := p.populateItems(); err != nil {
+		fmt.Printf("%s: %s\n", "Unable to fetch list of queries.", err.Error())
+	}
+	return p
+}
+
+func (p *queryListView) populateItems() error {
+	// Get total eligible items
+	queries, err := p.core.GetQueries(p.params.MaxItems, 0, p.params.Username)
+	if err != nil {
+		return err
+	}
+	p.params.TotalItems = len(queries)
+	// queries, err = p.core.GetQueries(p.params.ItemsPerPage, p.params.PageIndex*p.params.ItemsPerPage, p.params.Username)
+	// if err != nil {
+	// 	return err
+	// }
 	for _, q := range queries {
 		query := &QueryView{
 			Query: q,
 		}
 		p.items = append(p.items, query)
 	}
+	return nil
+}
 
+func (p *queryListView) Render() vecty.ComponentOrHTML {
 	return elem.Div(
 		vecty.Markup(
 			vecty.Class("container", "tile", "is-vertical", "is-ancestor"),
@@ -39,7 +74,7 @@ func (p *QueryListView) Render() vecty.ComponentOrHTML {
 	)
 }
 
-func (p *QueryListView) renderHeader() vecty.ComponentOrHTML {
+func (p *queryListView) renderHeader() vecty.ComponentOrHTML {
 	return elem.Div(
 		vecty.Markup(
 			vecty.Class("tile", "is-parent"),
@@ -48,7 +83,7 @@ func (p *QueryListView) renderHeader() vecty.ComponentOrHTML {
 			vecty.Markup(
 				vecty.Class("tile", "is-child"),
 			),
-			vecty.Text(fmt.Sprintf("Total: %d", len(p.items))),
+			vecty.Text(fmt.Sprintf("Total: %d", p.params.TotalItems)),
 		),
 		elem.Div(
 			vecty.Markup(
@@ -78,7 +113,7 @@ func (p *QueryListView) renderHeader() vecty.ComponentOrHTML {
 					vecty.Class("select", "is-rounded"),
 				),
 				elem.Select(
-					elem.Option(vecty.Text("10"+" Entries per page")),
+					elem.Option(vecty.Text("20"+" Entries per page")),
 					elem.Option(vecty.Text("50"+" Entries per page")),
 					elem.Option(vecty.Text("100"+" Entries per page")),
 				),
@@ -104,16 +139,27 @@ func (p *QueryListView) renderHeader() vecty.ComponentOrHTML {
 	)
 }
 
-func (p *QueryListView) onEditSearchbox(e vecty.Event) {
+func (p *queryListView) onEditSearchbox(e *vecty.Event) {
 }
 
-func (p *QueryListView) renderItems() vecty.ComponentOrHTML {
-	return elem.OrderedList(p.items)
+func (p *queryListView) onClickPageNavigation(_ *vecty.Event) {
+	p.params.PageIndex = p.params.PageIndex + 1
+	vecty.Rerender(p)
 }
 
-func (p *QueryListView) renderPagination() vecty.ComponentOrHTML {
-	totPag := fmt.Sprint(len(p.items))
-	currPag := fmt.Sprint(4)
+func (p *queryListView) renderItems() vecty.ComponentOrHTML {
+	r := vecty.List{}
+	for i, v := range p.items {
+		if i >= p.params.PageIndex*p.params.ItemsPerPage && i < (p.params.PageIndex+1)*p.params.ItemsPerPage {
+			r = append(r, v)
+		}
+	}
+	return elem.OrderedList(r)
+}
+
+func (p *queryListView) renderPagination() vecty.ComponentOrHTML {
+	totPag := int(math.Ceil(float64(p.params.TotalItems) / float64(p.params.ItemsPerPage)))
+	currPag := p.params.PageIndex + 1
 
 	return elem.Div(
 		vecty.Markup(
@@ -130,11 +176,18 @@ func (p *QueryListView) renderPagination() vecty.ComponentOrHTML {
 					vecty.Property("aria-label", "pagination"),
 				),
 				elem.Anchor(
-					vecty.Markup(vecty.Class("pagination-previous")),
+					vecty.Markup(
+						vecty.MarkupIf(currPag == 1, vecty.Style("display", "none")),
+						vecty.Class("pagination-previous"),
+					),
 					vecty.Text("Previous"),
 				),
 				elem.Anchor(
-					vecty.Markup(vecty.Class("pagination-next")),
+					vecty.Markup(
+						vecty.MarkupIf(currPag == totPag, vecty.Style("display", "none")),
+						vecty.Class("pagination-next"),
+						event.Click(p.onClickPageNavigation).PreventDefault(),
+					),
 					vecty.Text("Next page"),
 				),
 				elem.UnorderedList(
@@ -143,6 +196,7 @@ func (p *QueryListView) renderPagination() vecty.ComponentOrHTML {
 					),
 					elem.ListItem(elem.Anchor(
 						vecty.Markup(
+							vecty.MarkupIf(currPag == 1, vecty.Style("display", "none")),
 							vecty.Class("pagination-link"),
 							vecty.Property("aria-label", "Goto page 1"),
 						),
@@ -150,6 +204,7 @@ func (p *QueryListView) renderPagination() vecty.ComponentOrHTML {
 					)),
 					elem.ListItem(elem.Span(
 						vecty.Markup(
+							vecty.MarkupIf(currPag == 1, vecty.Style("display", "none")),
 							vecty.Class("pagination-ellipsis"),
 						),
 						vecty.Text("..."),
@@ -157,22 +212,24 @@ func (p *QueryListView) renderPagination() vecty.ComponentOrHTML {
 					elem.ListItem(elem.Anchor(
 						vecty.Markup(
 							vecty.Class("pagination-link", "is-current"),
-							vecty.Property("aria-label", "Goto page "+currPag),
+							vecty.Property("aria-label", fmt.Sprint("Goto page ", currPag)),
 						),
-						vecty.Text(currPag),
+						vecty.Text(fmt.Sprint(currPag)),
 					)),
 					elem.ListItem(elem.Span(
 						vecty.Markup(
+							vecty.MarkupIf(currPag == totPag, vecty.Style("display", "none")),
 							vecty.Class("pagination-ellipsis"),
 						),
 						vecty.Text("..."),
 					)),
 					elem.ListItem(elem.Anchor(
 						vecty.Markup(
+							vecty.MarkupIf(currPag == totPag, vecty.Style("display", "none")),
 							vecty.Class("pagination-link"),
-							vecty.Property("aria-label", "Goto page "+totPag),
+							vecty.Property("aria-label", fmt.Sprint("Goto page ", totPag)),
 						),
-						vecty.Text(totPag),
+						vecty.Text(fmt.Sprint(totPag)),
 					)),
 				),
 			),

@@ -23,8 +23,7 @@ type QueryRepo struct {
 }
 
 // NewCore returns a new instance of *Core
-func NewQueryRepo(ctx context.Context, repo dbRepo.IDbRepo) *QueryRepo {
-	_ = ctx
+func NewQueryRepo(repo dbRepo.IDbRepo) *QueryRepo {
 	return &QueryRepo{repo: repo}
 }
 

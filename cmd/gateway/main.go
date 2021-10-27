@@ -27,6 +27,7 @@ import (
 	"github.com/razorpay/trino-gateway/internal/monitor"
 	"github.com/razorpay/trino-gateway/internal/provider"
 	"github.com/razorpay/trino-gateway/internal/router"
+	"github.com/razorpay/trino-gateway/pkg/fetcher"
 	gatewayv1 "github.com/razorpay/trino-gateway/rpc/gateway"
 	// "github.com/razorpay/trino-gateway/twirpql"
 )
@@ -151,20 +152,18 @@ func startApiServer(ctx *context.Context) *http.Server {
 	mux := http.NewServeMux()
 
 	// // Define server handlers
-	healthCore := healthapi.NewCore(*ctx)
-	healthServer := healthapi.NewServer(healthCore)
+	healthServer := healthapi.NewServer(healthapi.NewCore())
 	healthServerHandler := gatewayv1.NewHealthCheckAPIServer(healthServer, nil)
 
-	gatewayDbRepo := dbRepo.NewDbRepo(*ctx, boot.DB)
-	gatewayBackendRepo := repo.NewBackendRepo(*ctx, gatewayDbRepo)
-	gatewayGroupRepo := repo.NewGroupRepo(*ctx, gatewayDbRepo)
-	gatewayPolicyRepo := repo.NewPolicyRepo(*ctx, gatewayDbRepo)
-	gatewayQueryRepo := repo.NewQueryRepo(*ctx, gatewayDbRepo)
+	gatewayDbRepo := dbRepo.NewDbRepo(boot.DB)
+	gatewayBackendRepo := repo.NewBackendRepo(gatewayDbRepo)
 
-	gatewayBackendCore := backendapi.NewCore(ctx, gatewayBackendRepo)
-	gatewayGroupCore := groupapi.NewCore(ctx, gatewayGroupRepo, gatewayBackendRepo)
-	gatewayPolicyCore := policyapi.NewCore(ctx, gatewayPolicyRepo)
-	gatewayQueryCore := queryapi.NewCore(ctx, gatewayQueryRepo)
+	fetcherClient := fetcher.New(boot.DB.Instance(*ctx))
+
+	gatewayBackendCore := backendapi.NewCore(gatewayBackendRepo)
+	gatewayGroupCore := groupapi.NewCore(repo.NewGroupRepo(gatewayDbRepo), gatewayBackendRepo)
+	gatewayPolicyCore := policyapi.NewCore(repo.NewPolicyRepo(gatewayDbRepo))
+	gatewayQueryCore := queryapi.NewCore(repo.NewQueryRepo(gatewayDbRepo), fetcherClient)
 
 	gatewayBackendServer := backendapi.NewServer(gatewayBackendCore)
 	gatewayGroupServer := groupapi.NewServer(gatewayGroupCore)

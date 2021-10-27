@@ -21,7 +21,7 @@ type Core struct {
 }
 
 type ICore interface {
-	GetAllQueries() ([]*gatewayv1.Query, error)
+	GetQueries(count int, skip int, user string) ([]*gatewayv1.Query, error)
 }
 
 func NewCore(gatewayHost string) *Core {
@@ -35,8 +35,12 @@ func NewCore(gatewayHost string) *Core {
 	}
 }
 
-func (c *Core) GetAllQueries() ([]*gatewayv1.Query, error) {
-	req := gatewayv1.QueriesListRequest{}
+func (c *Core) GetQueries(count int, skip int, user string) ([]*gatewayv1.Query, error) {
+	req := gatewayv1.QueriesListRequest{
+		Skip:     int32(skip),
+		Count:    int32(count),
+		Username: user,
+	}
 	queriesResp, err := c.gatewayApiClient.Query.ListQueries(context.Background(), &req)
 	if err != nil {
 		println(err.Error())

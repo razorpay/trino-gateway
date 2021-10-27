@@ -1,8 +1,11 @@
 package queryapi
 
-// import (
-// 	validation "github.com/go-ozzo/ozzo-validation/v4"
-// )
+import (
+	"context"
+
+	// validation "github.com/go-ozzo/ozzo-validation/v4"
+	gatewayv1 "github.com/razorpay/trino-gateway/rpc/gateway"
+)
 
 // func (cp *CreateParams) Validate() error {
 // 	err := validation.ValidateStruct(cp,
@@ -32,3 +35,14 @@ package queryapi
 
 // 	// return publicErr
 // }
+
+func ValidateMultiFetchRequest(ctx context.Context, req *gatewayv1.QueriesListRequest) error {
+	// err := validation.ValidateStruct(
+	// 	req,
+	// 	validation.Field(&req.EntityName,
+	// 		validation.Required))
+	// if err != nil {
+	// 	return rzperror.New(ctx, errorCodes.VALIDATION_ERROR, err).Report()
+	// }
+	return nil
+}

@@ -27,7 +27,7 @@ func (p *PageView) Render() vecty.ComponentOrHTML {
 					vecty.Class("container"),
 				),
 				p.renderHeader(),
-				&QueryListView{core: p.core},
+				NewQueryListView(p.core),
 				p.renderFooter(),
 			),
 		),

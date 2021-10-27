@@ -21,9 +21,7 @@ type IDbRepo interface {
 	Preload(ctx context.Context, query string, args ...interface{}) *spine.Repo
 }
 
-func NewDbRepo(ctx context.Context, db *db.DB) IDbRepo {
-	_ = ctx
-
+func NewDbRepo(db *db.DB) IDbRepo {
 	return &DbRepo{
 		Repo: spine.Repo{
 			Db: db,

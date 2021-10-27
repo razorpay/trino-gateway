@@ -28,8 +28,7 @@ type GroupRepo struct {
 }
 
 // NewCore returns a new instance of *Core
-func NewGroupRepo(ctx context.Context, repo dbRepo.IDbRepo) *GroupRepo {
-	_ = ctx
+func NewGroupRepo(repo dbRepo.IDbRepo) *GroupRepo {
 	return &GroupRepo{repo: repo}
 }
 

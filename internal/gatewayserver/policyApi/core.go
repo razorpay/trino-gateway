@@ -27,8 +27,7 @@ type ICore interface {
 	// FindPolicyForQuery(ctx context.Context, q string) (string, error)
 }
 
-func NewCore(ctx *context.Context, policy repo.IPolicyRepo) *Core {
-	_ = ctx
+func NewCore(policy repo.IPolicyRepo) *Core {
 	return &Core{policyRepo: policy}
 }
 
@@ -112,7 +111,6 @@ func (p *FindManyParams) GetRuleValue() string {
 }
 
 func (c *Core) FindMany(ctx context.Context, params IFindManyParams) ([]models.Policy, error) {
-
 	conditionStr := structs.New(params)
 	// use the json tag name, so we can respect omitempty tags
 	conditionStr.TagName = "json"

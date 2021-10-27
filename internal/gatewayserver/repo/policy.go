@@ -27,8 +27,7 @@ type PolicyRepo struct {
 }
 
 // NewCore returns a new instance of *Core
-func NewPolicyRepo(ctx context.Context, repo dbRepo.IDbRepo) *PolicyRepo {
-	_ = ctx
+func NewPolicyRepo(repo dbRepo.IDbRepo) *PolicyRepo {
 	return &PolicyRepo{repo: repo}
 }
 

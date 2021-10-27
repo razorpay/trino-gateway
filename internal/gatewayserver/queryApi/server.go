@@ -65,6 +65,11 @@ func (s *Server) ListQueries(ctx context.Context, req *gatewayv1.QueriesListRequ
 		"request": req.String(),
 	})
 	// TODO
+
+	if err := ValidateMultiFetchRequest(ctx, req); err != nil {
+		return nil, err
+	}
+
 	queries, err := s.core.FindMany(ctx, req)
 	if err != nil {
 		return nil, err

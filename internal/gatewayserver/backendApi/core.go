@@ -23,8 +23,7 @@ type ICore interface {
 	DisableBackend(ctx context.Context, id string) error
 }
 
-func NewCore(ctx *context.Context, backend repo.IBackendRepo) *Core {
-	_ = ctx
+func NewCore(backend repo.IBackendRepo) *Core {
 	return &Core{backendRepo: backend}
 }
 
