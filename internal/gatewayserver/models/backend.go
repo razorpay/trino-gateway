@@ -37,13 +37,13 @@ func (u *Backend) Validate() error {
 		validation.Field(&u.ID, validation.Required, validation.RuneLength(1, 50)),
 
 		// url, required, string, length 1-30
-		validation.Field(&u.Hostname, validation.Required, validation.RuneLength(1, 50)),
+		validation.Field(&u.Hostname, validation.Required, validation.RuneLength(1, 255)),
 
 		// Scheme, required, string,  Union(http, https)
 		validation.Field(&u.Scheme, validation.Required, validation.In("http", "https")),
 
 		// first_name, required, string, length 1-30
-		validation.Field(&u.ExternalUrl, validation.Required, validation.RuneLength(1, 50)),
+		validation.Field(&u.ExternalUrl, validation.Required, validation.RuneLength(1, 255)),
 
 		// validation.Field(&u.StatsUpdatedAt, validation.By(datatype.IsTimestamp)),
 
