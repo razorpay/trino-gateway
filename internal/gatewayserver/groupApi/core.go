@@ -59,8 +59,8 @@ func (c *Core) CreateOrUpdateGroup(ctx context.Context, params *GroupCreateParam
 	}
 	group.ID = params.ID
 	group.GroupBackendsMappings = backendMappings
-	_, exists := c.groupRepo.Find(ctx, params.ID)
-	if exists == nil { // update
+	_, notexists := c.groupRepo.Find(ctx, params.ID)
+	if notexists == nil { // update
 		return c.groupRepo.Update(ctx, &group)
 	} else { // create
 		return c.groupRepo.Create(ctx, &group)

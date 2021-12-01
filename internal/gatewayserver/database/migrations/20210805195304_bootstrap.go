@@ -105,7 +105,7 @@ func Up20210805195304(tx *sql.Tx) error {
 		return err
 	}
 
-	_, err = tx.Exec(`ALTER TABLE group_backends_mappings ADD FOREIGN KEY (backend_id) REFERENCES backends (id);`)
+	_, err = tx.Exec(`ALTER TABLE group_backends_mappings ADD FOREIGN KEY (backend_id) REFERENCES backends (id) ON DELETE CASCADE ON UPDATE CASCADE;`)
 	if err != nil {
 		return err
 	}

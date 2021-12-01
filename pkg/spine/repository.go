@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/razorpay/trino-gateway/pkg/spine/db"
+	"gorm.io/gorm/clause"
 	"gorm.io/plugin/dbresolver"
 
 	"gorm.io/gorm"
@@ -80,9 +81,21 @@ func (repo Repo) Update(ctx context.Context, receiver IModel, selectiveList ...s
 // Soft or hard delete of model depends on the models implementation
 // if the model composites SoftDeletableModel then it'll be soft deleted
 func (repo Repo) Delete(ctx context.Context, receiver IModel) error {
-	q := repo.DBInstance(ctx).Delete(receiver)
+	q := repo.DBInstance(ctx).Select(clause.Associations).Delete(receiver)
 
 	return GetDBError(q)
+}
+
+func (repo Repo) ClearAssociations(ctx context.Context, receiver IModel, name string) error {
+	err := repo.DBInstance(ctx).Model(receiver).Association(name).Clear()
+
+	return err
+}
+
+func (repo Repo) ReplaceAssociations(ctx context.Context, receiver IModel, name string, ass interface{}) error {
+	err := repo.DBInstance(ctx).Model(receiver).Association(name).Replace(ass)
+
+	return err
 }
 
 // FineMany will fetch multiple records form the entity defined by receiver which matched the condition provided

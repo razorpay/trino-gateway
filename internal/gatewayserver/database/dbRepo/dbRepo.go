@@ -19,6 +19,8 @@ type IDbRepo interface {
 	Delete(ctx context.Context, receiver spine.IModel) error
 	Update(ctx context.Context, receiver spine.IModel, attrList ...string) error
 	Preload(ctx context.Context, query string, args ...interface{}) *spine.Repo
+	ClearAssociations(ctx context.Context, receiver spine.IModel, name string) error
+	ReplaceAssociations(ctx context.Context, receiver spine.IModel, name string, ass interface{}) error
 }
 
 func NewDbRepo(db *db.DB) IDbRepo {

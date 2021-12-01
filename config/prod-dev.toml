@@ -1,4 +1,4 @@
 [app]
-    logLevel              = "info"
+    logLevel              = "debug"
 [monitor]
     interval              = "1m"

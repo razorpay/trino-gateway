@@ -32,8 +32,6 @@ func NewGroupRepo(repo dbRepo.IDbRepo) *GroupRepo {
 	return &GroupRepo{repo: repo}
 }
 
-func (c *GroupRepo) Dummy(ctx context.Context) error { return nil }
-
 func (r *GroupRepo) Create(ctx context.Context, group *models.Group) error {
 	err := r.repo.Create(ctx, group)
 	if err != nil {
@@ -47,6 +45,15 @@ func (r *GroupRepo) Create(ctx context.Context, group *models.Group) error {
 }
 
 func (r *GroupRepo) Update(ctx context.Context, group *models.Group) error {
+	if group.GroupBackendsMappings != nil {
+		err := r.repo.ReplaceAssociations(ctx, group, "GroupBackendsMappings", group.GroupBackendsMappings)
+		if err != nil {
+			provider.Logger(ctx).WithError(err).Errorw(
+				"group update failed, unable to update associations",
+				map[string]interface{}{"group_id": group.ID})
+			return err
+		}
+	}
 	err := r.repo.Update(ctx, group)
 	if err != nil {
 		if err == spine.NoRowAffected {
