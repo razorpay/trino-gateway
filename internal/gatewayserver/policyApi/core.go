@@ -2,11 +2,13 @@ package policyapi
 
 import (
 	"context"
+	"strconv"
 
 	"github.com/fatih/structs"
 	"github.com/razorpay/trino-gateway/internal/boot"
 	"github.com/razorpay/trino-gateway/internal/gatewayserver/models"
 	"github.com/razorpay/trino-gateway/internal/gatewayserver/repo"
+	"github.com/razorpay/trino-gateway/internal/provider"
 )
 
 type Core struct {
@@ -94,8 +96,8 @@ type FindManyParams struct {
 
 	// custom
 	IsEnabled bool   `json:"is_enabled"`
-	RuleType  string `json:"rule_value"`
-	RuleValue string `json:"rule_type"`
+	RuleType  string `json:"rule_type"`
+	RuleValue string `json:"rule_value"`
 }
 
 func (p *FindManyParams) GetIsEnabled() bool {
@@ -147,7 +149,12 @@ func (c *Core) EvaluateGroupsForClient(ctx context.Context, params *EvaluateClie
 	// policies, err := c.GetAllActivePolicies(ctx)
 	var err error
 
+	// Using a map instead of slice for returning groups, to simulate a 'set' data type
 	findGroupsForPolicyTypes := func(ruleType string, ruleValue string) (*map[string]struct{}, error) {
+		provider.Logger(ctx).Debugw("Fetching policies for rule", map[string]interface{}{
+			"ruleType":  ruleType,
+			"ruleValue": ruleValue,
+		})
 		activePolicies, err := c.FindMany(
 			ctx,
 			&FindManyParams{
@@ -158,15 +165,23 @@ func (c *Core) EvaluateGroupsForClient(ctx context.Context, params *EvaluateClie
 		if err != nil {
 			return nil, err
 		}
-		var gids map[string]struct{}
+		gids := make(map[string]struct{})
 		for _, policy := range activePolicies {
 			gids[policy.GroupId] = struct{}{}
+		}
+		provider.Logger(ctx).Debugw("Groups matching rule", map[string]interface{}{
+			"ruleType":  ruleType,
+			"ruleValue": ruleValue,
+			"GIDs":      gids,
+		})
+		if len(gids) == 0 {
+			gids = map[string]struct{}(nil)
 		}
 		return &gids, nil
 	}
 
 	// Step 1: find all policies
-	listeningPortPolicies, err := findGroupsForPolicyTypes("listening_port", string(params.ListeningPort))
+	listeningPortPolicies, err := findGroupsForPolicyTypes("listening_port", strconv.Itoa(int(params.ListeningPort)))
 	if err != nil {
 		return nil, err
 	}
@@ -187,6 +202,7 @@ func (c *Core) EvaluateGroupsForClient(ctx context.Context, params *EvaluateClie
 	}
 
 	// Step 2: take intersections of all non nil grp sets; a nil set = any grp; all sets nil == route to fallbackGrp;
+	provider.Logger(ctx).Debug("Taking intersection of all eligible non-nil groups sets")
 	gids := setIntersection(setIntersection(setIntersection(*listeningPortPolicies, *hostnamePolicies), *clientTagsPolicies), *clientConnPropsPolicies)
 
 	res := make([]string, len(gids))
@@ -204,8 +220,11 @@ func setIntersection(s1 map[string]struct{}, s2 map[string]struct{}) map[string]
 	if len(s1) > len(s2) {
 		s1, s2 = s2, s1 // better to iterate over a shorter set
 	}
+	if s1 == nil {
+		return s2
+	}
 	for k, _ := range s1 {
-		if (s2)[k] == struct{}{} {
+		if _, found := s2[k]; found {
 			s_intersection[k] = struct{}{}
 		}
 	}

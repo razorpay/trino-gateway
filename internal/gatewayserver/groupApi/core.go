@@ -3,6 +3,8 @@ package groupapi
 import (
 	"context"
 	"errors"
+	"fmt"
+	"reflect"
 	"sort"
 	"time"
 
@@ -129,34 +131,44 @@ func (c *Core) DisableGroup(ctx context.Context, id string) error {
 }
 
 func (c *Core) EvaluateBackendForGroups(ctx context.Context, groups []string) (string, string, error) {
-	// TODO
+	// Step 1: Get all active groups
+	provider.Logger(ctx).Debug("Fetching all active groups")
 
-	// Step 2: take intersections of all non nil grp sets; a nil set = any grp; all sets nil == route to fallbackGrp;
-	// Step 3: find active grps
 	var chosenGroup *models.Group
 	activeGroups, err := c.GetAllActiveGroups(ctx)
 	if err != nil {
 		return "", "", err
 	}
 
-	// Evaluate Backend for each
-	evaluatedBackendId := make(map[*models.Group]*string, len(activeGroups))
-	for _, g := range activeGroups {
-		backend_id, err := c.findBackend(ctx, g)
+	// Step 2: take intersections of all non nil grp sets; a nil set = any grp; all sets nil == route to fallbackGrp;
+	provider.Logger(ctx).Debug("Take intersection of active grps with provided grp list")
+	var eligibleGrps []*models.Group
+	for i, g := range activeGroups {
+		if sliceContains(groups, g.ID) {
+			eligibleGrps = append(eligibleGrps, &activeGroups[i])
+		}
+	}
+
+	// Step 3: Evaluate Backends for each
+	evaluatedBackendId := make(map[*models.Group]string, len(eligibleGrps))
+	for _, g := range eligibleGrps {
+		backend_id, err := c.findBackend(ctx, *g)
 		if err != nil {
 			return "", "", err
 		}
-		evaluatedBackendId[&g] = backend_id
 		if backend_id != nil {
-			chosenGroup = &g
+			evaluatedBackendId[g] = *backend_id
 		}
-
 	}
 
+	// Step 4: Choose group & a backend
 	var chosenBackendId string
-	if chosenGroup != nil {
-		chosenBackendId = *evaluatedBackendId[chosenGroup]
+	if len(evaluatedBackendId) > 0 {
+		chosenGroup = eligibleGrps[0]
+		chosenBackendId = evaluatedBackendId[chosenGroup]
+
 	} else {
+		// fallback grp
 		chosenGroup, err = c.GetGroup(ctx, boot.Config.Gateway.DefaultRoutingGroup)
 		if err != nil {
 			return "", "", err
@@ -168,7 +180,14 @@ func (c *Core) EvaluateBackendForGroups(ctx context.Context, groups []string) (s
 		if b == nil {
 			return "", "", errors.New("unable to find Backend for Default Routing Group")
 		}
+		chosenBackendId = *b
 	}
+
+	provider.Logger(ctx).Debugw("Backend Evaluated for groups", map[string]interface{}{
+		"chosenGroupId":              chosenGroup.GetID(),
+		"chosenBackendId":            chosenBackendId,
+		"evaluatedBackendsForGroups": fmt.Sprint(evaluatedBackendId),
+	})
 
 	return chosenBackendId, chosenGroup.GetID(), nil
 }
@@ -262,4 +281,40 @@ func (c *Core) findBackend(ctx context.Context, group models.Group) (*string, er
 	c.groupRepo.Update(ctx, &updGrp)
 
 	return &selectedBackendId, nil
+}
+
+// TODO: move to utils package
+// Finds intersection of 2 slices via simple comparison approach O(n^2)
+func simpleSliceIntersection(a interface{}, b interface{}) []interface{} {
+	set := make([]interface{}, 0)
+	av := reflect.ValueOf(a)
+
+	for i := 0; i < av.Len(); i++ {
+		el := av.Index(i).Interface()
+		if sliceContains(b, el) {
+			set = append(set, el)
+		}
+	}
+
+	return set
+}
+
+func simpleStringSliceIntersection(a []string, b []string) []string {
+	var res []string
+	for _, i := range simpleSliceIntersection(a, b) {
+		_i := i.(string)
+		res = append(res, _i)
+	}
+	return res
+}
+
+func sliceContains(a interface{}, e interface{}) bool {
+	v := reflect.ValueOf(a)
+
+	for i := 0; i < v.Len(); i++ {
+		if v.Index(i).Interface() == e {
+			return true
+		}
+	}
+	return false
 }
