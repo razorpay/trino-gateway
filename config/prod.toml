@@ -1,0 +1,4 @@
+[app]
+    logLevel              = "warn"
+[monitor]
+    interval              = "20s"
