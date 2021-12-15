@@ -117,5 +117,8 @@ func (s *Server) FindBackendForQuery(ctx context.Context, req *gatewayv1.FindBac
 	if err != nil {
 		return nil, err
 	}
-	return &gatewayv1.FindBackendForQueryResponse{BackendId: query.BackendId}, nil
+	return &gatewayv1.FindBackendForQueryResponse{
+		BackendId: query.BackendId,
+		GroupId:   query.GroupId,
+	}, nil
 }
