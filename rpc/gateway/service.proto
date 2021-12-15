@@ -266,4 +266,5 @@ message FindBackendForQueryRequest {
 
 message FindBackendForQueryResponse {
     string backend_id = 1; // required
+    string group_id = 2; // required
 }

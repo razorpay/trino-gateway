@@ -5,11 +5,14 @@ import (
 	"net/http"
 )
 
+// https://github.com/trinodb/trino/blob/master/client/trino-client/src/main/java/io/trino/client/ProtocolHeaders.java
+// Connection properties is not part of trino client protocol but is sent from some jdbc clients
 const (
 	PreparedStatement    = "Prepared-Statement"
 	User                 = "User"
 	ClientTags           = "Client-Tags"
 	ConnectionProperties = "Connection-Properties"
+	TransactionId        = "Transaction-Id"
 )
 
 var allowedPrefixes = [...]string{"Presto", "Trino"}

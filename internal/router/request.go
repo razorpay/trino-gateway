@@ -6,22 +6,12 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"strings"
 
 	"github.com/razorpay/trino-gateway/internal/provider"
 	"github.com/razorpay/trino-gateway/internal/router/trinoheaders"
 	gatewayv1 "github.com/razorpay/trino-gateway/rpc/gateway"
 )
-
-type ClientRequest struct {
-	username                   string
-	host                       string
-	headerConnectionProperties string
-	headerClientTags           string
-	queryId                    string
-	incomingPort               int32
-	queryText                  string
-	clientIp                   string
-}
 
 func extractQueryId(ctx *context.Context, body string) string {
 	isKillQuery := func() bool {
@@ -66,27 +56,15 @@ func extractQueryId(ctx *context.Context, body string) string {
 	return ""
 }
 
-func isValidRequest(ctx *context.Context, req *ClientRequest) bool {
-	if req.username == "" || req.queryText == "" {
-		return false
-	}
-	return true
-}
-
-func constructQueryFromReq(body string, preparedStmt string) string {
-	// TODO
-	return body
-}
-
-func (r *RouterServer) parseClientRequest(ctx *context.Context, req *http.Request) *ClientRequest {
-	body := ""
+func constructQueryFromReq(ctx *context.Context, req *http.Request) (string, error) {
 	// Assumption that HTTP spec is followed and body in GET is meaningless
+	body := ""
 	if req.Method == "GET" {
-		body = ""
+		return body, nil
 	} else if req.Method == "POST" {
-		b, e := parseBody(ctx, &req.Body)
-		if e != nil {
-			provider.Logger(*ctx).WithError(e).Error(fmt.Sprint(LOG_TAG, "unable to parse body of client request"))
+		b, err := parseBody(ctx, &req.Body)
+		if err != nil {
+			return body, err
 		}
 		provider.Logger(*ctx).Debugw(fmt.Sprint(LOG_TAG, "parsed body of client request"),
 			map[string]interface{}{
@@ -94,83 +72,137 @@ func (r *RouterServer) parseClientRequest(ctx *context.Context, req *http.Reques
 			})
 		body = b
 	}
-
-	query := constructQueryFromReq(body, trinoheaders.Get(trinoheaders.PreparedStatement, req))
-
-	return &ClientRequest{
-		username:                   trinoheaders.Get(trinoheaders.User, req),
-		queryId:                    extractQueryId(ctx, query),
-		incomingPort:               int32(r.port),
-		host:                       req.Host,
-		headerConnectionProperties: trinoheaders.Get(trinoheaders.ConnectionProperties, req),
-		headerClientTags:           trinoheaders.Get(trinoheaders.ClientTags, req),
-		queryText:                  query,
-	}
+	preparedStmt := trinoheaders.Get(trinoheaders.PreparedStatement, req)
+	// TODO
+	_ = preparedStmt
+	return body, nil
 }
 
-func (r *RouterServer) processRequest(
-	ctx *context.Context,
-	req *http.Request,
-) (*gatewayv1.Query, error) {
+func (r *RouterServer) ParseClientRequest(ctx *context.Context, req *http.Request) (cReq ClientRequest, err error) {
+	if req.Method == "GET" {
+		if strings.Contains(req.URL.Path, "ui/") {
+			return &UiRequest{
+				queryId: req.URL.RawQuery,
+			}, nil
+		} else if strings.Contains(req.URL.Path, "v1/info") ||
+			strings.Contains(req.URL.Path, "v1/status") {
+			return &ApiRequest{}, nil
+		}
+	} else if req.Method == "POST" {
 
-	var err error = nil
+		qText, err := constructQueryFromReq(ctx, req)
+		if err != nil {
+			provider.Logger(*ctx).WithError(err).Error(fmt.Sprint(LOG_TAG, "unable to construct Sql query from request"))
+		}
+		queryId := extractQueryId(ctx, qText)
+
+		query := &gatewayv1.Query{
+			Id:       queryId,
+			Text:     qText,
+			Username: trinoheaders.Get(trinoheaders.User, req),
+			ClientIp: req.RemoteAddr,
+		}
+
+		return &QueryRequest{
+			incomingPort:               int32(r.port),
+			headerConnectionProperties: trinoheaders.Get(trinoheaders.ConnectionProperties, req),
+			headerClientTags:           trinoheaders.Get(trinoheaders.ClientTags, req),
+			transactionId:              trinoheaders.Get(trinoheaders.TransactionId, req),
+			Query:                      query,
+			clientHost:                 req.Host,
+		}, nil
+	}
+	return nil, errors.New("client request type not supported by gateway")
+}
+
+func (r *RouterServer) ProcessRequest(ctx *context.Context, req *http.Request) (cReq ClientRequest, err error) {
+	cReq, err = r.ParseClientRequest(ctx, req)
+	if err != nil {
+		return nil, errors.New(fmt.Sprint("unable to parse Trino Request - ", err.Error()))
+	}
 	provider.Logger(*ctx).Infow(
 		fmt.Sprint(LOG_TAG, "Request received"),
 		map[string]interface{}{
 			"request":       stringifyHttpRequest(ctx, req),
+			"request.Url":   req.URL,
 			"listeningPort": r.port,
+			"request.Query": req.URL.Query(),
 		})
 
-	clientReq := r.parseClientRequest(ctx, req)
-	if !isValidRequest(ctx, clientReq) {
-		return nil, errors.New("invalid Request - not a valid Trino request")
-	}
-	querySaveReq := &gatewayv1.Query{
-		Id:       clientReq.queryId,
-		Text:     clientReq.queryText,
-		Username: clientReq.username,
-		ClientIp: clientReq.clientIp,
+	if err := cReq.Validate(); err != nil {
+		return nil, errors.New(fmt.Sprint("invalid Trino Request - ", err.Error()))
 	}
 
-	if clientReq.queryId != "" {
+	switch nt := cReq.(type) {
+	case *ApiRequest:
+		// TODO
+		return nil, nil
+
+	case *UiRequest:
 		findBackendIdResp, err := r.gatewayApiClient.Query.FindBackendForQuery(
 			*ctx,
-			&gatewayv1.FindBackendForQueryRequest{QueryId: clientReq.queryId},
+			&gatewayv1.FindBackendForQueryRequest{QueryId: nt.queryId},
 		)
-		if err == nil {
-			bId := findBackendIdResp.BackendId
-			err = r.prepareReqForRouting(ctx, req, querySaveReq, bId)
+		if err != nil {
+			provider.Logger(*ctx).WithError(err).
+				Errorw("Backend Unresolvable for queryId extracted for Ui Request.",
+					map[string]interface{}{"queryId": nt.queryId})
+			return nil, err
+		}
+		bId := findBackendIdResp.GetBackendId()
+		err = r.prepareReqForRouting(ctx, req, bId, nt)
+		if err != nil {
+			return nil, err
+		}
+
+		return nt, nil
+
+	case *QueryRequest:
+		if nt.Query.GetId() != "" {
+			findBackendIdResp, err := r.gatewayApiClient.Query.FindBackendForQuery(
+				*ctx,
+				&gatewayv1.FindBackendForQueryRequest{QueryId: nt.Query.GetId()},
+			)
+			if err != nil {
+				provider.Logger(*ctx).WithError(err).
+					Errorw("Backend Unresolvable for query metadata procedure. Ignoring extracted query_id",
+						map[string]interface{}{"queryId": nt.Query.GetId()})
+			}
+			nt.Query.BackendId = findBackendIdResp.GetBackendId()
+			nt.Query.GroupId = findBackendIdResp.GetGroupId()
+			err = r.prepareReqForRouting(ctx, req, nt.Query.GetBackendId(), nt)
 			if err != nil {
 				return nil, err
 			}
-			querySaveReq.BackendId = bId
 
-			return querySaveReq, nil
+			return nt, nil
 		}
-		provider.Logger(*ctx).WithError(err).
-			Errorw("Backend Unresolvable for query metadata procedure. Ignoring extracted query_id",
-				map[string]interface{}{"queryId": clientReq.queryId})
-	}
 
-	provider.Logger(*ctx).Debug(fmt.Sprint(LOG_TAG, "evaluating groups for client request"))
-	bId, gId, err := r.evaluateRoutingBackend(ctx, clientReq)
-	r.prepareReqForRouting(ctx, req, querySaveReq, bId)
-	if err != nil {
-		return nil, err
-	}
-	querySaveReq.GroupId = gId
-	querySaveReq.BackendId = bId
+		provider.Logger(*ctx).Debug(fmt.Sprint(LOG_TAG, "invoking routing backend evaluation"))
 
-	return querySaveReq, nil
+		bId, gId, err := r.evaluateRoutingBackend(ctx, *nt)
+		r.prepareReqForRouting(ctx, req, bId, nt)
+		if err != nil {
+			return nil, err
+		}
+		nt.Query.GroupId = gId
+		nt.Query.BackendId = bId
+
+		return nt, nil
+	default:
+		return nil, fmt.Errorf("unexpected type %T", nt)
+	}
 }
 
-func (r *RouterServer) evaluateRoutingBackend(ctx *context.Context, clientReq *ClientRequest) (backendId string, groupId string, err error) {
+func (r *RouterServer) evaluateRoutingBackend(ctx *context.Context, clientReq QueryRequest) (backendId string, groupId string, err error) {
 	evalGrpReq := &gatewayv1.EvaluateGroupsRequest{
 		IncomingPort:               clientReq.incomingPort,
-		Host:                       clientReq.host,
+		Host:                       clientReq.clientHost,
 		HeaderConnectionProperties: clientReq.headerConnectionProperties,
 		HeaderClientTags:           clientReq.headerClientTags,
 	}
+	provider.Logger(*ctx).Debug(fmt.Sprint(LOG_TAG, "evaluating groups for client"))
+
 	evalGrpResp, err := r.gatewayApiClient.Policy.
 		EvaluateGroupsForClient(*ctx, evalGrpReq)
 	if err != nil {
@@ -204,7 +236,8 @@ func (r *RouterServer) evaluateRoutingBackend(ctx *context.Context, clientReq *C
 	return backendId, groupId, nil
 }
 
-func (r *RouterServer) prepareReqForRouting(ctx *context.Context, req *http.Request, qSaveReq *gatewayv1.Query, backend_id string) error {
+// modifies http.req for preparing it for routing
+func (r *RouterServer) prepareReqForRouting(ctx *context.Context, req *http.Request, backend_id string, cReq ClientRequest) error {
 	provider.Logger(*ctx).Debug(fmt.Sprint(LOG_TAG, "fetching details of resolved backend"))
 	findBackendResp, err := r.gatewayApiClient.Backend.GetBackend(
 		*ctx,
@@ -219,19 +252,32 @@ func (r *RouterServer) prepareReqForRouting(ctx *context.Context, req *http.Requ
 	}
 	backend := findBackendResp.GetBackend()
 
-	req.URL.Host = backend.Hostname
-	req.URL.Scheme = backend.Scheme.Enum().String()
-	req.Host = backend.Hostname
+	var host, scheme string
+	// TODO: clean it
+	switch cr := cReq.(type) {
+	case *UiRequest:
+		host = backend.GetExternalUrl()
+		// TODO: track external url scheme separately
+		scheme = backend.GetScheme().Enum().String()
+	case *QueryRequest:
+		host = backend.GetHostname()
+		scheme = backend.GetScheme().Enum().String()
+		cr.Query.ServerHost = fmt.
+			Sprintf("%s://%s", backend.GetScheme().Enum().String(), backend.GetExternalUrl())
+	default:
+		return fmt.Errorf("unexpected type %T", cr)
+	}
+
+	req.URL.Host = host
+	req.URL.Scheme = scheme
+	req.Host = host
 	// TODO - validate and refine parsing of X-Forwarded headers
-	req.Header.Set("X-Forwarded-Host", backend.Hostname)
+	req.Header.Set("X-Forwarded-Host", host)
 	provider.Logger(*ctx).Infow(
 		fmt.Sprint(LOG_TAG, "Request modified, ready to be forwarded"),
 		map[string]interface{}{
 			"request": stringifyHttpRequest(ctx, req),
 		})
-
-	qSaveReq.ServerHost = fmt.
-		Sprintf("%s://%s", backend.GetScheme().Enum().String(), backend.GetExternalUrl())
 
 	return nil
 }

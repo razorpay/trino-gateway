@@ -42,8 +42,8 @@ const keyCtxSharedObj key = iota
 	3. goroutines + channel - cleaner but extra overhead
 */
 type ContextSharedObject struct {
-	query          *gatewayv1.Query
-	timerSt        *time.Time
+	clientRequest  ClientRequest
+	timerStart     *time.Time
 	preRoutingErr  *error
 	postRoutingErr *error
 }
@@ -81,7 +81,7 @@ func Server(ctx *context.Context, port int, apiClient *GatewayApiClient, routerH
 			var msg string
 			defer func(st time.Time) {
 				post_d := time.Since(st).Milliseconds()
-				tot_d := time.Since(*ctxSharedObj.timerSt).Milliseconds()
+				tot_d := time.Since(*ctxSharedObj.timerStart).Milliseconds()
 				metrics.responsesSentTotal.
 					WithLabelValues(metrics.env, req.Method, fmt.Sprint(status)).
 					Inc()
@@ -93,9 +93,10 @@ func Server(ctx *context.Context, port int, apiClient *GatewayApiClient, routerH
 					Observe(float64(tot_d))
 			}(time.Now())
 
-			if *ctxSharedObj.preRoutingErr != nil {
+			// Check whether preRouting & postRouting error pointers are initialized & then check their value
+			if ctxSharedObj.preRoutingErr != nil && *ctxSharedObj.preRoutingErr != nil {
 				status, msg = routerServer.handlePreRoutingError(ctx, *ctxSharedObj.preRoutingErr)
-			} else if *ctxSharedObj.postRoutingErr != nil {
+			} else if ctxSharedObj.postRoutingErr != nil && *ctxSharedObj.postRoutingErr != nil {
 				status, msg = routerServer.handlePostRoutingError(ctx, *ctxSharedObj.postRoutingErr)
 			} else {
 				status, msg = routerServer.handleServerError(ctx, err)
@@ -133,13 +134,25 @@ func (r *RouterServer) handleClientRequest(ctx *context.Context, req *http.Reque
 			Observe(float64(duration))
 	}(st)
 
-	q, err := r.processRequest(ctx, req)
+	cReq, err := r.ProcessRequest(ctx, req)
 	if err != nil {
 		r.handleClientRequestRoutingError(ctx, req, err)
 	} else {
-		metrics.requestsRoutedTotal.
-			WithLabelValues(metrics.env, req.Method, fmt.Sprint(r.port), q.GroupId, q.BackendId).
-			Inc()
+		switch nt := cReq.(type) {
+		case *ApiRequest:
+		case *UiRequest:
+		case *QueryRequest:
+			metrics.requestsRoutedTotal.
+				WithLabelValues(
+					metrics.env,
+					req.Method,
+					fmt.Sprint(r.port),
+					nt.Query.GetGroupId(),
+					nt.Query.GetBackendId(),
+				).
+				Inc()
+		default:
+		}
 	}
 
 	provider.Logger(*ctx).Debugw(
@@ -149,8 +162,8 @@ func (r *RouterServer) handleClientRequest(ctx *context.Context, req *http.Reque
 		})
 
 	c := &ContextSharedObject{
-		query:         q,
-		timerSt:       &st,
+		clientRequest: cReq,
+		timerStart:    &st,
 		preRoutingErr: &err,
 	}
 	reqCtx := context.WithValue(req.Context(), keyCtxSharedObj, c)
@@ -184,7 +197,7 @@ func (r *RouterServer) handleServerResponse(ctx *context.Context, resp *http.Res
 		provider.Logger(*ctx).WithError(err).Error("unable to cast shared object from context")
 		return err
 	}
-	err = r.processResponse(ctx, resp, ctxSharedObj.query)
+	err = r.ProcessResponse(ctx, resp, ctxSharedObj.clientRequest)
 	if err != nil {
 		provider.Logger(*ctx).Errorw(
 			fmt.Sprint(LOG_TAG, "Unable to process server response"),
@@ -194,15 +207,15 @@ func (r *RouterServer) handleServerResponse(ctx *context.Context, resp *http.Res
 	} else {
 		defer func(st time.Time) {
 			post_d := time.Since(st).Milliseconds()
-			tot_d := time.Since(*ctxSharedObj.timerSt).Milliseconds()
+			tot_d := time.Since(*ctxSharedObj.timerStart).Milliseconds()
 			metrics.responsesSentTotal.
-				WithLabelValues(metrics.env, resp.Request.Method, fmt.Sprint(200)).
+				WithLabelValues(metrics.env, resp.Request.Method, fmt.Sprint(http.StatusOK)).
 				Inc()
 			metrics.requestPostRoutingDelays.
-				WithLabelValues(metrics.env, resp.Request.Method, fmt.Sprint(200)).
+				WithLabelValues(metrics.env, resp.Request.Method, fmt.Sprint(http.StatusOK)).
 				Observe(float64(post_d))
 			metrics.responseDurations.
-				WithLabelValues(metrics.env, resp.Request.Method, fmt.Sprint(200)).
+				WithLabelValues(metrics.env, resp.Request.Method, fmt.Sprint(http.StatusOK)).
 				Observe(float64(tot_d))
 		}(time.Now())
 	}
