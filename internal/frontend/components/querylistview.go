@@ -113,9 +113,9 @@ func (p *queryListView) renderHeader() vecty.ComponentOrHTML {
 					vecty.Class("select", "is-rounded"),
 				),
 				elem.Select(
-					elem.Option(vecty.Text("20"+" Entries per page")),
-					elem.Option(vecty.Text("50"+" Entries per page")),
 					elem.Option(vecty.Text("100"+" Entries per page")),
+					elem.Option(vecty.Text("200"+" Entries per page")),
+					elem.Option(vecty.Text("500"+" Entries per page")),
 				),
 			),
 

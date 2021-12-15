@@ -44,10 +44,10 @@ func (p *PageView) renderHeader() *vecty.HTML {
 				vecty.Markup(
 					vecty.Class("is-active"),
 				),
-				&TabView{title: "Query History"},
+				&TabView{title: "Query History", hrefUrl: "#"},
 			),
-			elem.ListItem(&TabView{title: "Dashboard"}),
-			elem.ListItem(&TabView{title: "Admin"}),
+			elem.ListItem(&TabView{title: "Dashboard", hrefUrl: "#"}),
+			elem.ListItem(&TabView{title: "Admin", hrefUrl: "/admin/swaggerui"}),
 		),
 	)
 }

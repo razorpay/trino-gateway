@@ -3,7 +3,6 @@ package components
 import (
 	"github.com/hexops/vecty"
 	"github.com/hexops/vecty/elem"
-	"github.com/hexops/vecty/event"
 	"github.com/hexops/vecty/prop"
 )
 
@@ -12,15 +11,17 @@ type TabView struct {
 	vecty.Core
 	title      string
 	isSelected bool
-	component  *vecty.ComponentOrHTML
+	// TODO: remove this
+	hrefUrl   string
+	component *vecty.ComponentOrHTML
 }
 
 func (p *TabView) Render() vecty.ComponentOrHTML {
 	return elem.Anchor(
 		vecty.Markup(
 			vecty.MarkupIf(p.isSelected, vecty.Class("is-active")),
-			prop.Href("#"),
-			event.Click(p.onClick).PreventDefault(),
+			prop.Href(p.hrefUrl),
+			// event.Click(p.onClick).PreventDefault(),
 		),
 		vecty.Text(p.title),
 	)
