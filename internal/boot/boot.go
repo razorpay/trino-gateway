@@ -86,7 +86,9 @@ func initialize(ctx context.Context, env string) error {
 
 	// Puts git commit hash into config.
 	// This is not read automatically because env variable is not in expected format.
-	Config.App.GitCommitHash = os.Getenv("GIT_COMMIT_HASH")
+	if v, found := os.LookupEnv("GIT_COMMIT_HASH"); found {
+		Config.App.GitCommitHash = v
+	}
 
 	// Register DB stats prometheus collector
 	dbInstance, err := DB.Instance(ctx).DB()
@@ -146,7 +148,6 @@ func InitLogger(ctx context.Context) *logger.ZapLogger {
 	}
 
 	Logger, err := logger.NewLogger(lgrConfig)
-
 	if err != nil {
 		panic("failed to initialize logger")
 	}

@@ -29,7 +29,7 @@ jobs:
           file: build/docker/prod/Dockerfile
           push: true
           tags: razorpay/presto_gateway:${{ github.sha }}
-          build_args: GIT_COMMIT_HASH=${{ github.sha }}
+          build-args: GIT_COMMIT_HASH=${{ github.sha }}
       -
         name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
