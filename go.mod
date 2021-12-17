@@ -29,9 +29,9 @@ require (
 	github.com/twitchtv/twirp v8.1.1+incompatible
 	go.uber.org/zap v1.19.1
 	google.golang.org/protobuf v1.27.1
-	gorm.io/driver/mysql v1.2.1
-	gorm.io/driver/postgres v1.2.3
-	gorm.io/gorm v1.22.4
+	gorm.io/driver/mysql v1.1.2
+	gorm.io/driver/postgres v1.1.2
+	gorm.io/gorm v1.21.16
 	gorm.io/plugin/dbresolver v1.1.0
 )
 
