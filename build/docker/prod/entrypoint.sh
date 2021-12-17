@@ -3,7 +3,6 @@
 initialize() {
     # Init app secrets + envvars
     echo "Initializing app"
-    TRINO-GATEWAY_APP_GITCOMMITHASH=${GIT_COMMIT_HASH}
 }
 
 check_db_connection() {
