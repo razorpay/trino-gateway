@@ -43,4 +43,5 @@ type Monitor struct {
 		User     string
 		Password string
 	}
+	HealthCheckSql string
 }

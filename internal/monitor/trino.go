@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/razorpay/trino-gateway/internal/boot"
 	"github.com/razorpay/trino-gateway/internal/provider"
 	"github.com/trinodb/trino-go-client/trino"
 )
@@ -64,7 +65,6 @@ func (t *TrinoClient) initDbClient(ctx *context.Context) error {
 	dsn := t.generateDsn(ctx, CustomClientKey)
 
 	client, err := sql.Open("trino", dsn)
-
 	if err != nil {
 		// boot.Logger(ctx).Error("could not create data-lake client")
 
@@ -87,8 +87,8 @@ func (t *TrinoClient) generateDsn(ctx *context.Context, key string) string {
 		key)
 }
 
+// Checks whether cluster is up purely via healthcheck / clusterInfo Apis
 func (t *TrinoClient) IsClusterUp(ctx *context.Context) (bool, error) {
-
 	client := t.httpClient(ctx)
 
 	path := fmt.Sprintf("%s://%s/v1/info", t.url.Scheme, t.url.Host)
@@ -158,8 +158,36 @@ func (t *TrinoClient) IsClusterUp(ctx *context.Context) (bool, error) {
 	return true, nil
 }
 
-func (t *TrinoClient) RunQuery(ctx *context.Context, q string) (*sql.Rows, error) {
+func (t *TrinoClient) IsClusterHealthy(ctx *context.Context) (bool, error) {
+	// Run healthcheck sql query
+	q := boot.Config.Monitor.HealthCheckSql
+	rows, err := t.RunQuery(ctx, q)
+	if err != nil {
+		provider.Logger(*ctx).WithError(err).Errorw(
+			"error executing healthcheck trino query",
+			map[string]interface{}{"query": q})
+		return false, err
+	}
+	defer rows.Close()
 
+	for rows.Next() {
+		// The result of the healthcheck query is irrelevant
+		// iterate over it fully so Server can mark query as Finished instead of
+		// User Cancelled or User Abandoned.
+	}
+	if err = rows.Err(); err != nil {
+		provider.Logger(*ctx).WithError(err).Errorw(
+			"healthcheck query failed",
+			map[string]interface{}{"query": q})
+		return false, err
+	}
+	provider.Logger(*ctx).Debugw(
+		"healthcheck query ran succesfully",
+		map[string]interface{}{"query": q})
+	return true, nil
+}
+
+func (t *TrinoClient) RunQuery(ctx *context.Context, q string) (*sql.Rows, error) {
 	if t.db == nil {
 		// log
 		err := t.initDbClient(ctx)

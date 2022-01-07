@@ -173,10 +173,20 @@ func (c *Core) isBackendUp(ctx *context.Context, b *gatewayv1.Backend) (bool, er
 		user: boot.Config.Monitor.Trino.User,
 		url:  url.URL{Scheme: b.GetScheme().Enum().String(), Host: b.GetHostname()},
 	}
-	h, err := trinoClient.IsClusterUp(ctx)
+	isUp, err := trinoClient.IsClusterUp(ctx)
 	if err != nil {
 		provider.Logger(*ctx).WithError(err).Errorw(
-			"error checking trinocluster health",
+			"error checking whether trino cluster is up",
+			map[string]interface{}{"backend_id": b.GetId()})
+		return false, err
+	}
+	if !isUp {
+		return false, nil
+	}
+	h, err := trinoClient.IsClusterHealthy(ctx)
+	if err != nil {
+		provider.Logger(*ctx).WithError(err).Errorw(
+			"error checking trino cluster health",
 			map[string]interface{}{"backend_id": b.GetId()})
 		return false, err
 	}
@@ -230,7 +240,7 @@ func (c *Core) getBackendLoad(ctx *context.Context, b *gatewayv1.Backend) (int32
 		" GROUP BY state",
 	)
 	provider.Logger(*ctx).Debugw(
-		"Fetching Query info from trino cluster",
+		"Fetching Load info from trino cluster",
 		map[string]interface{}{"backend_id": b.GetId(), "query": q})
 	rows, err := trinoClient.RunQuery(ctx, q)
 	if err != nil {

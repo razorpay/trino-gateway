@@ -38,6 +38,7 @@
 [monitor]
     interval              = "10m"
     statsValiditySecs     = 0
+    healthCheckSql        = "SELECT 1"
     [monitor.trino]
         user              = "trino-gateway"
         password          = ""

@@ -63,6 +63,7 @@ func (m *Monitor) Execute(ctx *context.Context) {
 	newSts, err := m.core.EvaluateBackendNewState(ctx)
 	if err != nil {
 		provider.Logger(*ctx).WithError(err).Error("Error evaluating new states for backends")
+		return
 	}
 
 	provider.Logger(*ctx).Debug("Deactivating backends")
