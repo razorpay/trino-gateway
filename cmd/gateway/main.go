@@ -88,7 +88,7 @@ func main() {
 	shutDown(ctx, append(append(gatewayServers, apiServer), metricServer)...)
 }
 
-func startGatewayServers(ctx *context.Context) []*http.Server {
+func startGatewayServers(_ctx *context.Context) []*http.Server {
 	// Start trino gateway reverse proxy servers on ports
 
 	gatewayApiUrl := fmt.Sprint("http://localhost:", boot.Config.App.Port)
@@ -99,12 +99,20 @@ func startGatewayServers(ctx *context.Context) []*http.Server {
 		Query:   gatewayv1.NewQueryApiProtobufClient(gatewayApiUrl, &http.Client{}),
 	}
 
+	header := make(http.Header)
+	header.Set(boot.Config.Auth.TokenHeaderKey, boot.Config.Auth.Token)
+	ctx, err := twirp.WithHTTPRequestHeaders(*_ctx, header)
+	if err != nil {
+		log.Printf("twirp error setting headers: %s", err)
+		return nil
+	}
+
 	servers := make([]*http.Server, len(boot.Config.Gateway.Ports))
 	for i, port := range boot.Config.Gateway.Ports {
-		server := router.Server(ctx, port, &gatewayClient, boot.Config.App.ServiceExternalHostname)
+		server := router.Server(&ctx, port, &gatewayClient, boot.Config.App.ServiceExternalHostname)
 		servers[i] = server
 
-		go listenHttp(ctx, server, port)
+		go listenHttp(&ctx, server, port)
 	}
 	return servers
 }
@@ -120,16 +128,24 @@ func listenHttp(ctx *context.Context, server *http.Server, port int) {
 	}
 }
 
-func startMonitor(ctx *context.Context) {
+func startMonitor(_ctx *context.Context) {
 	// Start backend health check monitors
 	gatewayApiUrl := fmt.Sprint("http://localhost:", boot.Config.App.Port)
 	client := gatewayv1.NewBackendApiProtobufClient(gatewayApiUrl, &http.Client{})
 	core := monitor.NewCore(client)
 
-	m := monitor.NewMonitor(core)
-	err := m.Schedule(ctx, boot.Config.Monitor.Interval)
+	header := make(http.Header)
+	header.Set(boot.Config.Auth.TokenHeaderKey, boot.Config.Auth.Token)
+	ctx, err := twirp.WithHTTPRequestHeaders(*_ctx, header)
 	if err != nil {
-		provider.Logger(*ctx).WithError(err).Fatal(
+		log.Printf("twirp error setting headers: %s", err)
+		return
+	}
+
+	m := monitor.NewMonitor(core)
+	err = m.Schedule(&ctx, boot.Config.Monitor.Interval)
+	if err != nil {
+		provider.Logger(ctx).WithError(err).Fatal(
 			"Unable to start Monitoring module",
 		)
 	}
@@ -179,10 +195,10 @@ func startApiServer(ctx *context.Context) *http.Server {
 	mux.Handle(gatewayv1.HealthCheckAPIPathPrefix, healthServerHandler)
 	// grp, gatewayGroupCore.GetGroup(*ctx, boot.Config.Gateway.DefaultRoutingGroup)
 
-	mux.Handle(gatewayv1.BackendApiPathPrefix, gatewayBackendServerHandler)
-	mux.Handle(gatewayv1.GroupApiPathPrefix, gatewayGroupServerHandler)
-	mux.Handle(gatewayv1.PolicyApiPathPrefix, gatewayPolicyServerHandler)
-	mux.Handle(gatewayv1.QueryApiPathPrefix, gatewayQueryServerHandler)
+	mux.Handle(gatewayv1.BackendApiPathPrefix, hooks.WithAuth(gatewayBackendServerHandler))
+	mux.Handle(gatewayv1.GroupApiPathPrefix, hooks.WithAuth(gatewayGroupServerHandler))
+	mux.Handle(gatewayv1.PolicyApiPathPrefix, hooks.WithAuth(gatewayPolicyServerHandler))
+	mux.Handle(gatewayv1.QueryApiPathPrefix, hooks.WithAuth(gatewayQueryServerHandler))
 
 	// Serve the current git commit hash
 	mux.HandleFunc("/commit.txt", func(w http.ResponseWriter, _ *http.Request) {
@@ -217,7 +233,7 @@ func twirpHooks() *twirp.ServerHooks {
 	return twirp.ChainHooks(
 		hooks.Metric(),
 		hooks.RequestID(),
-		// hooks.Auth(),
+		hooks.Auth(),
 		hooks.Ctx())
 }
 

@@ -28,8 +28,8 @@
         connectionMaxLifetime = 0
 
 [auth]
-    username              = "test"
-    password              = "test123"
+    token              = "test123"
+    tokenHeaderKey     = "X-Auth-Key"
 
 [gateway]
     ports                 = [8080, 8081]

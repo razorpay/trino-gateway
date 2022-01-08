@@ -27,8 +27,8 @@ type App struct {
 }
 
 type Auth struct {
-	Password string
-	Username string
+	Token          string
+	TokenHeaderKey string
 }
 
 type Gateway struct {
