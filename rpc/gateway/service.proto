@@ -1,0 +1,310 @@
+syntax = "proto3";
+
+package razorpay.gateway;
+
+// import "google/protobuf/struct.proto";
+
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+  schemes: [HTTP, HTTPS];
+  base_path: "/twirp/";
+  security: {
+    security_requirement :{
+      key: "ApiKeyAuth";
+      value: {};
+    }
+  }
+  security_definitions: {
+    security: {
+      key: "ApiKeyAuth";
+      value: {
+        type: TYPE_API_KEY;
+        in: IN_HEADER;
+        name: "X-Auth-Key";
+      };
+    };
+    // security: {
+    //   key: "BasicAuth";
+    //   value: {
+    //       type: TYPE_BASIC;
+    //   }
+    // };
+  }
+};
+
+option go_package = "./rpc/gateway;gatewayv1";
+
+message Empty {}
+
+service HealthCheckAPI {
+    // Check returns HealthCheckResponse for the requested service.
+    rpc Check(HealthCheckRequest) returns (HealthCheckResponse);
+}
+
+message HealthCheckRequest {
+    string service = 1;
+}
+
+message HealthCheckResponse {
+    // ServingStatus denotes the status of the service.
+    enum ServingStatus {
+        SERVING_STATUS_INVALID = 0;
+        SERVING_STATUS_UNKNOWN = 1;
+        SERVING_STATUS_SERVING = 2;
+        SERVING_STATUS_NOT_SERVING = 3;
+    }
+    ServingStatus serving_status = 1;
+}
+
+service BackendApi {
+    rpc CreateOrUpdateBackend (Backend) returns (Empty);
+    rpc GetBackend (BackendGetRequest) returns (BackendGetResponse);
+    rpc ListAllBackends (Empty) returns (BackendListAllResponse);
+    rpc DeleteBackend (BackendDeleteRequest) returns (Empty);
+    rpc EnableBackend (BackendEnableRequest) returns (Empty);
+    rpc DisableBackend (BackendDisableRequest) returns (Empty);
+    rpc MarkHealthyBackend (BackendMarkHealthyRequest) returns (Empty);
+    rpc MarkUnhealthyBackend (BackendMarkUnhealthyRequest) returns (Empty);
+    rpc UpdateClusterLoadBackend (BackendUpdateClusterLoadRequest) returns (Empty);
+}
+
+message Backend {
+    enum Scheme {
+        http = 0;
+        https = 1;
+    }
+    string id = 1; // required
+    bool is_enabled = 2;
+    Scheme scheme = 3; // required
+    string hostname = 4; // required
+    string external_url = 5;
+    string uptime_schedule = 6;
+    bool is_healthy = 7;
+    int32 cluster_load = 8;
+    int32 threshold_cluster_load = 9;
+    int64 stats_updated_at = 10;
+}
+
+message BackendCreateResponse {
+    string id = 1; // required
+}
+
+message BackendGetRequest {
+    string id = 1; // required
+}
+
+message BackendGetResponse {
+    Backend backend = 1; //required
+}
+
+message BackendListAllResponse {
+    repeated Backend items = 1;
+}
+
+message BackendDeleteRequest {
+    string id = 1; // required
+}
+
+message BackendEnableRequest {
+    string id = 1; // required
+}
+
+message BackendDisableRequest {
+    string id = 1; // required
+}
+
+message BackendMarkHealthyRequest {
+    string id = 1; // required
+}
+
+message BackendMarkUnhealthyRequest {
+    string id = 1; // required
+}
+
+message BackendUpdateClusterLoadRequest {
+    string id = 1; // required
+    int32 cluster_load = 2; //required
+}
+
+service GroupApi {
+    rpc CreateOrUpdateGroup (Group) returns (Empty);
+    rpc GetGroup (GroupGetRequest) returns (GroupGetResponse);
+    rpc ListAllGroups (Empty) returns (GroupListAllResponse);
+    rpc DeleteGroup (GroupDeleteRequest) returns (Empty);
+    rpc EnableGroup (GroupEnableRequest) returns (Empty);
+    rpc DisableGroup (GroupDisableRequest) returns (Empty);
+
+    rpc EvaluateBackendForGroups(EvaluateBackendRequest) returns (EvaluateBackendResponse);
+}
+
+message Group {
+    enum RoutingStrategy {
+        LEAST_LOAD = 0;
+        ROUND_ROBIN = 1;
+        RANDOM = 2;
+    }
+    string id = 1; // required
+    repeated string backends = 2; // required
+    RoutingStrategy strategy = 3;
+    string last_routed_backend = 4;
+    bool is_enabled = 5;
+}
+
+message GroupGetRequest {
+    string id = 1; // required
+}
+
+message GroupGetResponse {
+    Group group = 2;
+}
+
+message GroupListAllResponse {
+    repeated Group items = 1;
+}
+
+message GroupDeleteRequest {
+    string id = 1; // required
+}
+
+message GroupEnableRequest {
+    string id = 1; // required
+}
+
+message GroupDisableRequest {
+    string id = 1; // required
+}
+
+message EvaluateBackendRequest  {
+    repeated string group_ids = 1; // required
+}
+
+message EvaluateBackendResponse  {
+    string backend_id = 1; // required
+    string group_id = 2; // required
+}
+
+service PolicyApi {
+    rpc CreateOrUpdatePolicy (Policy) returns (Empty);
+    rpc GetPolicy (PolicyGetRequest) returns (PolicyGetResponse);
+    rpc ListAllPolicies (Empty) returns (PolicyListAllResponse);
+    rpc DeletePolicy (PolicyDeleteRequest) returns (Empty);
+    rpc EnablePolicy (PolicyEnableRequest) returns (Empty);
+    rpc DisablePolicy (PolicyDisableRequest) returns (Empty);
+
+    rpc EvaluateGroupsForClient(EvaluateGroupsRequest) returns (EvaluateGroupsResponse);
+}
+
+message Policy {
+    message Rule {
+        enum RuleType {
+            header_connection_properties = 0;
+            header_client_tags = 1;
+            header_host = 2;
+            listening_port = 3;
+            // cron = 4;
+        }
+        RuleType type = 1; // required
+        string value = 2; // required
+    }
+    string id = 1; // required
+    Rule rule = 2; // required
+    string group = 3; // required
+    string fallback_group = 4;
+    bool is_enabled = 5;
+}
+
+message PolicyGetRequest {
+    string id = 1; // required
+}
+
+message PolicyGetResponse {
+    Policy policy = 1; // required
+}
+
+message PolicyListAllResponse {
+    repeated Policy items = 1;
+}
+
+message PolicyDeleteRequest {
+    string id = 1; // required
+}
+
+message PolicyEnableRequest {
+    string id = 1; // required
+}
+
+message PolicyDisableRequest {
+    string id = 1; // required
+}
+
+message EvaluateGroupsRequest {
+    int32 incoming_port = 1;
+    string host = 2;
+    string header_connection_properties = 3;
+    string header_client_tags = 4;
+}
+
+message EvaluateGroupsResponse {
+    repeated string group_ids = 1; // required
+}
+
+service QueryApi {
+    rpc CreateOrUpdateQuery (Query) returns (Empty);
+    rpc GetQuery (QueryGetRequest) returns (QueryGetResponse);
+    rpc ListQueries (QueriesListRequest) returns (QueriesListResponse);
+
+    rpc FindBackendForQuery(FindBackendForQueryRequest) returns (FindBackendForQueryResponse);
+}
+
+message Query {
+    string id = 1; // required
+    string text = 2; // required
+    int64 submitted_at = 3; // required
+    string client_ip = 4;
+    string group_id = 5; // required
+    string backend_id = 6; // required
+    string username = 7;
+    string server_host = 8;
+}
+
+message QueryGetRequest {
+    string id = 1; // required
+}
+
+message QueryGetResponse {
+    Query query = 1; // required
+}
+
+message QueriesListRequest {
+    enum Order {
+        ASC = 0;
+        DESC = 1;
+    }
+    // standard
+    int32 count = 1;
+    Order order_by = 2;
+    int64 from = 3;
+    int64 to = 4;
+    int32 skip = 5;
+    reserved 6 to 10;
+
+    // custom fields to filter on
+    string username = 11;
+    string backend_id = 12;
+    string group_id = 13;
+}
+
+message QueriesListResponse {
+    int32 Count = 1; // required
+    repeated Query items = 2;
+}
+
+message FindBackendForQueryRequest {
+    string query_id = 1; // required
+}
+
+message FindBackendForQueryResponse {
+    string backend_id = 1; // required
+    string group_id = 2; // required
+}
