@@ -1,0 +1,7 @@
+[app]
+    logLevel              = "info"
+[monitor]
+    interval              = "20s"
+    healthCheckSql        = "SHOW SCHEMAS FROM alluxio"
+[gateway]
+    ports                 = [8080, 8081, 8082, 8083]

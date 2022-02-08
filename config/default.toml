@@ -1,0 +1,44 @@
+[app]
+    env                          = "default"
+    gitCommitHash                = "nil"
+    logLevel                     = "info"
+    metricsPort                  = 8002
+    # gui & twirp app need to be on same port for now, check frontend README for more details
+    # guiPort                      = 8000
+    port                         = 8000
+    serviceExternalHostname      = "localhost:8080"
+    serviceHostname              = "$$internalHost"
+    serviceName                  = "trino-gateway"
+    shutdownDelay                = 2
+    shutdownTimeout              = 5
+
+[db]
+    [db.ConnectionConfig]
+        dialect               = "mysql"
+        protocol              = "tcp"
+        url                   = "localhost"
+        port                  = 33306
+        username              = "root"
+        password              = "root123"
+        sslMode               = "require"
+        name                  = "trino-gateway"
+    [db.ConnectionPoolConfig]
+        maxOpenConnections    = 5
+        maxIdleConnections    = 5
+        connectionMaxLifetime = 0
+
+[auth]
+    token              = "test123"
+    tokenHeaderKey     = "X-Auth-Key"
+
+[gateway]
+    ports                 = [8080, 8081]
+    defaultRoutingGroup   = "adhoc"
+
+[monitor]
+    interval              = "10m"
+    statsValiditySecs     = 0
+    healthCheckSql        = "SELECT 1"
+    [monitor.trino]
+        user              = "trino-gateway"
+        password          = ""
