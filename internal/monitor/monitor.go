@@ -75,11 +75,10 @@ func (m *Monitor) Execute(ctx *context.Context) {
 			err = m.core.DeactivateBackend(ctx, x)
 			if err != nil {
 				provider.Logger(*ctx).WithError(err).Errorw(
-					"Failure updating backend",
+					"Failure deactivating backend",
 					map[string]interface{}{"backend": x})
 			}
 		}(b)
-
 	}
 
 	if len(newSts.Active) == 0 {

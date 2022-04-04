@@ -18,6 +18,8 @@ var (
 	responseDurations     *prometheus.HistogramVec
 )
 
+var reqStartTsCtxKey = new(int)
+
 func init() {
 	requestsReceivedTotal = promauto.NewCounterVec(
 		prometheus.CounterOpts{
@@ -97,13 +99,11 @@ func Metric() *twirp.ServerHooks {
 	return hooks
 }
 
-var reqStartTimestampKey = new(int)
-
 func markRequestStart(ctx context.Context) context.Context {
-	return context.WithValue(ctx, reqStartTimestampKey, time.Now())
+	return context.WithValue(ctx, reqStartTsCtxKey, time.Now())
 }
 
 func getRequestStart(ctx context.Context) (time.Time, bool) {
-	t, ok := ctx.Value(reqStartTimestampKey).(time.Time)
+	t, ok := ctx.Value(reqStartTsCtxKey).(time.Time)
 	return t, ok
 }

@@ -52,7 +52,7 @@ func (t *TrinoClient) httpClient(ctx *context.Context) *http.Client {
 	}
 }
 
-func (t *TrinoClient) initDbClient(ctx *context.Context) error {
+func (t *TrinoClient) initTrinoDbClient(ctx *context.Context) error {
 	provider.Logger(*ctx).Debug("Initializing Trinodb Client")
 	httpClient := t.httpClient(ctx)
 
@@ -190,7 +190,7 @@ func (t *TrinoClient) IsClusterHealthy(ctx *context.Context) (bool, error) {
 func (t *TrinoClient) RunQuery(ctx *context.Context, q string) (*sql.Rows, error) {
 	if t.db == nil {
 		// log
-		err := t.initDbClient(ctx)
+		err := t.initTrinoDbClient(ctx)
 		if err != nil {
 			provider.Logger(*ctx).WithError(err).Errorw(
 				"error initializing trino db client",

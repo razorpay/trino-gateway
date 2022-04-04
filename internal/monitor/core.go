@@ -68,6 +68,8 @@ func (c *Core) EvaluateBackendNewState(ctx *context.Context) (*BackendsNewState,
 	}, nil
 }
 
+// checks whether current time is int the specified cron schedule pattern
+// it will also evaluate to false if the pattern is invalid
 func (c *Core) isCurrentTimeInCron(ctx *context.Context, sched string) (bool, error) {
 	s, err := cron.ParseStandard(sched)
 	if err != nil {

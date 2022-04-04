@@ -4,8 +4,10 @@ import (
 	"context"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/dlmiddlecote/sqlstats"
+	"github.com/fatih/structs"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/razorpay/trino-gateway/internal/config"
 	"github.com/razorpay/trino-gateway/internal/constants/contextkeys"
@@ -44,8 +46,8 @@ func init() {
 	}
 }
 
+// Fetch env for bootstrapping
 func GetEnv() string {
-	// Fetch env for bootstrapping
 	environment := os.Getenv("APP_ENV")
 	if environment == "" {
 		log.Print("APP_ENV not set defaulting to dev env.", environment)
@@ -134,10 +136,18 @@ func NewContext(ctx context.Context) context.Context {
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	//for k, v := range structs.Map(Config.Core) {
-	//  key := strings.ToLower(k)
-	//	ctx = context.WithValue(ctx, key, v)
-	//}
+	for k, v := range structs.Map(struct {
+		GitCommitHash string
+		Env           string
+		ServiceName   string
+	}{
+		GitCommitHash: Config.App.GitCommitHash,
+		Env:           Config.App.Env,
+		ServiceName:   Config.App.ServiceName,
+	}) {
+		key := strings.ToLower(k)
+		ctx = context.WithValue(ctx, key, v)
+	}
 	return ctx
 }
 
