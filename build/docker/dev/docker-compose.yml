@@ -32,7 +32,7 @@ services:
     links:
       - trino_gateway_mysql
   trino_gateway_mysql:
-    image: mysql:8.0.18
+    image: mysql:8.0.28-oracle
     container_name: trino_gateway_mysql
     volumes:
     - ./mysqlconf:/etc/mysql/conf.d
