@@ -10,6 +10,7 @@ import (
 
 	"github.com/fatih/structs"
 	"github.com/razorpay/trino-gateway/internal/boot"
+	"github.com/razorpay/trino-gateway/internal/gatewayserver/metrics"
 	"github.com/razorpay/trino-gateway/internal/gatewayserver/models"
 	"github.com/razorpay/trino-gateway/internal/gatewayserver/repo"
 	"github.com/razorpay/trino-gateway/internal/provider"
@@ -169,6 +170,10 @@ func (c *Core) EvaluateBackendForGroups(ctx context.Context, groups []string) (s
 
 	} else {
 		// fallback grp
+		provider.Logger(ctx).Logger.Warn(
+			"No eligible backends available, invoking fallback group routing.",
+		)
+		metrics.FallbackGroupInvoked.WithLabelValues(metrics.Env).Inc()
 		chosenGroup, err = c.GetGroup(ctx, boot.Config.Gateway.DefaultRoutingGroup)
 		if err != nil {
 			return "", "", err

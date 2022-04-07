@@ -5,49 +5,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/razorpay/trino-gateway/internal/boot"
+	"github.com/razorpay/trino-gateway/internal/gatewayserver/metrics"
 	"github.com/twitchtv/twirp"
 )
 
-var (
-	env                   string
-	requestsReceivedTotal *prometheus.CounterVec
-	responsesSentTotal    *prometheus.CounterVec
-	responseDurations     *prometheus.HistogramVec
-)
-
 var reqStartTsCtxKey = new(int)
-
-func init() {
-	requestsReceivedTotal = promauto.NewCounterVec(
-		prometheus.CounterOpts{
-			Name: "trino_gateway_http_requests_total",
-			Help: "Number of HTTP requests received.",
-		},
-		[]string{"package", "server", "method", "env"},
-	)
-
-	responsesSentTotal = promauto.NewCounterVec(
-		prometheus.CounterOpts{
-			Name: "trino_gateway_http_responses_total",
-			Help: "Number of HTTP responses sent.",
-		},
-		[]string{"package", "server", "method", "code", "env"},
-	)
-
-	responseDurations = promauto.NewHistogramVec(
-		prometheus.HistogramOpts{
-			Name:    "trino_gateway_http_durations_ms_histogram",
-			Help:    "HTTP latency distributions histogram.",
-			Buckets: []float64{2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096},
-		},
-		[]string{"package", "server", "method", "code", "env"},
-	)
-
-	env = boot.Config.App.Env
-}
 
 // Metric returns function which puts unique request id into context.
 func Metric() *twirp.ServerHooks {
@@ -66,8 +28,8 @@ func Metric() *twirp.ServerHooks {
 		service, _ := twirp.ServiceName(ctx)
 		method, _ := twirp.MethodName(ctx)
 
-		requestsReceivedTotal.
-			WithLabelValues(pkg, service, method, env).
+		metrics.RequestsReceivedTotal.
+			WithLabelValues(pkg, service, method, metrics.Env).
 			Inc()
 
 		return ctx, nil
@@ -83,16 +45,16 @@ func Metric() *twirp.ServerHooks {
 
 		duration := float64(time.Now().Sub(start).Milliseconds())
 
-		responsesSentTotal.WithLabelValues(
+		metrics.ResponsesSentTotal.WithLabelValues(
 			pkg, service, method,
 			fmt.Sprintf("%v", statusCode),
-			env,
+			metrics.Env,
 		).Inc()
 
-		responseDurations.WithLabelValues(
+		metrics.ResponseDurations.WithLabelValues(
 			pkg, service, method,
 			fmt.Sprintf("%v", statusCode),
-			env,
+			metrics.Env,
 		).Observe(duration)
 	}
 

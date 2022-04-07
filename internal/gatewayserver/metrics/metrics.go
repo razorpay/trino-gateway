@@ -1,0 +1,51 @@
+package metrics
+
+import (
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/razorpay/trino-gateway/internal/boot"
+)
+
+var (
+	Env                   string
+	RequestsReceivedTotal *prometheus.CounterVec
+	ResponsesSentTotal    *prometheus.CounterVec
+	ResponseDurations     *prometheus.HistogramVec
+	FallbackGroupInvoked  *prometheus.CounterVec
+)
+
+func init() {
+	Env = boot.Config.App.Env
+	RequestsReceivedTotal = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "trino_gateway_http_requests_total",
+			Help: "Number of HTTP requests received.",
+		},
+		[]string{"package", "server", "method", "env"},
+	)
+
+	ResponsesSentTotal = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "trino_gateway_http_responses_total",
+			Help: "Number of HTTP responses sent.",
+		},
+		[]string{"package", "server", "method", "code", "env"},
+	)
+
+	ResponseDurations = promauto.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name:    "trino_gateway_http_durations_ms_histogram",
+			Help:    "HTTP latency distributions histogram.",
+			Buckets: []float64{2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096},
+		},
+		[]string{"package", "server", "method", "code", "env"},
+	)
+
+	FallbackGroupInvoked = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "trino_gateway_fallback_group_invoked_total",
+			Help: "Number of requests where fallback group routing was invoked",
+		},
+		[]string{"env"},
+	)
+}
