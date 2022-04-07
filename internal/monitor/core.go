@@ -197,7 +197,7 @@ func (c *Core) isBackendUp(ctx *context.Context, b *gatewayv1.Backend) (bool, er
 
 func (c *Core) updateBackendClusterLoad(ctx *context.Context, b_id string, load int32) error {
 	defer func() {
-		metrics.backendLoad.WithLabelValues(metrics.env, b_id).
+		metrics.backendLoad.WithLabelValues(b_id).
 			Set(float64(load))
 	}()
 	_, err := c.gatewayBackendClient.

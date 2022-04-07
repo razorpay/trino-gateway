@@ -7,7 +7,6 @@ import (
 )
 
 type Metrics struct {
-	env                string
 	executionsTotal    *prometheus.CounterVec
 	executionlastRunAt *prometheus.GaugeVec
 	executionDurations *prometheus.HistogramVec
@@ -17,16 +16,15 @@ type Metrics struct {
 var metrics *Metrics
 
 func initMetrics() {
-	metrics = &Metrics{
-		env: boot.Config.App.Env,
-	}
+	env := boot.Config.App.Env
+	metrics = &Metrics{}
 	metrics.executionsTotal = promauto.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: "trino_gateway_monitor_executions_total",
 			Help: "Number of executions triggered for monitor task.",
 		},
 		[]string{"env"},
-	)
+	).MustCurryWith(prometheus.Labels{"env": env})
 
 	metrics.executionlastRunAt = promauto.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -34,7 +32,7 @@ func initMetrics() {
 			Help: "Monitor task last run epoch ts.",
 		},
 		[]string{"env"},
-	)
+	).MustCurryWith(prometheus.Labels{"env": env})
 
 	metrics.executionDurations = promauto.NewHistogramVec(
 		prometheus.HistogramOpts{
@@ -43,7 +41,7 @@ func initMetrics() {
 			Buckets: []float64{1, 5, 10, 15, 20, 30, 40, 60, 100, 150},
 		},
 		[]string{"env"},
-	)
+	).MustCurryWith(prometheus.Labels{"env": env}).(*prometheus.HistogramVec)
 
 	metrics.backendLoad = promauto.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -51,5 +49,5 @@ func initMetrics() {
 			Help: "Backend Load computed by last run of monitor task.",
 		},
 		[]string{"env", "backend"},
-	)
+	).MustCurryWith(prometheus.Labels{"env": env})
 }

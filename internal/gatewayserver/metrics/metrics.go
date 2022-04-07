@@ -7,7 +7,6 @@ import (
 )
 
 var (
-	Env                   string
 	RequestsReceivedTotal *prometheus.CounterVec
 	ResponsesSentTotal    *prometheus.CounterVec
 	ResponseDurations     *prometheus.HistogramVec
@@ -15,22 +14,22 @@ var (
 )
 
 func init() {
-	Env = boot.Config.App.Env
+	env := boot.Config.App.Env
 	RequestsReceivedTotal = promauto.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: "trino_gateway_http_requests_total",
 			Help: "Number of HTTP requests received.",
 		},
-		[]string{"package", "server", "method", "env"},
-	)
+		[]string{"env", "package", "server", "method"},
+	).MustCurryWith(prometheus.Labels{"env": env})
 
 	ResponsesSentTotal = promauto.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: "trino_gateway_http_responses_total",
 			Help: "Number of HTTP responses sent.",
 		},
-		[]string{"package", "server", "method", "code", "env"},
-	)
+		[]string{"env", "package", "server", "method", "code"},
+	).MustCurryWith(prometheus.Labels{"env": env})
 
 	ResponseDurations = promauto.NewHistogramVec(
 		prometheus.HistogramOpts{
@@ -38,8 +37,8 @@ func init() {
 			Help:    "HTTP latency distributions histogram.",
 			Buckets: []float64{2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096},
 		},
-		[]string{"package", "server", "method", "code", "env"},
-	)
+		[]string{"env", "package", "server", "method", "code"},
+	).MustCurryWith(prometheus.Labels{"env": env}).(*prometheus.HistogramVec)
 
 	FallbackGroupInvoked = promauto.NewCounterVec(
 		prometheus.CounterOpts{
@@ -47,5 +46,5 @@ func init() {
 			Help: "Number of requests where fallback group routing was invoked",
 		},
 		[]string{"env"},
-	)
+	).MustCurryWith(prometheus.Labels{"env": env})
 }

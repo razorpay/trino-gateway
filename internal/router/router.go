@@ -83,13 +83,13 @@ func Server(ctx *context.Context, port int, apiClient *GatewayApiClient, routerH
 				post_d := time.Since(st).Milliseconds()
 				tot_d := time.Since(*ctxSharedObj.timerStart).Milliseconds()
 				metrics.responsesSentTotal.
-					WithLabelValues(metrics.env, req.Method, fmt.Sprint(status)).
+					WithLabelValues(req.Method, fmt.Sprint(status)).
 					Inc()
 				metrics.requestPostRoutingDelays.
-					WithLabelValues(metrics.env, req.Method, fmt.Sprint(status)).
+					WithLabelValues(req.Method, fmt.Sprint(status)).
 					Observe(float64(post_d))
 				metrics.responseDurations.
-					WithLabelValues(metrics.env, req.Method, fmt.Sprint(status)).
+					WithLabelValues(req.Method, fmt.Sprint(status)).
 					Observe(float64(tot_d))
 			}(time.Now())
 
@@ -126,11 +126,11 @@ func (r *RouterServer) handleClientRequest(ctx *context.Context, req *http.Reque
 	var err error
 	st := time.Now()
 	metrics.requestsReceivedTotal.
-		WithLabelValues(metrics.env, req.Method, fmt.Sprint(r.port))
+		WithLabelValues(req.Method, fmt.Sprint(r.port))
 	defer func(st time.Time) {
 		duration := time.Since(st).Milliseconds()
 		metrics.requestPreRoutingDelays.
-			WithLabelValues(metrics.env, req.Method).
+			WithLabelValues(req.Method).
 			Observe(float64(duration))
 	}(st)
 
@@ -144,7 +144,6 @@ func (r *RouterServer) handleClientRequest(ctx *context.Context, req *http.Reque
 		case *QueryRequest:
 			metrics.requestsRoutedTotal.
 				WithLabelValues(
-					metrics.env,
 					req.Method,
 					fmt.Sprint(r.port),
 					nt.Query.GetGroupId(),
@@ -209,13 +208,13 @@ func (r *RouterServer) handleServerResponse(ctx *context.Context, resp *http.Res
 			post_d := time.Since(st).Milliseconds()
 			tot_d := time.Since(*ctxSharedObj.timerStart).Milliseconds()
 			metrics.responsesSentTotal.
-				WithLabelValues(metrics.env, resp.Request.Method, fmt.Sprint(http.StatusOK)).
+				WithLabelValues(resp.Request.Method, fmt.Sprint(http.StatusOK)).
 				Inc()
 			metrics.requestPostRoutingDelays.
-				WithLabelValues(metrics.env, resp.Request.Method, fmt.Sprint(http.StatusOK)).
+				WithLabelValues(resp.Request.Method, fmt.Sprint(http.StatusOK)).
 				Observe(float64(post_d))
 			metrics.responseDurations.
-				WithLabelValues(metrics.env, resp.Request.Method, fmt.Sprint(http.StatusOK)).
+				WithLabelValues(resp.Request.Method, fmt.Sprint(http.StatusOK)).
 				Observe(float64(tot_d))
 		}(time.Now())
 	}

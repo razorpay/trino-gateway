@@ -7,7 +7,6 @@ import (
 )
 
 type Metrics struct {
-	env                      string
 	requestsReceivedTotal    *prometheus.CounterVec
 	requestsRoutedTotal      *prometheus.CounterVec
 	requestPreRoutingDelays  *prometheus.HistogramVec
@@ -19,16 +18,15 @@ type Metrics struct {
 var metrics *Metrics
 
 func initMetrics() {
-	metrics = &Metrics{
-		env: boot.Config.App.Env,
-	}
+	env := boot.Config.App.Env
+	metrics = &Metrics{}
 	metrics.requestsReceivedTotal = promauto.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: "trino_gateway_router_http_requests_total",
 			Help: "Number of HTTP requests received from clients.",
 		},
 		[]string{"env", "method", "port"},
-	)
+	).MustCurryWith(prometheus.Labels{"env": env})
 
 	metrics.requestsRoutedTotal = promauto.NewCounterVec(
 		prometheus.CounterOpts{
@@ -36,7 +34,7 @@ func initMetrics() {
 			Help: "Number of HTTP requests routed to a trino server.",
 		},
 		[]string{"env", "method", "port", "group", "backend"},
-	)
+	).MustCurryWith(prometheus.Labels{"env": env})
 
 	metrics.requestPreRoutingDelays = promauto.NewHistogramVec(
 		prometheus.HistogramOpts{
@@ -45,7 +43,7 @@ func initMetrics() {
 			Buckets: []float64{5, 10, 15, 20, 30, 40, 60, 100, 150, 500},
 		},
 		[]string{"env", "method"},
-	)
+	).MustCurryWith(prometheus.Labels{"env": env}).(*prometheus.HistogramVec)
 
 	metrics.requestPostRoutingDelays = promauto.NewHistogramVec(
 		prometheus.HistogramOpts{
@@ -54,7 +52,7 @@ func initMetrics() {
 			Buckets: []float64{5, 10, 15, 20, 30, 40, 60, 100, 150, 500},
 		},
 		[]string{"env", "method", "code"},
-	)
+	).MustCurryWith(prometheus.Labels{"env": env}).(*prometheus.HistogramVec)
 
 	metrics.responsesSentTotal = promauto.NewCounterVec(
 		prometheus.CounterOpts{
@@ -62,7 +60,7 @@ func initMetrics() {
 			Help: "Number of HTTP responses sent back to client.",
 		},
 		[]string{"env", "method", "code"},
-	)
+	).MustCurryWith(prometheus.Labels{"env": env})
 
 	metrics.responseDurations = promauto.NewHistogramVec(
 		prometheus.HistogramOpts{
@@ -71,5 +69,5 @@ func initMetrics() {
 			Buckets: []float64{5, 10, 15, 20, 30, 40, 60, 100, 150, 500},
 		},
 		[]string{"env", "method", "code"},
-	)
+	).MustCurryWith(prometheus.Labels{"env": env}).(*prometheus.HistogramVec)
 }

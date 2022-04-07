@@ -29,7 +29,7 @@ func Metric() *twirp.ServerHooks {
 		method, _ := twirp.MethodName(ctx)
 
 		metrics.RequestsReceivedTotal.
-			WithLabelValues(pkg, service, method, metrics.Env).
+			WithLabelValues(pkg, service, method).
 			Inc()
 
 		return ctx, nil
@@ -48,13 +48,11 @@ func Metric() *twirp.ServerHooks {
 		metrics.ResponsesSentTotal.WithLabelValues(
 			pkg, service, method,
 			fmt.Sprintf("%v", statusCode),
-			metrics.Env,
 		).Inc()
 
 		metrics.ResponseDurations.WithLabelValues(
 			pkg, service, method,
 			fmt.Sprintf("%v", statusCode),
-			metrics.Env,
 		).Observe(duration)
 	}
 

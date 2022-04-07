@@ -173,7 +173,7 @@ func (c *Core) EvaluateBackendForGroups(ctx context.Context, groups []string) (s
 		provider.Logger(ctx).Logger.Warn(
 			"No eligible backends available, invoking fallback group routing.",
 		)
-		metrics.FallbackGroupInvoked.WithLabelValues(metrics.Env).Inc()
+		metrics.FallbackGroupInvoked.WithLabelValues().Inc()
 		chosenGroup, err = c.GetGroup(ctx, boot.Config.Gateway.DefaultRoutingGroup)
 		if err != nil {
 			return "", "", err

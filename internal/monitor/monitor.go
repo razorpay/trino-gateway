@@ -46,17 +46,15 @@ func (m *Monitor) Execute(ctx *context.Context) {
 	provider.Logger(*ctx).Info("Executing monitoring task")
 
 	metrics.executionsTotal.
-		WithLabelValues(metrics.env).
-		Inc()
+		WithLabelValues().Inc()
+
 	defer func(st time.Time) {
 		duration := float64(time.Since(st).Seconds())
 		metrics.executionDurations.
-			WithLabelValues(metrics.env).
-			Observe(duration)
+			WithLabelValues().Observe(duration)
 
 		metrics.executionlastRunAt.
-			WithLabelValues(metrics.env).
-			SetToCurrentTime()
+			WithLabelValues().SetToCurrentTime()
 	}(time.Now())
 
 	provider.Logger(*ctx).Info("Evaluating new state for backends")
