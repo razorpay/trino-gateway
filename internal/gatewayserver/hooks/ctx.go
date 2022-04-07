@@ -24,8 +24,9 @@ func Ctx() *twirp.ServerHooks {
 		reqService, _ := twirp.ServiceName(ctx)
 		reqPackage, _ := twirp.PackageName(ctx)
 		req := map[string]interface{}{
-			"reqId":      boot.GetRequestID(ctx),
-			"reqUser":    ctx.Value("authUserCtxKey"),
+			"reqId": boot.GetRequestID(ctx),
+			// TODO: set auth user in auth Hook
+			// "reqUser":    ctx.Value("authUserCtxKey"),
 			"reqMethod":  reqMethod,
 			"reqService": reqService,
 			"reqPackage": reqPackage,
