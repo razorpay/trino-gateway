@@ -35,7 +35,7 @@ func init() {
 		prometheus.HistogramOpts{
 			Name:    "trino_gateway_http_durations_ms_histogram",
 			Help:    "HTTP latency distributions histogram.",
-			Buckets: []float64{2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096},
+			Buckets: []float64{2, 5, 10, 15, 25, 40, 60, 85, 120, 150, 200, 300},
 		},
 		[]string{"env", "package", "server", "method", "code"},
 	).MustCurryWith(prometheus.Labels{"env": env}).(*prometheus.HistogramVec)

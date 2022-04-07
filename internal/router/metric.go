@@ -49,7 +49,7 @@ func initMetrics() {
 		prometheus.HistogramOpts{
 			Name:    "trino_gateway_router_http_post_routing_delay_ms_histogram",
 			Help:    "Delay in sending response to client after receiving response from Trino server, latency distributions histogram.",
-			Buckets: []float64{5, 10, 15, 20, 30, 40, 60, 100, 150, 500},
+			Buckets: []float64{2, 5, 10, 15, 20, 25, 30, 40, 50, 100, 500},
 		},
 		[]string{"env", "method", "code"},
 	).MustCurryWith(prometheus.Labels{"env": env}).(*prometheus.HistogramVec)
@@ -66,7 +66,7 @@ func initMetrics() {
 		prometheus.HistogramOpts{
 			Name:    "trino_gateway_router_http_durations_ms_histogram",
 			Help:    "Router HTTP latency distributions histogram for responses sent to clients.",
-			Buckets: []float64{5, 10, 15, 20, 30, 40, 60, 100, 150, 500},
+			Buckets: []float64{20, 40, 60, 90, 120, 150, 200, 250, 300, 500},
 		},
 		[]string{"env", "method", "code"},
 	).MustCurryWith(prometheus.Labels{"env": env}).(*prometheus.HistogramVec)

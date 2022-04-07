@@ -38,7 +38,7 @@ func initMetrics() {
 		prometheus.HistogramOpts{
 			Name:    "trino_gateway_monitor_execution_seconds_histogram",
 			Help:    "Monitor task execution time distributions histogram.",
-			Buckets: []float64{1, 5, 10, 15, 20, 30, 40, 60, 100, 150},
+			Buckets: []float64{5, 15, 30, 60, 90, 120, 150, 180, 210, 240},
 		},
 		[]string{"env"},
 	).MustCurryWith(prometheus.Labels{"env": env}).(*prometheus.HistogramVec)

@@ -37,6 +37,8 @@ Proper GUI - scope would be limited but current implementation of using vecty + 
 
 Tracing integration
 
+Explore victoriaMetrics go client https://github.com/VictoriaMetrics/metrics
+
 ## Gateway API
 Check the
 protobuf file or the swaggerUI
