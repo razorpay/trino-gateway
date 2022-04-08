@@ -2,6 +2,7 @@ package logger
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"sync"
@@ -227,11 +228,15 @@ func (logger *ZapLogger) WithError(err error) *Entry {
 }
 
 // Ctx gets logger instance from context if available else creates
-// a new one basic on the existing config and returns a logger object or error
+// a new one based on the existing config and returns a logger object or error
+// will throw an error if there is no existing config
 func Ctx(ctx context.Context) (*Entry, error) {
 	k, ok := ctx.Value(LoggerCtxKey).(*Entry)
 	if ok {
 		return k, nil
+	}
+	if config == nil {
+		return nil, errors.New("logger uninitialized")
 	}
 	l, err := NewLogger(*config)
 	if err != nil {
