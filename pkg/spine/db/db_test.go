@@ -13,7 +13,6 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 
-	"github.com/razorpay/trino-gateway/pkg/errors"
 	"github.com/razorpay/trino-gateway/pkg/spine"
 	"github.com/razorpay/trino-gateway/pkg/spine/db"
 )
@@ -35,11 +34,11 @@ func (t *TestModel) GetID() string {
 	return t.ID
 }
 
-func (t *TestModel) Validate() errors.IError {
+func (t *TestModel) Validate() error {
 	return nil
 }
 
-func (t *TestModel) SetDefaults() errors.IError {
+func (t *TestModel) SetDefaults() error {
 	return nil
 }
 

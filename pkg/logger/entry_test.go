@@ -10,7 +10,6 @@ import (
 )
 
 func TestEntryWithError(t *testing.T) {
-
 	assert := assert.New(t)
 
 	defer func() {
@@ -20,10 +19,7 @@ func TestEntryWithError(t *testing.T) {
 	err := fmt.Errorf("doomed here %d", 1234)
 
 	config := logger.Config{
-		LogLevel:       logger.Debug,
-		SentryDSN:      "",
-		SentryEnabled:  false,
-		SentryLogLevel: "",
+		LogLevel: logger.Debug,
 	}
 
 	lgr, lErr := logger.NewLogger(config)
@@ -36,7 +32,6 @@ func TestEntryWithError(t *testing.T) {
 
 	logger.ErrorKey = "err"
 	assert.Equal(err.Error(), entry.WithError(err).Data["err"])
-
 }
 
 func TestEntryWithContext(t *testing.T) {
@@ -44,10 +39,7 @@ func TestEntryWithContext(t *testing.T) {
 	ctx := context.WithValue(context.Background(), "foo", "bar")
 
 	config := logger.Config{
-		LogLevel:       logger.Debug,
-		SentryDSN:      "",
-		SentryEnabled:  false,
-		SentryLogLevel: "",
+		LogLevel: logger.Debug,
 	}
 
 	lgr, err := logger.NewLogger(config)

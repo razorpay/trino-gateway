@@ -6,7 +6,6 @@ import (
 	"os"
 	"sync"
 
-	"github.com/razorpay/trino-gateway/pkg/logger/sentry"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -18,9 +17,8 @@ type MutexWrap struct {
 
 type contextKey int
 
-//ZapLogger ... struct for handling the logger and associated methods. Kept public to ensure it can be accessible from tests
+// ZapLogger ... struct for handling the logger and associated methods. Kept public to ensure it can be accessible from tests
 type ZapLogger struct {
-
 	// internal zap squared logger object
 	sugaredLogger *zap.SugaredLogger
 	// Used to sync writing to the log. Locking is enabled by Default
@@ -29,17 +27,11 @@ type ZapLogger struct {
 	entryPool sync.Pool
 }
 
-//Config ... largely kept for extensions and other hooks
+// Config ... largely kept for extensions and other hooks
 type Config struct {
-	//LogLevel ... the default log level
+	// LogLevel ... the default log level
 	LogLevel string
-	//SentryDSN ... sentry DSN in case you want sentry integration
-	SentryDSN string
-	//SentryEnabled ...enable only for non dev environment. For others, keep it enabled
-	SentryEnabled bool
-	//SentryLogLevel ... minimum log level for sentry to fire alerts.
-	SentryLogLevel string
-	//ContextString ... in case of logging extra context information to logs, this should be enabled
+	// ContextString ... in case of logging extra context information to logs, this should be enabled
 	ContextString string
 	// StackTraceKey... key for stacktrace data in logs
 	StackTraceKey string
@@ -58,26 +50,26 @@ var (
 	ErrorKey = "error"
 )
 
-//Fields Type to pass when we want to call WithFields for structured logging
-//var DefaultFields = make(map[string]interface{}, 0)
-//var mutex = & sync.RWMutex{}
+// Fields Type to pass when we want to call WithFields for structured logging
+// var DefaultFields = make(map[string]interface{}, 0)
+// var mutex = & sync.RWMutex{}
 const (
-	//Debug has verbose message
+	// Debug has verbose message
 	Debug = "debug"
-	//Info is default log level
+	// Info is default log level
 	Info = "info"
-	//Warn is for logging messages about possible issues
+	// Warn is for logging messages about possible issues
 	Warn = "warn"
-	//Error is for logging errors
+	// Error is for logging errors
 	Error = "error"
-	//Fatal is for logging fatal messages. The sytem shutsdown after logging the message.
+	// Fatal is for logging fatal messages. The sytem shutsdown after logging the message.
 	Fatal = "fatal"
-	//TODO: Should we add panic and DPanic like what zap uses internally?
-	//DefaultContextString is for adding extra context
+	// TODO: Should we add panic and DPanic like what zap uses internally?
+	// DefaultContextString is for adding extra context
 	DefaultContextString = "extra"
-	//DefaultFieldConstant for adding existing context
+	// DefaultFieldConstant for adding existing context
 	DefaultFieldConstant = "context"
-	//Unique Identifier for context key
+	// Unique Identifier for context key
 	LoggerCtxKey contextKey = iota
 	// DefaultStacktraceKey ... default key for stacktrace if none provided in config
 	DefaultStacktraceKey = "stacktrace"
@@ -114,7 +106,7 @@ func (logger *ZapLogger) releaseEntry(entry *Entry) {
 	logger.entryPool.Put(entry)
 }
 
-//getZapLevel internal method for reading the default log level
+// getZapLevel internal method for reading the default log level
 func getZapLevel(level string) zapcore.Level {
 	switch level {
 	case Info:
@@ -132,7 +124,7 @@ func getZapLevel(level string) zapcore.Level {
 	}
 }
 
-//getConfig internal method for reading zap configuration
+// getConfig internal method for reading zap configuration
 func getConfig(level zapcore.Level) zap.Config {
 	cfg := zap.Config{
 		Encoding:         "json",
@@ -180,16 +172,6 @@ func NewLogger(c Config) (*ZapLogger, error) {
 			// get a new core with json encoding and append it
 			core := zapcore.NewCore(zapcore.NewJSONEncoder(cfg.EncoderConfig), zapcore.AddSync(os.Stdout), level)
 			cores = append(cores, core)
-			if c.SentryEnabled {
-				// get the sentry core here and add it to the list of cores
-				core = sentry.NewCore(c.SentryLogLevel, c.SentryDSN)
-				if core != nil {
-					cores = append(cores, core)
-				} else {
-					fmt.Printf("Error Getting Sentry Core. Not Enabling it")
-				}
-
-			}
 			combinedCore := zapcore.NewTee(cores...)
 
 			// AddCallerSkip skips 2 number of callers, this is important else the file that gets
@@ -203,7 +185,6 @@ func NewLogger(c Config) (*ZapLogger, error) {
 			defer l.Sync()
 			logger = &ZapLogger{sugaredLogger: l}
 		}
-
 	})
 	if err != nil {
 		fmt.Printf("Error getting logger:%s", err.Error())
@@ -238,7 +219,7 @@ func (logger *ZapLogger) WithContext(ctx context.Context, ctxFields []string) *E
 	return entry.WithContext(ctx, ctxFields)
 }
 
-//WithError adds an error as single field (using the key defined in ErrorKey) to the Entry.
+// WithError adds an error as single field (using the key defined in ErrorKey) to the Entry.
 func (logger *ZapLogger) WithError(err error) *Entry {
 	entry := logger.newEntry()
 	defer logger.releaseEntry(entry)

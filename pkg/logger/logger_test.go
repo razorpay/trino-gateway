@@ -8,10 +8,7 @@ import (
 
 func BenchmarkNewLogger(b *testing.B) {
 	config := logger.Config{
-		LogLevel:       logger.Debug,
-		SentryDSN:      "",
-		SentryEnabled:  false,
-		SentryLogLevel: "",
+		LogLevel: logger.Debug,
 	}
 	lgr, err := logger.NewLogger(config)
 	if err != nil {
@@ -31,10 +28,7 @@ func BenchmarkNewLogger(b *testing.B) {
 
 func LogTest(b *testing.B) {
 	config := logger.Config{
-		LogLevel:       logger.Debug,
-		SentryDSN:      "",
-		SentryEnabled:  false,
-		SentryLogLevel: "",
+		LogLevel: logger.Debug,
 	}
 	lgr, err := logger.NewLogger(config)
 	if err != nil {
