@@ -20,6 +20,8 @@ type IBackendRepo interface {
 	Delete(ctx context.Context, id string) error
 	Enable(ctx context.Context, id string) error
 	Disable(ctx context.Context, id string) error
+	MarkHealthy(ctx context.Context, id string) error
+	MarkUnhealthy(ctx context.Context, id string) error
 }
 
 type BackendRepo struct {
@@ -76,10 +78,16 @@ func (r *BackendRepo) Find(ctx context.Context, id string) (*models.Backend, err
 	return &backend, nil
 }
 
+// Returns list of backend ids which are ready to serve traffic
 func (r *BackendRepo) GetAllActiveByIDs(ctx context.Context, ids []string) ([]models.Backend, error) {
 	var backends []models.Backend
 
-	err := r.repo.FindWithConditionByIDs(ctx, &backends, map[string]interface{}{"is_enabled": true}, ids)
+	err := r.repo.FindWithConditionByIDs(
+		ctx,
+		&backends,
+		map[string]interface{}{"is_enabled": true, "is_healthy": true},
+		ids,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -158,6 +166,52 @@ func (r *BackendRepo) Disable(ctx context.Context, id string) error {
 	}
 
 	*backend.IsEnabled = false
+
+	if err := r.repo.Update(ctx, backend); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *BackendRepo) MarkHealthy(ctx context.Context, id string) error {
+	provider.Logger(ctx).Infow("backend mark as healthy triggered", map[string]interface{}{"backend_id": id})
+
+	backend, err := r.Find(ctx, id)
+	if err != nil {
+		provider.Logger(ctx).Error("backend mark as healthy failed: " + err.Error())
+		return err
+	}
+
+	if *backend.IsHealthy {
+		provider.Logger(ctx).Info("backend mark as healthy failed. Already healthy")
+		return nil
+	}
+
+	*backend.IsHealthy = true
+
+	if err := r.repo.Update(ctx, backend); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *BackendRepo) MarkUnhealthy(ctx context.Context, id string) error {
+	provider.Logger(ctx).Infow("backend mark as unhealthy triggered", map[string]interface{}{"backend_id": id})
+
+	backend, err := r.Find(ctx, id)
+	if err != nil {
+		provider.Logger(ctx).Error("backend mark as unhealthy failed: " + err.Error())
+		return err
+	}
+
+	if !*backend.IsHealthy {
+		provider.Logger(ctx).Info("backend mark as unhealthy failed. Already unhealthy")
+		return nil
+	}
+
+	*backend.IsHealthy = false
 
 	if err := r.repo.Update(ctx, backend); err != nil {
 		return err

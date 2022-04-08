@@ -39,6 +39,7 @@ func (s *Server) CreateOrUpdateBackend(ctx context.Context, req *gatewayv1.Backe
 		Hostname:             req.GetHostname(),
 		ExternalUrl:          req.GetExternalUrl(),
 		IsEnabled:            req.GetIsEnabled(),
+		IsHealthy:            req.GetIsHealthy(),
 		UptimeSchedule:       req.GetUptimeSchedule(),
 		ClusterLoad:          req.GetClusterLoad(),
 		ThresholdClusterLoad: req.GetThresholdClusterLoad(),
@@ -122,11 +123,34 @@ func (s *Server) DisableBackend(ctx context.Context, req *gatewayv1.BackendDisab
 	return &gatewayv1.Empty{}, nil
 }
 
+func (s *Server) MarkHealthyBackend(ctx context.Context, req *gatewayv1.BackendMarkHealthyRequest) (*gatewayv1.Empty, error) {
+	provider.Logger(ctx).Debugw("MarkHealthyBackend", map[string]interface{}{
+		"request": req.String(),
+	})
+	err := s.core.MarkHealthyBackend(ctx, req.GetId())
+	if err != nil {
+		return nil, err
+	}
+
+	return &gatewayv1.Empty{}, nil
+}
+
+func (s *Server) MarkUnhealthyBackend(ctx context.Context, req *gatewayv1.BackendMarkUnhealthyRequest) (*gatewayv1.Empty, error) {
+	provider.Logger(ctx).Debugw("MarkUnhealthyBackend", map[string]interface{}{
+		"request": req.String(),
+	})
+	err := s.core.MarkUnhealthyBackend(ctx, req.GetId())
+	if err != nil {
+		return nil, err
+	}
+
+	return &gatewayv1.Empty{}, nil
+}
+
 func (s *Server) UpdateClusterLoadBackend(
 	ctx context.Context,
 	req *gatewayv1.BackendUpdateClusterLoadRequest,
 ) (*gatewayv1.Empty, error) {
-
 	provider.Logger(ctx).Debugw("UpdateClusterLoadBackend", map[string]interface{}{
 		"request": req.String(),
 	})
@@ -175,6 +199,7 @@ func toBackendResponseProto(backend *models.Backend) (*gatewayv1.Backend, error)
 		ClusterLoad:          *backend.ClusterLoad,
 		ThresholdClusterLoad: *backend.ThresholdClusterLoad,
 		StatsUpdatedAt:       *backend.StatsUpdatedAt,
+		IsHealthy:            *backend.IsHealthy,
 	}
 
 	return &response, nil

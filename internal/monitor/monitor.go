@@ -58,67 +58,46 @@ func (m *Monitor) Execute(ctx *context.Context) {
 	}(time.Now())
 
 	provider.Logger(*ctx).Info("Evaluating new state for backends")
-	newSts, err := m.core.EvaluateBackendNewState(ctx)
+	newStates, err := m.core.EvaluateBackendNewState(ctx)
 	if err != nil {
 		provider.Logger(*ctx).WithError(err).Error("Error evaluating new states for backends")
 		return
 	}
 
-	provider.Logger(*ctx).Debug("Deactivating backends")
+	if len(newStates.Healthy) == 0 {
+		provider.Logger(*ctx).Error("No Backends are in Healthy state.")
+	}
+
+	provider.Logger(*ctx).Debug("Marking healthy/unhealthy backends as per evaluated states")
 	var wg sync.WaitGroup
-	for _, b := range newSts.Inactive {
+	for _, b := range newStates.Unhealthy {
 		wg.Add(1)
 		go func(x *gatewayv1.Backend) {
 			defer wg.Done()
-			err = m.core.DeactivateBackend(ctx, x)
+			err = m.core.MarkUnhealthyBackend(ctx, x)
 			if err != nil {
 				provider.Logger(*ctx).WithError(err).Errorw(
-					"Failure deactivating backend",
+					"Failure marking backend as Unhealthy",
 					map[string]interface{}{"backend": x})
 			}
 		}(b)
 	}
 
-	if len(newSts.Active) == 0 {
-		provider.Logger(*ctx).Error("No Backends eligible for active state")
-	}
-
-	provider.Logger(*ctx).Info("Activating/Deactivating backends based on cluster load")
-	for _, b := range newSts.Active {
+	for _, b := range newStates.Healthy {
 		wg.Add(1)
 		go func(x *gatewayv1.Backend) {
 			defer wg.Done()
-			provider.Logger(*ctx).Debugw(
-				"Evaluating health of backend",
-				map[string]interface{}{"backend": b})
-
-			isHealthy, err := m.core.IsBackendHealthy(ctx, x)
+			err = m.core.MarkHealthyBackend(ctx, x)
 			if err != nil {
 				provider.Logger(*ctx).WithError(err).Errorw(
-					"Failure checking backend health",
+					"Failure marking backend as Healthy",
 					map[string]interface{}{"backend": x})
 			}
-
-			if isHealthy {
-				err := m.core.ActivateBackend(ctx, x)
-				if err != nil {
-					provider.Logger(*ctx).WithError(err).Errorw(
-						"Failure activating backend",
-						map[string]interface{}{"backend": x})
-				}
-			} else {
-
-				err = m.core.DeactivateBackend(ctx, x)
-				if err != nil {
-					provider.Logger(*ctx).WithError(err).Errorw(
-						"Failure deactivating backend",
-						map[string]interface{}{"backend": x})
-				}
-			}
 		}(b)
-
 	}
 
-	// Wait for all backend status checks to complete.
+	// Wait for all backend health updates to complete.
 	wg.Wait()
+
+	provider.Logger(*ctx).Info("Finished executing monitoring task")
 }

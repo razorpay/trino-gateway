@@ -19,9 +19,8 @@ type Core struct {
 
 type ICore interface {
 	EvaluateBackendNewState(ctx *context.Context) (*BackendsNewState, error)
-	ActivateBackend(ctx *context.Context, b *gatewayv1.Backend) error
-	DeactivateBackend(ctx *context.Context, b *gatewayv1.Backend) error
-	IsBackendHealthy(ctx *context.Context, b *gatewayv1.Backend) (bool, error)
+	MarkHealthyBackend(ctx *context.Context, b *gatewayv1.Backend) error
+	MarkUnhealthyBackend(ctx *context.Context, b *gatewayv1.Backend) error
 }
 
 func NewCore(b gatewayv1.BackendApi) *Core {
@@ -29,8 +28,8 @@ func NewCore(b gatewayv1.BackendApi) *Core {
 }
 
 type BackendsNewState struct {
-	Active   []*gatewayv1.Backend
-	Inactive []*gatewayv1.Backend
+	Healthy   []*gatewayv1.Backend
+	Unhealthy []*gatewayv1.Backend
 }
 
 func (c *Core) EvaluateBackendNewState(ctx *context.Context) (*BackendsNewState, error) {
@@ -40,31 +39,40 @@ func (c *Core) EvaluateBackendNewState(ctx *context.Context) (*BackendsNewState,
 	if err != nil {
 		return nil, err
 	}
-	var toActivate []*gatewayv1.Backend
-	var toDeactivate []*gatewayv1.Backend
+	var markHealthy []*gatewayv1.Backend
+	var markUnhealthy []*gatewayv1.Backend
 	for _, b := range backends {
 		if b == nil {
 			return nil, errors.New("nil pointer reference in twirp response")
 		}
-		isEligibleToActivate, err := c.isCurrentTimeInCron(ctx, b.UptimeSchedule)
+		isEligible, err := c.isCurrentTimeInCron(ctx, b.UptimeSchedule)
 		if err != nil {
 			provider.Logger(*ctx).WithError(err).Errorw(
-				"Unable to parse cron expression in uptime schedule, skipping",
+				"Unable to parse cron expression in uptime schedule, marking as unhealthy",
 				map[string]interface{}{"backend": b},
 			)
-			toDeactivate = append(toDeactivate, b)
-			continue
+		} else if isEligible {
+			provider.Logger(*ctx).Debugw(
+				"Evaluating health of backend based on availability and cluster load",
+				map[string]interface{}{"backend": b})
+
+			isHealthy, err := c.isBackendHealthy(ctx, b)
+			if err != nil {
+				provider.Logger(*ctx).WithError(err).Errorw(
+					"Failure checking backend health",
+					map[string]interface{}{"backend": b})
+			} else if isHealthy {
+				markHealthy = append(markHealthy, b)
+				continue
+			}
 		}
-		if isEligibleToActivate {
-			toActivate = append(toActivate, b)
-		} else {
-			toDeactivate = append(toDeactivate, b)
-		}
+
+		markUnhealthy = append(markUnhealthy, b)
 	}
 
 	return &BackendsNewState{
-		Active:   toActivate,
-		Inactive: toDeactivate,
+		Healthy:   markHealthy,
+		Unhealthy: markUnhealthy,
 	}, nil
 }
 
@@ -91,23 +99,23 @@ func (c *Core) getAllBackends(ctx *context.Context) ([]*gatewayv1.Backend, error
 	return resp.GetItems(), nil
 }
 
-func (c *Core) ActivateBackend(ctx *context.Context, b *gatewayv1.Backend) error {
+func (c *Core) MarkHealthyBackend(ctx *context.Context, b *gatewayv1.Backend) error {
 	_, err := c.gatewayBackendClient.
-		EnableBackend(*ctx, &gatewayv1.BackendEnableRequest{
+		MarkHealthyBackend(*ctx, &gatewayv1.BackendMarkHealthyRequest{
 			Id: b.GetId(),
 		})
 	return err
 }
 
-func (c *Core) DeactivateBackend(ctx *context.Context, b *gatewayv1.Backend) error {
+func (c *Core) MarkUnhealthyBackend(ctx *context.Context, b *gatewayv1.Backend) error {
 	_, err := c.gatewayBackendClient.
-		DisableBackend(*ctx, &gatewayv1.BackendDisableRequest{
+		MarkUnhealthyBackend(*ctx, &gatewayv1.BackendMarkUnhealthyRequest{
 			Id: b.GetId(),
 		})
 	return err
 }
 
-func (c *Core) IsBackendHealthy(ctx *context.Context, b *gatewayv1.Backend) (bool, error) {
+func (c *Core) isBackendHealthy(ctx *context.Context, b *gatewayv1.Backend) (bool, error) {
 	isUp, err := c.isBackendUp(ctx, b)
 	if err != nil {
 		provider.Logger(*ctx).WithError(err).Errorw(

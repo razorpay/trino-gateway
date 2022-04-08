@@ -21,6 +21,8 @@ type ICore interface {
 	DeleteBackend(ctx context.Context, id string) error
 	EnableBackend(ctx context.Context, id string) error
 	DisableBackend(ctx context.Context, id string) error
+	MarkHealthyBackend(ctx context.Context, id string) error
+	MarkUnhealthyBackend(ctx context.Context, id string) error
 }
 
 func NewCore(backend repo.IBackendRepo) *Core {
@@ -34,6 +36,7 @@ type BackendCreateParams struct {
 	Scheme               string
 	ExternalUrl          string
 	IsEnabled            bool
+	IsHealthy            bool
 	UptimeSchedule       string
 	ClusterLoad          int32
 	ThresholdClusterLoad int32
@@ -46,6 +49,7 @@ func (c *Core) CreateOrUpdateBackend(ctx context.Context, params *BackendCreateP
 		Scheme:               params.Scheme,
 		ExternalUrl:          &params.ExternalUrl,
 		IsEnabled:            &params.IsEnabled,
+		IsHealthy:            &params.IsHealthy,
 		UptimeSchedule:       &params.UptimeSchedule,
 		ClusterLoad:          &params.ClusterLoad,
 		ThresholdClusterLoad: &params.ThresholdClusterLoad,
@@ -128,6 +132,14 @@ func (c *Core) EnableBackend(ctx context.Context, id string) error {
 
 func (c *Core) DisableBackend(ctx context.Context, id string) error {
 	return c.backendRepo.Disable(ctx, id)
+}
+
+func (c *Core) MarkHealthyBackend(ctx context.Context, id string) error {
+	return c.backendRepo.MarkHealthy(ctx, id)
+}
+
+func (c *Core) MarkUnhealthyBackend(ctx context.Context, id string) error {
+	return c.backendRepo.MarkUnhealthy(ctx, id)
 }
 
 type EvaluateClientParams struct {

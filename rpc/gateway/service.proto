@@ -64,6 +64,8 @@ service BackendApi {
     rpc DeleteBackend (BackendDeleteRequest) returns (Empty);
     rpc EnableBackend (BackendEnableRequest) returns (Empty);
     rpc DisableBackend (BackendDisableRequest) returns (Empty);
+    rpc MarkHealthyBackend (BackendMarkHealthyRequest) returns (Empty);
+    rpc MarkUnhealthyBackend (BackendMarkUnhealthyRequest) returns (Empty);
     rpc UpdateClusterLoadBackend (BackendUpdateClusterLoadRequest) returns (Empty);
 }
 
@@ -81,6 +83,7 @@ message Backend {
     int32 cluster_load = 7;
     int32 threshold_cluster_load = 8;
     int64 stats_updated_at = 9;
+    bool is_healthy = 10;
 }
 
 message BackendCreateResponse {
@@ -108,6 +111,14 @@ message BackendEnableRequest {
 }
 
 message BackendDisableRequest {
+    string id = 1; // required
+}
+
+message BackendMarkHealthyRequest {
+    string id = 1; // required
+}
+
+message BackendMarkUnhealthyRequest {
     string id = 1; // required
 }
 
