@@ -10,6 +10,7 @@ import (
 
 	"github.com/razorpay/trino-gateway/internal/provider"
 	"github.com/razorpay/trino-gateway/internal/router/trinoheaders"
+	"github.com/razorpay/trino-gateway/internal/utils"
 	gatewayv1 "github.com/razorpay/trino-gateway/rpc/gateway"
 )
 
@@ -62,7 +63,7 @@ func constructQueryFromReq(ctx *context.Context, req *http.Request) (string, err
 	if req.Method == "GET" {
 		return body, nil
 	} else if req.Method == "POST" {
-		b, err := parseBody(ctx, &req.Body)
+		b, err := utils.ParseHttpPayloadBody(ctx, &req.Body)
 		if err != nil {
 			return body, err
 		}
@@ -123,7 +124,7 @@ func (r *RouterServer) ProcessRequest(ctx *context.Context, req *http.Request) (
 	provider.Logger(*ctx).Infow(
 		fmt.Sprint(LOG_TAG, "Request received"),
 		map[string]interface{}{
-			"request":       stringifyHttpRequest(ctx, req),
+			"request":       utils.StringifyHttpRequest(ctx, req),
 			"request.Url":   req.URL,
 			"listeningPort": r.port,
 			"request.Query": req.URL.Query(),
@@ -276,7 +277,7 @@ func (r *RouterServer) prepareReqForRouting(ctx *context.Context, req *http.Requ
 	provider.Logger(*ctx).Infow(
 		fmt.Sprint(LOG_TAG, "Request modified, ready to be forwarded"),
 		map[string]interface{}{
-			"request": stringifyHttpRequest(ctx, req),
+			"request": utils.StringifyHttpRequest(ctx, req),
 		})
 
 	return nil

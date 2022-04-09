@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/razorpay/trino-gateway/internal/boot"
-	util "github.com/razorpay/trino-gateway/internal/monitor/util"
 	"github.com/razorpay/trino-gateway/internal/provider"
+	"github.com/razorpay/trino-gateway/internal/utils"
 	gatewayv1 "github.com/razorpay/trino-gateway/rpc/gateway"
 )
 
@@ -79,7 +79,7 @@ func (c *Core) EvaluateBackendNewState(ctx *context.Context) (*BackendsNewState,
 // checks whether current time is int the specified cron schedule pattern
 // it will also evaluate to false if the pattern is invalid
 func (c *Core) isCurrentTimeInCron(ctx *context.Context, sched string) (bool, error) {
-	return util.IsTimeInCron(ctx, time.Now(), sched)
+	return utils.IsTimeInCron(ctx, time.Now(), sched)
 }
 
 func (c *Core) getAllBackends(ctx *context.Context) ([]*gatewayv1.Backend, error) {

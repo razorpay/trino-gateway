@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"reflect"
 	"sort"
 	"time"
 
@@ -14,6 +13,7 @@ import (
 	"github.com/razorpay/trino-gateway/internal/gatewayserver/models"
 	"github.com/razorpay/trino-gateway/internal/gatewayserver/repo"
 	"github.com/razorpay/trino-gateway/internal/provider"
+	"github.com/razorpay/trino-gateway/internal/utils"
 )
 
 type Core struct {
@@ -145,7 +145,7 @@ func (c *Core) EvaluateBackendForGroups(ctx context.Context, groups []string) (s
 	provider.Logger(ctx).Debug("Take intersection of active grps with provided grp list")
 	var eligibleGrps []*models.Group
 	for i, g := range activeGroups {
-		if sliceContains(groups, g.ID) {
+		if utils.SliceContains(groups, g.ID) {
 			eligibleGrps = append(eligibleGrps, &activeGroups[i])
 		}
 	}
@@ -286,40 +286,4 @@ func (c *Core) findBackend(ctx context.Context, group models.Group) (*string, er
 	c.groupRepo.Update(ctx, &updGrp)
 
 	return &selectedBackendId, nil
-}
-
-// TODO: move to utils package
-// Finds intersection of 2 slices via simple comparison approach O(n^2)
-func simpleSliceIntersection(a interface{}, b interface{}) []interface{} {
-	set := make([]interface{}, 0)
-	av := reflect.ValueOf(a)
-
-	for i := 0; i < av.Len(); i++ {
-		el := av.Index(i).Interface()
-		if sliceContains(b, el) {
-			set = append(set, el)
-		}
-	}
-
-	return set
-}
-
-func simpleStringSliceIntersection(a []string, b []string) []string {
-	var res []string
-	for _, i := range simpleSliceIntersection(a, b) {
-		_i := i.(string)
-		res = append(res, _i)
-	}
-	return res
-}
-
-func sliceContains(a interface{}, e interface{}) bool {
-	v := reflect.ValueOf(a)
-
-	for i := 0; i < v.Len(); i++ {
-		if v.Index(i).Interface() == e {
-			return true
-		}
-	}
-	return false
 }

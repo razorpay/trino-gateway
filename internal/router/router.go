@@ -9,9 +9,11 @@ import (
 	"time"
 
 	"github.com/razorpay/trino-gateway/internal/provider"
+	"github.com/razorpay/trino-gateway/internal/utils"
 	gatewayv1 "github.com/razorpay/trino-gateway/rpc/gateway"
 )
 
+// TODO: Remove this, tagging not needed, info should be present in context object
 const LOG_TAG string = "GATEWAY_ROUTER: "
 
 type GatewayApiClient struct {
@@ -68,7 +70,7 @@ func Server(ctx *context.Context, port int, apiClient *GatewayApiClient, routerH
 			provider.Logger(*ctx).WithError(err).Errorw(
 				fmt.Sprint(LOG_TAG, "HttpReverseProxy ErrorHandler invoked"),
 				map[string]interface{}{
-					"request": stringifyHttpRequest(ctx, req),
+					"request": utils.StringifyHttpRequest(ctx, req),
 				})
 			ctxSharedObj, e := routerServer.extractSharedRequestCtxObject(ctx, req)
 			if e != nil {

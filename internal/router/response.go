@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/razorpay/trino-gateway/internal/provider"
+	"github.com/razorpay/trino-gateway/internal/utils"
 )
 
 func (r *RouterServer) handleRedirect(ctx *context.Context, resp *http.Response) error {
@@ -31,7 +32,6 @@ func (r *RouterServer) ProcessResponse(
 	resp *http.Response,
 	cReq ClientRequest,
 ) error {
-
 	switch stCode := resp.StatusCode; true {
 	case stCode >= 200 && stCode < 300:
 		// TODO - fix redirect
@@ -43,7 +43,7 @@ func (r *RouterServer) ProcessResponse(
 		provider.Logger(*ctx).Errorw(
 			fmt.Sprint(LOG_TAG, "Routing unsuccessful"),
 			map[string]interface{}{
-				"serverResponse": stringifyHttpResponse(ctx, resp),
+				"serverResponse": utils.StringifyHttpResponse(ctx, resp),
 			})
 		return nil
 	}
@@ -57,7 +57,7 @@ func (r *RouterServer) ProcessResponse(
 		return nil
 	case *QueryRequest:
 		req := nt.Query
-		body, err := parseBody(ctx, &resp.Body)
+		body, err := utils.ParseHttpPayloadBody(ctx, &resp.Body)
 		if err != nil {
 			provider.Logger(*ctx).WithError(err).Error(fmt.Sprint(LOG_TAG, "unable to parse body of server response"))
 		}
@@ -78,7 +78,7 @@ func (r *RouterServer) ProcessResponse(
 		}()
 
 		provider.Logger(*ctx).Debugw("Server Response Processed", map[string]interface{}{
-			"resp": stringifyHttpResponse(ctx, resp),
+			"resp": utils.StringifyHttpResponse(ctx, resp),
 		})
 
 		return nil
