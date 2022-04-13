@@ -13,7 +13,7 @@ type Backend struct {
 	ExternalUrl          *string `json:"external_url"`
 	IsEnabled            *bool   `json:"is_enabled"`
 	IsHealthy            *bool   `json:"is_healthy"`
-	UptimeSchedule       *string `json:"uptime_schedule" gorm:"default:'* * * * *';`
+	UptimeSchedule       *string `json:"uptime_schedule" gorm:"default:'* * * * *';"`
 	ClusterLoad          *int32  `json:"cluster_load"`
 	ThresholdClusterLoad *int32  `json:"threshold_cluster_load"`
 	StatsUpdatedAt       *int64  `json:"stats_updated_at"`
