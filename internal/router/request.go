@@ -58,25 +58,32 @@ func extractQueryId(ctx *context.Context, body string) string {
 }
 
 func constructQueryFromReq(ctx *context.Context, req *http.Request) (string, error) {
-	// Assumption that HTTP spec is followed and body in GET is meaningless
-	body := ""
 	if req.Method == "GET" {
-		return body, nil
+		// Assumption that HTTP spec is followed and body in GET is meaningless
+		return "", nil
 	} else if req.Method == "POST" {
-		b, err := utils.ParseHttpPayloadBody(ctx, &req.Body)
+		body, err := utils.ParseHttpPayloadBody(ctx, &req.Body)
 		if err != nil {
-			return body, err
+			return "", err
 		}
 		provider.Logger(*ctx).Debugw(fmt.Sprint(LOG_TAG, "parsed body of client request"),
 			map[string]interface{}{
 				"body": body,
 			})
-		body = b
+		preparedStmt := trinoheaders.Get(trinoheaders.PreparedStatement, req)
+		// TODO
+		_ = preparedStmt
+		return body, nil
+
 	}
-	preparedStmt := trinoheaders.Get(trinoheaders.PreparedStatement, req)
-	// TODO
-	_ = preparedStmt
-	return body, nil
+
+	// Other request methods are not unsupported
+	return "", errors.New(
+		fmt.Sprintf(
+			"unsupported request method '%s' for extracting query ID from request body",
+			req.Method,
+		),
+	)
 }
 
 func (r *RouterServer) ParseClientRequest(ctx *context.Context, req *http.Request) (cReq ClientRequest, err error) {
