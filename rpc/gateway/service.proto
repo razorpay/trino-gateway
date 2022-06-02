@@ -74,16 +74,16 @@ message Backend {
         http = 0;
         https = 1;
     }
-    string hostname = 1; // required
-    Scheme scheme = 2; // required
-    string id = 3;
-    string external_url = 4;
-    bool is_enabled = 5;
+    string id = 1; // required
+    bool is_enabled = 2;
+    Scheme scheme = 3; // required
+    string hostname = 4; // required
+    string external_url = 5;
     string uptime_schedule = 6;
-    int32 cluster_load = 7;
-    int32 threshold_cluster_load = 8;
-    int64 stats_updated_at = 9;
-    bool is_healthy = 10;
+    bool is_healthy = 7;
+    int32 cluster_load = 8;
+    int32 threshold_cluster_load = 9;
+    int64 stats_updated_at = 10;
 }
 
 message BackendCreateResponse {
@@ -277,12 +277,12 @@ message QueryGetResponse {
 }
 
 message QueriesListRequest {
-    // standard
-    int32 count = 1;
     enum Order {
         ASC = 0;
         DESC = 1;
     }
+    // standard
+    int32 count = 1;
     Order order_by = 2;
     int64 from = 3;
     int64 to = 4;
