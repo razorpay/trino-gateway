@@ -94,6 +94,9 @@ Uses [twirp](https://github.com/twitchtv/twirp) framework.
 
 The project aims to loosely follow [golang-standards/project-layout](https://github.com/golang-standards/project-layout) structure
 
+
+/third_party/swaggerui  -  Contains swaggerui distribution [files](https://github.com/swagger-api/swagger-ui/tree/v4.12.0/dist)
+
 ### Build Instructions
 
 A container based development environment can be setup in the project via docker-compose or similar tools with only prerequisite being docker installation (or similar tools like podman + buildah etc).
