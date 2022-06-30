@@ -13,7 +13,7 @@ require (
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/gobuffalo/nulls v0.4.1
 	github.com/golang/protobuf v1.5.2
-	github.com/gopherjs/gopherjs v0.0.0-20211216084454-9ae78a3fa6dd
+	github.com/gopherjs/gopherjs v1.17.2
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.7.2
 	github.com/hexops/vecty v0.6.0
 	github.com/lib/pq v1.10.4
@@ -67,6 +67,7 @@ require (
 	github.com/prometheus/common v0.32.1 // indirect
 	github.com/prometheus/procfs v0.7.3 // indirect
 	github.com/shurcooL/httpfs v0.0.0-20190707220628-8d4bc4ba7749 // indirect
+	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/spf13/afero v1.6.0 // indirect
 	github.com/spf13/cast v1.4.1 // indirect
 	github.com/spf13/cobra v1.3.0 // indirect
