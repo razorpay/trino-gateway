@@ -4,21 +4,21 @@ name: SecurityChecks
 on:
   pull_request: {}
   push:
-    branches: ["master"]
+    branches: ["master", "semgrep"]
   schedule:
     - cron: '30 20 * * *'  
 jobs:
   semgrep:
     name: Scan
-    runs-on: [ubuntu-latest]                               
+    runs-on: [ self-hosted ]
+    env:
+      SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
+    container:
+      image: returntocorp/semgrep
     steps:
-      - uses: actions/checkout@v2
-      - uses: returntocorp/semgrep-action@v1
-        with:
-          publishToken: ${{ secrets.SEMGREP_APP_TOKEN }}
-          publishDeployment: 339
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/checkout@v3
+      - name: Scan and suppress internal errors
+        run: semgrep ci || [ $? != 1 ] 
 
   workflow_status:
     runs-on: [ ubuntu-latest ]
