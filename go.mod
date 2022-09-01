@@ -7,7 +7,7 @@ require (
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/dlmiddlecote/sqlstats v1.0.2
 	github.com/fatih/structs v1.1.0
-	github.com/go-co-op/gocron v1.16.2
+	github.com/go-co-op/gocron v1.17.0
 	github.com/go-ozzo/ozzo-validation v3.6.0+incompatible
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
 	github.com/go-sql-driver/mysql v1.6.0
