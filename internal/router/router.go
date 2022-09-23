@@ -152,6 +152,15 @@ func (r *RouterServer) handleClientRequest(ctx *context.Context, req *http.Reque
 					nt.Query.GetBackendId(),
 				).
 				Inc()
+		case *QueryApiRequest:
+			metrics.requestsRoutedTotal.
+				WithLabelValues(
+					req.Method,
+					fmt.Sprint(r.port),
+					nt.Query.GetGroupId(),
+					nt.Query.GetBackendId(),
+				).
+				Inc()
 		default:
 		}
 	}

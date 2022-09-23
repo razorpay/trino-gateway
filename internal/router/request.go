@@ -119,6 +119,22 @@ func (r *RouterServer) ParseClientRequest(ctx *context.Context, req *http.Reques
 			Query:                      query,
 			clientHost:                 req.Host,
 		}, nil
+	} else if req.Method == "DELETE" && strings.HasPrefix(req.URL.Path, "/v1/query") {
+		queryId := strings.TrimPrefix(req.URL.Path, "/v1/query/")
+		query := &gatewayv1.Query{
+			Id:       queryId,
+			Username: trinoheaders.Get(trinoheaders.User, req),
+			ClientIp: req.RemoteAddr,
+		}
+
+		return &QueryApiRequest{
+			incomingPort:               int32(r.port),
+			headerConnectionProperties: trinoheaders.Get(trinoheaders.ConnectionProperties, req),
+			headerClientTags:           trinoheaders.Get(trinoheaders.ClientTags, req),
+			transactionId:              trinoheaders.Get(trinoheaders.TransactionId, req),
+			Query:                      query,
+			clientHost:                 req.Host,
+		}, nil
 	}
 	return nil, errors.New("client request type not supported by gateway")
 }
@@ -197,6 +213,27 @@ func (r *RouterServer) ProcessRequest(ctx *context.Context, req *http.Request) (
 		nt.Query.BackendId = bId
 
 		return nt, nil
+	case *QueryApiRequest:
+		findBackendIdResp, err := r.gatewayApiClient.Query.FindBackendForQuery(
+			*ctx,
+			&gatewayv1.FindBackendForQueryRequest{QueryId: nt.Query.GetId()},
+		)
+		if err != nil {
+			provider.Logger(*ctx).WithError(err).
+				Errorw("Backend Unresolvable for query.",
+					map[string]interface{}{"queryId": nt.Query.GetId()})
+		}
+		provider.Logger(*ctx).Debug(fmt.Sprint(LOG_TAG, "preparing payload for query Api request"))
+		nt.Query.BackendId = findBackendIdResp.GetBackendId()
+		nt.Query.GroupId = findBackendIdResp.GetGroupId()
+		err = r.prepareReqForRouting(ctx, req, nt.Query.GetBackendId(), nt)
+		if err != nil {
+			provider.Logger(*ctx).WithError(err).
+				Error("Error generating routing payload")
+			return nil, err
+		}
+		return nt, nil
+
 	default:
 		return nil, fmt.Errorf("unexpected type %T", nt)
 	}
@@ -267,6 +304,11 @@ func (r *RouterServer) prepareReqForRouting(ctx *context.Context, req *http.Requ
 		host = backend.GetExternalUrl()
 		// TODO: track external url scheme separately
 		scheme = backend.GetScheme().Enum().String()
+	case *QueryApiRequest:
+		host = backend.GetHostname()
+		scheme = backend.GetScheme().Enum().String()
+		cr.Query.ServerHost = fmt.
+			Sprintf("%s://%s", backend.GetScheme().Enum().String(), backend.GetExternalUrl())
 	case *QueryRequest:
 		host = backend.GetHostname()
 		scheme = backend.GetScheme().Enum().String()
