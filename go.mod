@@ -14,7 +14,7 @@ require (
 	github.com/gobuffalo/nulls v0.4.1
 	github.com/golang/protobuf v1.5.2
 	github.com/gopherjs/gopherjs v1.18.0-beta1.0.20220818100850-32d447b1e2ab
-	github.com/grpc-ecosystem/grpc-gateway/v2 v2.11.2
+	github.com/grpc-ecosystem/grpc-gateway/v2 v2.11.3
 	github.com/hexops/vecty v0.6.0
 	github.com/lib/pq v1.10.6
 	github.com/pressly/goose/v3 v3.6.1
@@ -82,7 +82,7 @@ require (
 	golang.org/x/term v0.0.0-20220722155259-a9ba230a4035 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/tools v0.1.12 // indirect
-	google.golang.org/genproto v0.0.0-20220817144833-d7fd3f11b9b1 // indirect
+	google.golang.org/genproto v0.0.0-20220822174746-9e6da59bd2fc // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
