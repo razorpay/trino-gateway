@@ -17,7 +17,7 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.11.3
 	github.com/hexops/vecty v0.6.0
 	github.com/lib/pq v1.10.6
-	github.com/pressly/goose/v3 v3.6.1
+	github.com/pressly/goose/v3 v3.7.0
 	github.com/prometheus/client_golang v1.13.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rs/xid v1.4.0
