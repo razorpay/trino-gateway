@@ -26,10 +26,10 @@ require (
 	github.com/trinodb/trino-go-client v0.305.0
 	github.com/twitchtv/twirp v8.1.2+incompatible
 	go.uber.org/zap v1.22.0
-	gorm.io/driver/mysql v1.1.2
+	gorm.io/driver/mysql v1.4.3
 	gorm.io/driver/postgres v1.1.2
-	gorm.io/gorm v1.21.16
-	gorm.io/plugin/dbresolver v1.1.0
+	gorm.io/gorm v1.24.0
+	gorm.io/plugin/dbresolver v1.4.0
 )
 
 require (
