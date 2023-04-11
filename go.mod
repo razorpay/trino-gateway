@@ -10,7 +10,7 @@ require (
 	github.com/go-co-op/gocron v1.17.0
 	github.com/go-ozzo/ozzo-validation v3.6.0+incompatible
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
-	github.com/go-sql-driver/mysql v1.6.0
+	github.com/go-sql-driver/mysql v1.7.0
 	github.com/gobuffalo/nulls v0.4.1
 	github.com/golang/protobuf v1.5.2
 	github.com/gopherjs/gopherjs v1.18.0-beta1.0.20220818100850-32d447b1e2ab
@@ -26,9 +26,9 @@ require (
 	github.com/trinodb/trino-go-client v0.305.0
 	github.com/twitchtv/twirp v8.1.2+incompatible
 	go.uber.org/zap v1.22.0
-	gorm.io/driver/mysql v1.1.2
+	gorm.io/driver/mysql v1.5.0
 	gorm.io/driver/postgres v1.1.2
-	gorm.io/gorm v1.21.16
+	gorm.io/gorm v1.24.7-0.20230306060331-85eaf9eeda11
 	gorm.io/plugin/dbresolver v1.1.0
 )
 
