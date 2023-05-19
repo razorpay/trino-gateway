@@ -4,9 +4,21 @@ package razorpay.gateway;
 
 // import "google/protobuf/struct.proto";
 
+// OpenApi Spec config
+// Refer to https://github.com/grpc-ecosystem/grpc-gateway/blob/main/protoc-gen-openapiv2/options/openapiv2.proto
+
 import "protoc-gen-openapiv2/options/annotations.proto";
 
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+  info: {
+    title: "Trino Gateway Server API";
+    version: "1.0";
+    description: "1. Set correct scheme matching the server's hostname.\n2. Secured APIs (WRITE operations) are hidden from UI till the user is authorized.";
+    contact: {
+      name: "Trino Gateway";
+      url: "https://github.com/razorpay/trino-gateway";
+    };
+  };
   schemes: [HTTP, HTTPS];
   base_path: "/twirp/";
   security: {
@@ -24,12 +36,6 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
         name: "X-Auth-Key";
       };
     };
-    // security: {
-    //   key: "BasicAuth";
-    //   value: {
-    //       type: TYPE_BASIC;
-    //   }
-    // };
   }
 };
 
@@ -38,8 +44,13 @@ option go_package = "./rpc/gateway;gatewayv1";
 message Empty {}
 
 service HealthCheckAPI {
-    // Check returns HealthCheckResponse for the requested service.
-    rpc Check(HealthCheckRequest) returns (HealthCheckResponse);
+    rpc Check(HealthCheckRequest) returns (HealthCheckResponse){
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+        summary: "Healthcheck status of the service";
+        description: "Runs healthchecks of the service and returns current status as HealthCheckResponse";
+        security: {};
+      };
+    };
 }
 
 message HealthCheckRequest {
@@ -59,14 +70,27 @@ message HealthCheckResponse {
 
 service BackendApi {
     rpc CreateOrUpdateBackend (Backend) returns (Empty);
-    rpc GetBackend (BackendGetRequest) returns (BackendGetResponse);
-    rpc ListAllBackends (Empty) returns (BackendListAllResponse);
+    rpc GetBackend (BackendGetRequest) returns (BackendGetResponse){
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+        security: {};
+      };
+    };
+    rpc ListAllBackends (Empty) returns (BackendListAllResponse){
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+        security: {};
+      };
+    };
     rpc DeleteBackend (BackendDeleteRequest) returns (Empty);
     rpc EnableBackend (BackendEnableRequest) returns (Empty);
     rpc DisableBackend (BackendDisableRequest) returns (Empty);
     rpc MarkHealthyBackend (BackendMarkHealthyRequest) returns (Empty);
     rpc MarkUnhealthyBackend (BackendMarkUnhealthyRequest) returns (Empty);
-    rpc UpdateClusterLoadBackend (BackendUpdateClusterLoadRequest) returns (Empty);
+    rpc UpdateClusterLoadBackend (BackendUpdateClusterLoadRequest) returns (Empty){
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+        summary: "Updates cluster load values";
+        description: "Update cluster load values of a backend";
+      };
+    };
 }
 
 message Backend {
@@ -129,13 +153,26 @@ message BackendUpdateClusterLoadRequest {
 
 service GroupApi {
     rpc CreateOrUpdateGroup (Group) returns (Empty);
-    rpc GetGroup (GroupGetRequest) returns (GroupGetResponse);
-    rpc ListAllGroups (Empty) returns (GroupListAllResponse);
+    rpc GetGroup (GroupGetRequest) returns (GroupGetResponse){
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+        security: {};
+      };
+    };
+    rpc ListAllGroups (Empty) returns (GroupListAllResponse){
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+        security: {};
+      };
+    };
     rpc DeleteGroup (GroupDeleteRequest) returns (Empty);
     rpc EnableGroup (GroupEnableRequest) returns (Empty);
     rpc DisableGroup (GroupDisableRequest) returns (Empty);
 
-    rpc EvaluateBackendForGroups(EvaluateBackendRequest) returns (EvaluateBackendResponse);
+    rpc EvaluateBackendForGroups(EvaluateBackendRequest) returns (EvaluateBackendResponse){
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+        summary: "Returns backend to be used for routing requests to this group";
+        description: "Evaluates which backend to be used for routing requests for this group. Depends on the configured routing strategy and backend health.";
+      };
+    };
 }
 
 message Group {
@@ -186,13 +223,26 @@ message EvaluateBackendResponse  {
 
 service PolicyApi {
     rpc CreateOrUpdatePolicy (Policy) returns (Empty);
-    rpc GetPolicy (PolicyGetRequest) returns (PolicyGetResponse);
-    rpc ListAllPolicies (Empty) returns (PolicyListAllResponse);
+    rpc GetPolicy (PolicyGetRequest) returns (PolicyGetResponse){
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+        security: {};
+      };
+    };
+    rpc ListAllPolicies (Empty) returns (PolicyListAllResponse){
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+        security: {};
+      };
+    };
     rpc DeletePolicy (PolicyDeleteRequest) returns (Empty);
     rpc EnablePolicy (PolicyEnableRequest) returns (Empty);
     rpc DisablePolicy (PolicyDisableRequest) returns (Empty);
 
-    rpc EvaluateGroupsForClient(EvaluateGroupsRequest) returns (EvaluateGroupsResponse);
+    rpc EvaluateGroupsForClient(EvaluateGroupsRequest) returns (EvaluateGroupsResponse){
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+        summary: "Returns groups eligible for routing for this client request.";
+        description: "Evaluates routing policies and returns a list of groups eligible for this client request.";
+      };
+    };
 }
 
 message Policy {
@@ -251,10 +301,25 @@ message EvaluateGroupsResponse {
 
 service QueryApi {
     rpc CreateOrUpdateQuery (Query) returns (Empty);
-    rpc GetQuery (QueryGetRequest) returns (QueryGetResponse);
-    rpc ListQueries (QueriesListRequest) returns (QueriesListResponse);
+    rpc GetQuery (QueryGetRequest) returns (QueryGetResponse){
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+        security: {};
+      };
+    };
+    rpc ListQueries (QueriesListRequest) returns (QueriesListResponse){
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+        security: {};
+        summary: "Returns paginated list of queries submitted";
+        description: "List of queries are returned as per the pagination parameters in Request. Pagination is handled on client side.";
+      };
+    };
 
-    rpc FindBackendForQuery(FindBackendForQueryRequest) returns (FindBackendForQueryResponse);
+    rpc FindBackendForQuery(FindBackendForQueryRequest) returns (FindBackendForQueryResponse){
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+        summary: "Finds backend used for routing this query";
+        description: "Finds backend used for routing this query. Returns error message if backend is not found.";
+      };
+    };
 }
 
 message Query {

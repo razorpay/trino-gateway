@@ -11,10 +11,37 @@ window.onload = function() {
       SwaggerUIStandalonePreset
     ],
     plugins: [
-      SwaggerUIBundle.plugins.DownloadUrl
+      SwaggerUIBundle.plugins.DownloadUrl,
+      HideInfoUrlPartsPlugin,
+      HideOperationsUntilAuthorizedPlugin
     ],
     layout: "StandaloneLayout"
   });
 
   //</editor-fold>
 };
+
+const HideInfoUrlPartsPlugin = () => {
+  return {
+    wrapComponents: {
+      InfoUrl: () => () => null,
+      // InfoBasePath: () => () => null, // this hides the `Base Url` part too, if you want that
+    }
+  }
+}
+
+const HideOperationsUntilAuthorizedPlugin = function() {
+  return {
+    wrapComponents: {
+      operation: (Ori, system) => (props) => {
+        const isOperationSecured = !!props.operation.get("security").size
+        const isOperationAuthorized = props.operation.get("isAuthorized")
+
+        if(!isOperationSecured || isOperationAuthorized) {
+          return system.React.createElement(Ori, props)
+        }
+        return null
+      }
+    }
+  }
+}
