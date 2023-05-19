@@ -1,22 +1,21 @@
 # Trino-Gateway
 
-A load balancer / routing proxy / gateway primarily for [Trino](https://trino.io/) Query engine.
-Written in Go and uses twirp framework.
+Trino-Gateway is a load balancer / routing proxy / gateway primarily for [Trino](https://trino.io/) Query engine, written in Go and uses twirp framework.
 
 
 ## Features
 
-- Horizontally scalable - Each instance of the service is stateless and a relational database is used for synchronization.
+- Horizontally scalable - Each instance of the service is stateless, and a relational database is used for synchronization.
 
 - Cluster Monitoring - Periodic Trino Cluster healthchecks via a combination of SQL healthcheck queries, APIs.
 
-- Logical Grouping - Create multiple logical groups of Trino clusters, following routing strategies are available
+- Logical Grouping - Create multiple logical groups of Trino clusters, available routing strategies:
 
   - round robin
   - least load
   - random
 
-- Routing policies - Traffic can be routed to logical groups of Trino clusters based on following parameters:
+- Routing policies - Traffic can be routed to logical groups of Trino clusters based on the following parameters:
 
   - Incoming socket (controlled by deployment infrastructure)
   - HTTP headers (controlled by client)
@@ -25,7 +24,7 @@ Written in Go and uses twirp framework.
     - connection-properties
     - host
 
-- GUI for monitoring queries (WIP)
+- GUI for monitoring queries (EXPERIMENTAL)
 
 - swaggerUI for service administration
 
@@ -33,10 +32,9 @@ Written in Go and uses twirp framework.
 
 ### Not supported
 
-SQL Transactions - Handling SQL transactions is half baked in the app, thus it is disabled and the application will throw an exception (HTTP500) if the client tries to initiate transactions.
+SQL Transactions - Handling SQL transactions is half-baked in the app. Therefore, it is disabled, and the application will throw an exception (HTTP500) if the client tries to initiate transactions.
 
-Proxy entire query lifecycle - A design decision to only route the query submission requests to the backend, so subsequent communication between the server and client happens directly.
-This removes data transfer overhead from gateway but as a tradeoff requires direct network connectivity between Trino clients and servers, which might be undesirable in certain scenarios.
+Proxy entire query lifecycle - A design decision to only route the query submission requests to the backend, so subsequent communication between the server and client happens directly. This removes data transfer overhead from the gateway but requires direct network connectivitybetween Trino clients and servers, which might be undesirable in certain scenarios.
 
 ## Deployment
 
@@ -81,12 +79,12 @@ Proto file containing all the API contracts is present [here](rpc/gateway/servic
 
 ### Application Architecture
 
-The application comprises 3 components and they leverage gRPC for Inter process communication.
+The application comprises of 3 components and they leverage gRPC for Inter-process communication.
 
 1. gatewayserver - Serves as the admin service and contains the logic for interfacing with the service's storage and business logic for selecting Trino cluster to route an incoming query to.
 Uses [twirp](https://github.com/twitchtv/twirp) framework.
 
-2. monitor - Performs periodic healthchecks of the configured `Backends`. Also tracks configures "uptime schedules" of the clusters and disables/enables them accordingly.
+2. monitor - Performs periodic healthchecks of the configured `Backends`. Also tracks configured "uptime schedules" of the clusters and disables/enables them accordingly.
 
 3. router - Contains logic to act as a reverse proxy for clients.
 
@@ -99,7 +97,7 @@ The project aims to loosely follow [golang-standards/project-layout](https://git
 
 ### Build Instructions
 
-A container based development environment can be setup in the project via docker-compose or similar tools with only prerequisite being docker installation (or similar tools like podman + buildah etc).
+A container-based development environment can be set up in the project via docker-compose or similar tools with the only prerequisite being docker installation (or similar tools like podman + buildah etc).
 
 Docker based env can be setup by invoking
 
@@ -165,13 +163,25 @@ go run ./cmd/gateway | jq
 
 _rough notes_
 
+Add DB query history purge logic.
+
+Add initial setup configs
+
 Integration tests
+
+Fix GORM model regression in later version
+
+Use https://github.com/samber/mo and https://github.com/samber/lo
 
 Support Transactions (need sticky routing on transaction id), need caching layer or else performance is poor.
 
-Setup cache layer for storing query_id -> backend_id ampping
+Setup cache layer for storing query_id -> backend_id mapping
 
 Proper GUI - scope would be limited but current implementation of using vecty + gopherjs is hard to maintain and deploy.
+
+Switch to Server side rendering for frontend eg:
+    - https://hotwired.dev/
+    - https://github.com/wolfeidau/hotwire-golang-website
 
 Tracing integration
 
