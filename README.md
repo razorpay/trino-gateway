@@ -95,7 +95,7 @@ Uses [twirp](https://github.com/twitchtv/twirp) framework.
 The project aims to loosely follow [golang-standards/project-layout](https://github.com/golang-standards/project-layout) structure
 
 
-/third_party/swaggerui  -  Contains swaggerui distribution [files](https://github.com/swagger-api/swagger-ui/tree/v4.12.0/dist)
+/third_party/swaggerui  -  Contains swaggerui distribution [files](https://github.com/swagger-api/swagger-ui/tree/v4.18.3/dist)
 
 ### Build Instructions
 
@@ -160,6 +160,12 @@ App uses uber/zap for logging with everything in single line json, use `jq` or s
 ```bash
 go run ./cmd/gateway | jq
 ```
+
+## Notes
+
+#### Update swaggerUI
+1. Extract https://github.com/swagger-api/swagger-ui/tree/<version>/dist -> third_party/swaggerui
+2. Modify swagger-initializer.js to point to generated openApi spec
 
 ## TODO 
 
