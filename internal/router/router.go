@@ -34,14 +34,14 @@ type key int
 const keyCtxSharedObj key = iota
 
 /*
-	For data sharing between processClientReq & processClientResponse, we hav following approaches
+For data sharing between processClientReq & processClientResponse, we hav following approaches
 
-	1. context - Be careful with it, twirp clients require the context sent to http.Server whereas sharing should be done on req.Context (req object sent to Director), otherwise the http.Server context will keep getting shared ctx values added to it unless the Server is shutdown, also this ctx will be shared across all requests sent to the server
-	TODO - have unit tests ensuring http.Server ctx is not being modified (i.e. none changes *ctx), maybe by checking fmt.Sprintf("%v", *ctx)
+1. context - Be careful with it, twirp clients require the context sent to http.Server whereas sharing should be done on req.Context (req object sent to Director), otherwise the http.Server context will keep getting shared ctx values added to it unless the Server is shutdown, also this ctx will be shared across all requests sent to the server
+TODO - have unit tests ensuring http.Server ctx is not being modified (i.e. none changes *ctx), maybe by checking fmt.Sprintf("%v", *ctx)
 
-	2. pointers - issues with synchronization, also hinders readability and code is prone to bugs
-	              won't work with concurrent requests
-	3. goroutines + channel - cleaner but extra overhead
+ 2. pointers - issues with synchronization, also hinders readability and code is prone to bugs
+    won't work with concurrent requests
+ 3. goroutines + channel - cleaner but extra overhead
 */
 type ContextSharedObject struct {
 	clientRequest  ClientRequest
@@ -70,7 +70,7 @@ func Server(ctx *context.Context, port int, apiClient *GatewayApiClient, routerH
 			provider.Logger(*ctx).WithError(err).Errorw(
 				fmt.Sprint(LOG_TAG, "HttpReverseProxy ErrorHandler invoked"),
 				map[string]interface{}{
-					"request": utils.StringifyHttpRequest(ctx, req),
+					"request": utils.StringifyHttpRequestOrResponse(ctx, req),
 				})
 			ctxSharedObj, e := routerServer.extractSharedRequestCtxObject(ctx, req)
 			if e != nil {

@@ -2,6 +2,7 @@ package utils
 
 import (
 	"bytes"
+	"compress/gzip"
 	"context"
 	"io"
 	"io/ioutil"
@@ -70,40 +71,68 @@ func SimpleStringSliceIntersection(a []string, b []string) []string {
 	return res
 }
 
-func StringifyHttpRequest(ctx *context.Context, req *http.Request) string {
-	requestDump, err := httputil.DumpRequest(req, true)
+func GetHttpBodyEncoding[T *http.Request | *http.Response](ctx *context.Context, r T) string {
+	enc := ""
+	headerKey := "Content-Encoding"
+	switch v := any(r).(type) {
+	case *http.Request:
+		enc = v.Header.Get(headerKey)
+	case *http.Response:
+		enc = v.Header.Get(headerKey)
+	}
+	return enc
+}
+
+func StringifyHttpRequestOrResponse[T *http.Request | *http.Response](ctx *context.Context, r T) string {
+	canDumpBody := GetHttpBodyEncoding(ctx, r) == ""
+	if !canDumpBody {
+		provider.Logger(*ctx).Debug(
+			"Encoded body in http payload, assuming binary data and skipping dump of body")
+	}
+	var res []byte
+	var err error
+	switch v := any(r).(type) {
+	case *http.Request:
+		res, err = httputil.DumpRequest(v, canDumpBody)
+	case *http.Response:
+		res, err = httputil.DumpResponse(v, canDumpBody)
+	}
 	if err != nil {
 		provider.Logger(*ctx).Errorw(
-			"Unable to stringify http request",
+			"Unable to stringify http payload",
 			map[string]interface{}{
 				"error": err.Error(),
 			})
 	}
-	return string(requestDump)
+	return string(res)
 }
 
-func StringifyHttpResponse(ctx *context.Context, req *http.Response) string {
-	responseDump, err := httputil.DumpResponse(req, true)
-	if err != nil {
-		provider.Logger(*ctx).Errorw(
-			"Unable to stringify http response",
-			map[string]interface{}{
-				"error": err.Error(),
-			})
-	}
-	return string(responseDump)
-}
-
-func ParseHttpPayloadBody(ctx *context.Context, body *io.ReadCloser) (string, error) {
-	// b := req.Body
-
+func ParseHttpPayloadBody(ctx *context.Context, body *io.ReadCloser, encoding string) (string, error) {
 	bodyBytes, err := io.ReadAll(*body)
 	if err != nil {
 		return "", err
 	}
 	// since its a ReadCloser type, the stream will be empty after its read once
-	// ensure it is restored in original request
+	// ensure it is restored in original object
 	*body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
 
-	return string(bodyBytes), nil
+	switch encoding {
+	case "gzip":
+		var reader io.ReadCloser
+		reader, err = gzip.NewReader(bytes.NewReader([]byte(bodyBytes)))
+		if err != nil {
+			provider.Logger(
+				*ctx).WithError(err).Error(
+				"Unable to decompress gzip encoded response")
+		}
+		defer reader.Close()
+		bb, err := io.ReadAll(reader)
+		if err != nil {
+			return "", err
+		}
+
+		return string(bb), nil
+	default:
+		return string(bodyBytes), nil
+	}
 }

@@ -43,7 +43,7 @@ func (r *RouterServer) ProcessResponse(
 		provider.Logger(*ctx).Errorw(
 			fmt.Sprint(LOG_TAG, "Routing unsuccessful"),
 			map[string]interface{}{
-				"serverResponse": utils.StringifyHttpResponse(ctx, resp),
+				"serverResponse": utils.StringifyHttpRequestOrResponse(ctx, resp),
 			})
 		return nil
 	}
@@ -57,7 +57,7 @@ func (r *RouterServer) ProcessResponse(
 		return nil
 	case *QueryRequest:
 		req := nt.Query
-		body, err := utils.ParseHttpPayloadBody(ctx, &resp.Body)
+		body, err := utils.ParseHttpPayloadBody(ctx, &resp.Body, utils.GetHttpBodyEncoding(ctx, resp))
 		if err != nil {
 			provider.Logger(*ctx).WithError(err).Error(fmt.Sprint(LOG_TAG, "unable to parse body of server response"))
 		}
@@ -78,7 +78,7 @@ func (r *RouterServer) ProcessResponse(
 		}()
 
 		provider.Logger(*ctx).Debugw("Server Response Processed", map[string]interface{}{
-			"resp": utils.StringifyHttpResponse(ctx, resp),
+			"resp": utils.StringifyHttpRequestOrResponse(ctx, resp),
 		})
 
 		return nil
