@@ -118,7 +118,7 @@ func startGatewayServers(_ctx *context.Context) []*http.Server {
 }
 
 func listenHttp(ctx *context.Context, server *http.Server, port int) {
-	listener, err := net.Listen("tcp4", fmt.Sprint(":", port))
+	listener, err := net.Listen("tcp4", fmt.Sprint("localhost:", port))
 	if err != nil {
 		panic(err)
 	}
