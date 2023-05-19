@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"bytes"
+	"compress/gzip"
 	"context"
 	"io"
 	"strings"
@@ -49,10 +51,10 @@ func (suite *UtilsSuite) Test_IsTimeInCron() {
 	)
 }
 
-func (suite *UtilsSuite) Test_stringifyHttpRequest() {
+func (suite *UtilsSuite) Test_getHttpBodyEncoding() {
 }
 
-func (suite *UtilsSuite) Test_stringifyHttpResponse() {
+func (suite *UtilsSuite) Test_stringifyHttpRequestOrResponse() {
 }
 
 func (suite *UtilsSuite) Test_parseBody() {
@@ -61,12 +63,33 @@ func (suite *UtilsSuite) Test_parseBody() {
 	stringReadCloser := io.NopCloser(stringReader)
 
 	tst := func() string {
-		s, _ := ParseHttpPayloadBody(suite.ctx, &stringReadCloser)
+		s, _ := ParseHttpPayloadBody(suite.ctx, &stringReadCloser, "")
 		return s
 	}
 
 	suite.Equalf(str, tst(), "Failed to extract string from body")
 	suite.Equalf(str, tst(), "String extraction is not idempotent")
+
+	var b bytes.Buffer
+	gz := gzip.NewWriter(&b)
+	if _, err := gz.Write([]byte(str)); err != nil {
+		panic(err)
+	}
+	if err := gz.Close(); err != nil {
+		panic(err)
+	}
+
+	strGzipped := b.String()
+	stringReaderGzipped := strings.NewReader(strGzipped)
+	stringReadCloserGzipped := io.NopCloser(stringReaderGzipped)
+
+	tst_gzipped := func() string {
+		s, _ := ParseHttpPayloadBody(suite.ctx, &stringReadCloserGzipped, "gzip")
+		return s
+	}
+
+	suite.Equalf(str, tst_gzipped(), "Failed to extract string from body")
+	suite.Equalf(str, tst_gzipped(), "String extraction is not idempotent")
 }
 
 func TestSuite(t *testing.T) {

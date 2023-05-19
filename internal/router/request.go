@@ -62,7 +62,7 @@ func constructQueryFromReq(ctx *context.Context, req *http.Request) (string, err
 		// Assumption that HTTP spec is followed and body in GET is meaningless
 		return "", nil
 	} else if req.Method == "POST" {
-		body, err := utils.ParseHttpPayloadBody(ctx, &req.Body)
+		body, err := utils.ParseHttpPayloadBody(ctx, &req.Body, req.Header.Get("Content-Encoding"))
 		if err != nil {
 			return "", err
 		}
@@ -147,7 +147,7 @@ func (r *RouterServer) ProcessRequest(ctx *context.Context, req *http.Request) (
 	provider.Logger(*ctx).Infow(
 		fmt.Sprint(LOG_TAG, "Request received"),
 		map[string]interface{}{
-			"request":       utils.StringifyHttpRequest(ctx, req),
+			"request":       utils.StringifyHttpRequestOrResponse(ctx, req),
 			"request.Url":   req.URL,
 			"listeningPort": r.port,
 			"request.Query": req.URL.Query(),
@@ -326,7 +326,7 @@ func (r *RouterServer) prepareReqForRouting(ctx *context.Context, req *http.Requ
 	provider.Logger(*ctx).Infow(
 		fmt.Sprint(LOG_TAG, "Request modified, ready to be forwarded"),
 		map[string]interface{}{
-			"request": utils.StringifyHttpRequest(ctx, req),
+			"request": utils.StringifyHttpRequestOrResponse(ctx, req),
 		})
 
 	return nil
