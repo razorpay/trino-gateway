@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
-	"reflect"
 	"time"
 
 	"github.com/razorpay/trino-gateway/internal/provider"
@@ -36,39 +35,32 @@ func IsTimeInCron(ctx *context.Context, t time.Time, sched string) (bool, error)
 	return nextRun.Sub(t).Minutes() <= 1, nil
 }
 
-func SliceContains(a interface{}, e interface{}) bool {
-	v := reflect.ValueOf(a)
-
-	for i := 0; i < v.Len(); i++ {
-		if v.Index(i).Interface() == e {
+func SliceContains[T comparable](collection []T, element T) bool {
+	for _, item := range collection {
+		if item == element {
 			return true
 		}
 	}
+
 	return false
 }
 
-// Finds intersection of 2 slices via simple comparison approach O(n^2)
-func SimpleSliceIntersection(a interface{}, b interface{}) []interface{} {
-	set := make([]interface{}, 0)
-	av := reflect.ValueOf(a)
+// Finds intersection of 2 slices
+func SimpleSliceIntersection[T comparable](list1 []T, list2 []T) []T {
+	result := []T{}
+	seen := map[T]struct{}{}
 
-	for i := 0; i < av.Len(); i++ {
-		el := av.Index(i).Interface()
-		if SliceContains(b, el) {
-			set = append(set, el)
+	for _, elem := range list1 {
+		seen[elem] = struct{}{}
+	}
+
+	for _, elem := range list2 {
+		if _, ok := seen[elem]; ok {
+			result = append(result, elem)
 		}
 	}
 
-	return set
-}
-
-func SimpleStringSliceIntersection(a []string, b []string) []string {
-	var res []string
-	for _, i := range SimpleSliceIntersection(a, b) {
-		_i := i.(string)
-		res = append(res, _i)
-	}
-	return res
+	return result
 }
 
 func GetHttpBodyEncoding[T *http.Request | *http.Response](ctx *context.Context, r T) string {
