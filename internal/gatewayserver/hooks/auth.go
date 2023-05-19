@@ -33,7 +33,7 @@ func Auth() *twirp.ServerHooks {
 			return ctx, twirp.NewError(
 				twirp.Unauthenticated,
 				fmt.Sprint(
-					"empty/undefined apiToken in header",
+					"empty/undefined apiToken in header: ",
 					boot.Config.Auth.TokenHeaderKey),
 			)
 		}
