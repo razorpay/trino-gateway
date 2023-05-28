@@ -34,6 +34,7 @@ type Auth struct {
 type Gateway struct {
 	DefaultRoutingGroup string
 	Ports               []int
+	Network             string
 }
 
 type Monitor struct {
