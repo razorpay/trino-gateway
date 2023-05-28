@@ -10,9 +10,7 @@ services:
     volumes:
       - ./../../..:/app
     environment:
-      TRINO-GATEWAY_APP_GITCOMMITHASH: dev-docker
-      TRINO-GATEWAY_DB_CONNECTIONCONFIG_URL: trino_gateway_mysql
-      TRINO-GATEWAY_DB_CONNECTIONCONFIG_PORT: 3306
+      APP_ENV: dev-docker
     entrypoint: /app/build/docker/dev/entrypoint.sh
     # entrypoint: ["tail", "-f", "/dev/null"]
     expose:

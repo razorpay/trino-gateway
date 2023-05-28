@@ -1,0 +1,11 @@
+[app]
+    gitCommitHash                = "dev-docker"
+    logLevel                     = "debug"
+
+[db]
+    [db.ConnectionConfig]
+        url                      = "trino_gateway_mysql"
+        port                     = 3306
+
+[gateway]
+    defaultRoutingGroup          = "dev"
