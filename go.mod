@@ -26,11 +26,15 @@ require (
 	github.com/trinodb/trino-go-client v0.311.0
 	github.com/twitchtv/twirp v8.1.3+incompatible
 	go.uber.org/zap v1.24.0
-	google.golang.org/protobuf v1.30.0
 	gorm.io/driver/mysql v1.1.2
-	gorm.io/driver/postgres v1.1.2
-	gorm.io/gorm v1.21.16
+	gorm.io/driver/postgres v1.5.2
+	gorm.io/gorm v1.25.0
 	gorm.io/plugin/dbresolver v1.1.0
+)
+
+require (
+	github.com/jackc/pgx/v5 v5.3.1 // indirect
+	google.golang.org/protobuf v1.30.0 // indirect
 )
 
 require (
@@ -44,14 +48,8 @@ require (
 	github.com/hashicorp/go-uuid v1.0.3 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
-	github.com/jackc/pgconn v1.14.0 // indirect
-	github.com/jackc/pgio v1.0.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
-	github.com/jackc/pgproto3/v2 v2.3.2 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a // indirect
-	github.com/jackc/pgtype v1.14.0 // indirect
-	github.com/jackc/pgx/v4 v4.18.1 // indirect
 	github.com/jcmturner/gofork v1.7.6 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
