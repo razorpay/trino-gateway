@@ -9,3 +9,4 @@
 
 [gateway]
     defaultRoutingGroup          = "dev"
+    network                      = ""

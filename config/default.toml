@@ -34,6 +34,7 @@
 [gateway]
     ports                 = [8080, 8081]
     defaultRoutingGroup   = "adhoc"
+    network               = "localhost"
 
 [monitor]
     interval              = "10m"
