@@ -1,0 +1,10 @@
+version: '3'
+services:
+  trino_gateway:
+    # [Optional] Required for ptrace-based debuggers like C++, Go, and Rust
+    cap_add:
+      - SYS_PTRACE
+    security_opt:
+      - seccomp:unconfined
+    # Overrides default command so things don't shut down after the process ends.
+    entrypoint: /bin/sh -c "while sleep 1000; do :; done"
