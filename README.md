@@ -1,5 +1,7 @@
 # Trino-Gateway
 
+[![Open in Dev Containers](https://img.shields.io/static/v1?label=Dev%20Containers&message=Open&color=blue&logo=visualstudiocode)](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/razorpay/trino-gateway)
+
 Trino-Gateway is a load balancer / routing proxy / gateway primarily for [Trino](https://trino.io/) Query engine, written in Go and uses twirp framework.
 
 
@@ -94,6 +96,10 @@ The project aims to loosely follow [golang-standards/project-layout](https://git
 
 
 /third_party/swaggerui  -  Contains swaggerui distribution [files](https://github.com/swagger-api/swagger-ui/tree/v4.18.3/dist)
+
+#### VS Code Dev Containers
+
+If you already have VS Code and Docker installed, you can click the badge above or [here](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/razorpay/trino-gateway) to get started. Clicking these links will cause VS Code to automatically install the Dev Containers extension if needed, clone the source code into a container volume, and spin up a dev container for use.
 
 ### Build Instructions
 

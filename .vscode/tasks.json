@@ -1,0 +1,31 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "serve on local",
+        "type": "shell",
+        "command": "go run ./cmd/gateway | jq",
+        "problemMatcher": []
+      },
+      {
+        "label": "serve on local without jq",
+        "type": "shell",
+        "command": "go run ./cmd/gateway",
+        "problemMatcher": []
+      },
+      {
+        "label": "send query submission request to localhost:8080",
+        "type": "shell",
+        "command": "curl -X POST http://localhost:8080/v1/statement -H 'X-Trino-User: dev' -d 'SELECT 1' ",
+        "problemMatcher": []
+      },
+      {
+        "label": "Run local-dev setup example",
+        "type": "shell",
+        "command": "source ./scripts/run-example.sh",
+        "problemMatcher": []
+      }
+    ]
+  }
