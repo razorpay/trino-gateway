@@ -34,7 +34,8 @@
 [gateway]
     ports                 = [8080, 8081]
     defaultRoutingGroup   = "adhoc"
-    network               = "localhost"
+    # empty will mean 0.0.0.0 which is required only if running inside docker container, set to `localhost` otherwise
+    network               = ""
 
 [monitor]
     interval              = "10m"
