@@ -165,6 +165,13 @@ App uses uber/zap for logging with everything in single line json, use `jq` or s
 go run ./cmd/gateway | jq
 ```
 
+## References :sparkles:
+
+--------------------
+[Razorpay](https://engineering.razorpay.com/how-trino-and-alluxio-power-analytics-at-razorpay-803d3386daaf)
+
+{{Add your org here}}
+
 ## Notes
 
 #### Update swaggerUI
