@@ -188,6 +188,8 @@ Add initial setup configs
 
 Integration tests
 
+Restructure README reference: https://github.com/keyval-dev/odigos
+
 Fix GORM model regression in later version
 
 Use https://github.com/samber/mo and https://github.com/samber/lo
@@ -208,3 +210,4 @@ Explore victoriaMetrics go client <https://github.com/VictoriaMetrics/metrics>
 
 
 Handle routing errors properly instead of returning HTTP500 in all cases, eg: sql transaction request must return HTTP400 instead of HTTP500
+
