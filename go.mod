@@ -7,7 +7,7 @@ require (
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/dlmiddlecote/sqlstats v1.0.2
 	github.com/fatih/structs v1.1.0
-	github.com/go-co-op/gocron v1.27.1
+	github.com/go-co-op/gocron v1.28.3
 	github.com/go-ozzo/ozzo-validation v3.6.0+incompatible
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
 	github.com/go-sql-driver/mysql v1.7.1
@@ -26,12 +26,13 @@ require (
 	github.com/trinodb/trino-go-client v0.311.0
 	github.com/twitchtv/twirp v8.1.3+incompatible
 	go.uber.org/zap v1.24.0
-	google.golang.org/protobuf v1.30.0
 	gorm.io/driver/mysql v1.1.2
 	gorm.io/driver/postgres v1.1.2
 	gorm.io/gorm v1.21.16
 	gorm.io/plugin/dbresolver v1.1.0
 )
+
+require google.golang.org/protobuf v1.30.0 // indirect
 
 require (
 	github.com/beorn7/perks v1.0.1 // indirect
