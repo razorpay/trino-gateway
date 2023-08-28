@@ -28,8 +28,16 @@
         connectionMaxLifetime = 0
 
 [auth]
-    token              = "test123"
-    tokenHeaderKey     = "X-Auth-Key"
+    token                        = "test123"
+    tokenHeaderKey               = "X-Auth-Key"
+    [auth.router]
+        validationURL            = "localhost:28001"
+        validationToken          = "test123"
+        cacheTTLMinutes          = "10m"
+        authenticate             = false
+
+
+
 
 [gateway]
     ports                 = [8080, 8081]

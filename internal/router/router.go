@@ -54,7 +54,7 @@ func init() {
 	initMetrics()
 }
 
-func Server(ctx *context.Context, port int, apiClient *GatewayApiClient, routerHostname string) *http.Server {
+func Server(ctx *context.Context, port int, apiClient *GatewayApiClient, routerHostname string, authenticate bool) *http.Server {
 	routerServer := RouterServer{
 		port:             port,
 		gatewayApiClient: apiClient,
@@ -108,9 +108,17 @@ func Server(ctx *context.Context, port int, apiClient *GatewayApiClient, routerH
 		},
 	}
 
-	return &http.Server{
-		Handler: &reverseProxy,
+	if authenticate {
+		authenticatedReverseProxy := WithAuth(ctx, &reverseProxy)
+		return &http.Server{
+			Handler: authenticatedReverseProxy,
+		}
+	} else {
+		return &http.Server{
+			Handler: &reverseProxy,
+		}
 	}
+
 }
 
 func (r *RouterServer) extractSharedRequestCtxObject(ctx *context.Context, req *http.Request) (*ContextSharedObject, error) {

@@ -11,6 +11,7 @@ services:
       - ./../../..:/app
     environment:
       APP_ENV: dev-docker
+      TRINO-GATEWAY_AUTH_ROUTER_AUTHENTICATE: true
     entrypoint: /app/build/docker/dev/entrypoint.sh
     # entrypoint: ["tail", "-f", "/dev/null"]
     expose:

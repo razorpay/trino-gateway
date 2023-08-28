@@ -33,6 +33,8 @@ require (
 	gorm.io/plugin/dbresolver v1.1.0
 )
 
+require github.com/stretchr/objx v0.5.0 // indirect
+
 require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
