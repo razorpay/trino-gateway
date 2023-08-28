@@ -13,6 +13,7 @@ const (
 	ClientTags           = "Client-Tags"
 	ConnectionProperties = "Connection-Properties"
 	TransactionId        = "Transaction-Id"
+	Password             = "Password"
 )
 
 var allowedPrefixes = [...]string{"Presto", "Trino"}

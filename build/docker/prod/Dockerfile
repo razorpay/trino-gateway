@@ -8,7 +8,7 @@ WORKDIR /app
 
 
 RUN apk update \
-    && apk add --no-cache bash make protobuf protobuf-dev git gzip curl
+    && apk add --no-cache bash make protobuf protobuf-dev git gzip curl build-base
 
 COPY ./ /app
 
