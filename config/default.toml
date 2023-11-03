@@ -34,7 +34,7 @@
         validationURL            = "localhost:28001"
         validationToken          = "test123"
         cacheTTLMinutes          = "10m"
-        authenticate             = false
+        authenticate             = "false"
 
 
 

@@ -54,7 +54,7 @@ func init() {
 	initMetrics()
 }
 
-func Server(ctx *context.Context, port int, apiClient *GatewayApiClient, routerHostname string, authenticate bool) *http.Server {
+func Server(ctx *context.Context, port int, apiClient *GatewayApiClient, routerHostname string, authenticate string) *http.Server {
 	routerServer := RouterServer{
 		port:             port,
 		gatewayApiClient: apiClient,
@@ -108,7 +108,7 @@ func Server(ctx *context.Context, port int, apiClient *GatewayApiClient, routerH
 		},
 	}
 
-	if authenticate {
+	if authenticate == "true" {
 		authenticatedReverseProxy := WithAuth(ctx, &reverseProxy)
 		return &http.Server{
 			Handler: authenticatedReverseProxy,
