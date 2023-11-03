@@ -33,7 +33,7 @@ type Auth struct {
 		ValidationURL   string
 		ValidationToken string
 		CacheTTLMinutes string
-		Authenticate    bool
+		Authenticate    string
 	}
 }
 
