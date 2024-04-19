@@ -40,8 +40,6 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: root123
       MYSQL_DATABASE: trino-gateway
-    # volumes:
-    # - ./dockerconf/mysqlconf:/etc/mysql/conf.d
     networks:
       - default
 # networks:
