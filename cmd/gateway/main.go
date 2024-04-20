@@ -15,7 +15,7 @@ import (
 	"github.com/twitchtv/twirp"
 
 	"github.com/razorpay/trino-gateway/internal/boot"
-	guiserver "github.com/razorpay/trino-gateway/internal/frontend/server"
+	// guiserver "github.com/razorpay/trino-gateway/internal/frontend/server"
 	backendapi "github.com/razorpay/trino-gateway/internal/gatewayserver/backendApi"
 	"github.com/razorpay/trino-gateway/internal/gatewayserver/database/dbRepo"
 	groupapi "github.com/razorpay/trino-gateway/internal/gatewayserver/groupApi"
@@ -208,7 +208,8 @@ func startApiServer(ctx *context.Context) *http.Server {
 	fs := http.FileServer(http.Dir("./third_party/swaggerui"))
 	mux.Handle(appSwaggerUiPath, http.StripPrefix(appSwaggerUiPath, fs))
 
-	mux.Handle("/", *guiserver.NewServerHandler(ctx))
+	mux.Handle("/", http.RedirectHandler(appSwaggerUiPath, http.StatusSeeOther))
+	// mux.Handle("/", *guiserver.NewServerHandler(ctx))
 
 	// mux.Handle("/twirpql", twirpql.Handler(gatewayServer, nil))
 	// mux.Handle("/admin/twirpql/play", twirpql.Playground("my service", "/twirpql"))

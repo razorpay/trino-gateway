@@ -13,7 +13,7 @@ RUN apk update \
 COPY ./ /app
 
 RUN go mod download \
-    && make setup build build-frontend
+    && make setup build
 # RUN go mod vendor
 
 COPY ./build/docker/prod/probe.sh /app/probe.sh

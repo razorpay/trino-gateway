@@ -3,7 +3,7 @@
 initialize() {
     # Init app secrets + envvars
     echo "Syncing app deps, if this takes time, update deps in the built image"
-    make setup build build-frontend
+    make setup build
 }
 
 check_db_connection() {
