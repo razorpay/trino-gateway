@@ -10,7 +10,7 @@ setup:
 
 .PHONY: dev-setup
 dev-setup: setup config/dev.toml
-	
+
 
 config/dev.toml:
 	touch $(PWD)/config/dev.toml
@@ -38,6 +38,9 @@ dev-docker-up:
 dev-docker-down:
 	$(SCRIPT_DIR)/docker.sh down
 
+.PHONY: dev-docker-run-example ## Runs bundled example in dev docker env
+dev-docker-run-example:
+	$(SCRIPT_DIR)/run-example.sh
 
 .PHONY: dev-migration
 dev-migration:
