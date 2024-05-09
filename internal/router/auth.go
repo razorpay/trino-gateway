@@ -34,10 +34,12 @@ func NewDefaultAuthService() *DefaultAuthService {
 /*
 Calls an Auth Token Validator Service with following api contract:
 With Params-
-{
-	"email": "abc@xyz.com",
-	"token": "token123"
-}
+
+	{
+		"email": "abc@xyz.com",
+		"token": "token123"
+	}
+
 api returns-
 If Authenticated - {"ok": true}
 If not authenticated- {"ok": false}
@@ -144,12 +146,33 @@ func WithAuth(ctx *context.Context, h http.Handler, authService ...AuthService) 
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		username := trinoheaders.Get(trinoheaders.User, r)
-		password := trinoheaders.Get(trinoheaders.Password, r)
+		// TODO: Refactor auth type handling to a dedicated type
 
-		//Remove this later after full rollout
-		if password == "" {
-			h.ServeHTTP(w, r)
+		// BasicAuth
+		username, password, isBasicAuth := r.BasicAuth()
+
+		// CustomAuth
+		if !isBasicAuth {
+			provider.Logger(*ctx).Debug("Custom Auth type")
+			username = trinoheaders.Get(trinoheaders.User, r)
+			password = trinoheaders.Get(trinoheaders.Password, r)
+		} else {
+			if u := trinoheaders.Get(trinoheaders.User, r); u != username {
+				errorMsg := fmt.Sprintf("Username from basicauth - %s does not match with User principal - %s", username, u)
+				provider.Logger(*ctx).Debug(errorMsg)
+				http.Error(w, errorMsg, http.StatusUnauthorized)
+			}
+
+			// Remove auth details from request
+			r.Header.Del("Authorization")
+		}
+
+		// NoAuth
+		isNoAuth := password == ""
+		if isNoAuth {
+			provider.Logger(*ctx).Debug("No Auth type detected")
+			errorMsg := fmt.Sprintf("Password required")
+			http.Error(w, errorMsg, http.StatusUnauthorized)
 			return
 		}
 
