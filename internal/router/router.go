@@ -8,6 +8,7 @@ import (
 	"net/http/httputil"
 	"time"
 
+	"github.com/razorpay/trino-gateway/internal/boot"
 	"github.com/razorpay/trino-gateway/internal/provider"
 	"github.com/razorpay/trino-gateway/internal/utils"
 	gatewayv1 "github.com/razorpay/trino-gateway/rpc/gateway"
@@ -27,6 +28,7 @@ type RouterServer struct {
 	gatewayApiClient *GatewayApiClient
 	port             int
 	routerHostname   string
+	authService      IAuthService
 }
 
 type key int
@@ -54,11 +56,15 @@ func init() {
 	initMetrics()
 }
 
-func Server(ctx *context.Context, port int, apiClient *GatewayApiClient, routerHostname string, authenticate string) *http.Server {
+func Server(ctx *context.Context, port int, apiClient *GatewayApiClient, routerHostname string) *http.Server {
 	routerServer := RouterServer{
 		port:             port,
 		gatewayApiClient: apiClient,
 		routerHostname:   routerHostname,
+		authService: &AuthService{
+			ValidationProviderURL:   boot.Config.Auth.Router.DelegatedAuth.ValidationProviderURL,
+			ValidationProviderToken: boot.Config.Auth.Router.DelegatedAuth.ValidationProviderToken,
+		},
 	}
 	reverseProxy := httputil.ReverseProxy{
 		Director:  func(req *http.Request) { routerServer.handleClientRequest(ctx, req) },
@@ -108,24 +114,16 @@ func Server(ctx *context.Context, port int, apiClient *GatewayApiClient, routerH
 		},
 	}
 
-	if authenticate == "true" {
-		authenticatedReverseProxy := WithAuth(ctx, &reverseProxy)
-		return &http.Server{
-			Handler: authenticatedReverseProxy,
-		}
-	} else {
-		return &http.Server{
-			Handler: &reverseProxy,
-		}
+	return &http.Server{
+		Handler: routerServer.AuthHandler(ctx, &reverseProxy),
 	}
-
 }
 
 func (r *RouterServer) extractSharedRequestCtxObject(ctx *context.Context, req *http.Request) (*ContextSharedObject, error) {
 	reqCtx := req.Context()
 	res, ok := (reqCtx).Value(keyCtxSharedObj).(*ContextSharedObject)
 	if !ok {
-		err := errors.New("unable to cast shared object object from context")
+		err := errors.New("unable to cast shared object from context")
 		provider.Logger(*ctx).WithError(err).Error("unable to cast shared object object from context")
 		return nil, err
 	}

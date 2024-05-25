@@ -7,28 +7,22 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"sync"
 	"time"
 
 	"github.com/razorpay/trino-gateway/internal/boot"
 	"github.com/razorpay/trino-gateway/internal/provider"
 	"github.com/razorpay/trino-gateway/internal/router/trinoheaders"
+	"github.com/razorpay/trino-gateway/internal/utils"
+	gatewayv1 "github.com/razorpay/trino-gateway/rpc/gateway"
 )
 
-type AuthCache struct {
-	Cache map[string]struct {
-		Timestamp time.Time
-		Password  string
-	}
-	mu sync.Mutex
+type IAuthService interface {
+	Authenticate(ctx *context.Context, username string, password string) (bool, error)
 }
-type AuthService interface {
-	Authenticate(ctx *context.Context, username, password string) (bool, error)
-}
-type DefaultAuthService struct{}
 
-func NewDefaultAuthService() *DefaultAuthService {
-	return &DefaultAuthService{}
+type AuthService struct {
+	ValidationProviderURL   string
+	ValidationProviderToken string
 }
 
 /*
@@ -47,23 +41,7 @@ If not authenticated- {"ok": false}
 @returns-
 boolean{True or False},error_message
 */
-func (s *DefaultAuthService) Authenticate(ctx *context.Context, username string, password string) (bool, error) {
-	authCache, ok := (*ctx).Value("routerAuthCache").(*AuthCache)
-
-	if !ok {
-		authCache = &AuthCache{
-			Cache: make(map[string]struct {
-				Timestamp time.Time
-				Password  string
-			}),
-		}
-		*ctx = context.WithValue(*ctx, "routerAuthCache", authCache)
-	}
-
-	if authCache.Check(username, password) {
-		authCache.Update(username, password)
-		return true, nil
-	}
+func (s *AuthService) ValidateFromValidationProvider(ctx *context.Context, username string, password string) (bool, error) {
 	payload := struct {
 		Username string `json:"email"`
 		Token    string `json:"token"`
@@ -73,8 +51,8 @@ func (s *DefaultAuthService) Authenticate(ctx *context.Context, username string,
 	}
 
 	payloadBytes, _ := json.Marshal(payload)
-	req, _ := http.NewRequest("POST", boot.Config.Auth.Router.ValidationURL, bytes.NewReader(payloadBytes))
-	req.Header.Set("X-Auth-Token", boot.Config.Auth.Router.ValidationToken)
+	req, _ := http.NewRequest("POST", s.ValidationProviderURL, bytes.NewReader(payloadBytes))
+	req.Header.Set("X-Auth-Token", s.ValidationProviderToken)
 	req.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{}
@@ -94,102 +72,112 @@ func (s *DefaultAuthService) Authenticate(ctx *context.Context, username string,
 		return false, jsonParseError
 	}
 
-	if data.OK {
-		authCache.Update(username, password)
-	}
-
 	return data.OK, nil
 }
 
-func (authCache *AuthCache) Check(username, password string) bool {
-	authCache.mu.Lock()
-	defer authCache.mu.Unlock()
+func (s *AuthService) Authenticate(ctx *context.Context, username string, password string) (bool, error) {
+	authCache := s.GetInMemoryAuthCache(ctx)
 
-	entry, found := authCache.Cache[username]
-
-	if !found {
-		return false
-	}
-	cachedInterval := boot.Config.Auth.Router.CacheTTLMinutes
-
-	cachedDuration, _ := time.ParseDuration(cachedInterval)
-
-	if time.Since(entry.Timestamp) > cachedDuration {
-		// If entry is older than cachedDuration, then delete the record and return false
-		delete(authCache.Cache, username)
-		return false
+	if entry, exists := authCache.Get(username); exists && entry == password {
+		authCache.Update(username, password)
+		return true, nil
 	}
 
-	return entry.Password == password
+	isValid, err := s.ValidateFromValidationProvider(ctx, username, password)
+	if err != nil {
+		return false, err
+	}
+
+	if isValid {
+		authCache.Update(username, password)
+	}
+
+	return isValid, nil
 }
 
-func (authCache *AuthCache) Update(username, password string) {
-	authCache.mu.Lock()
-	defer authCache.mu.Unlock()
+func (s *AuthService) GetInMemoryAuthCache(ctx *context.Context) utils.ISimpleCache {
+	ctxKeyName := "routerAuthCache"
+	authCache, ok := (*ctx).Value(ctxKeyName).(*utils.InMemorySimpleCache)
 
-	authCache.Cache[username] = struct {
-		Timestamp time.Time
-		Password  string
-	}{
-		Timestamp: time.Now(),
-		Password:  password,
+	if !ok {
+
+		expiryInterval, _ := time.ParseDuration(boot.Config.Auth.Router.DelegatedAuth.CacheTTLMinutes)
+
+		authCache = &utils.InMemorySimpleCache{
+			Cache: make(map[string]struct {
+				Timestamp time.Time
+				Value     string
+			}),
+			ExpiryInterval: expiryInterval,
+		}
+		*ctx = context.WithValue(*ctx, ctxKeyName, authCache)
 	}
+	return authCache
 }
 
-func WithAuth(ctx *context.Context, h http.Handler, authService ...AuthService) http.Handler {
+func (r *RouterServer) isAuthDelegated(ctx *context.Context) (bool, error) {
+	res, err := r.gatewayApiClient.Policy.EvaluateAuthDelegationForClient(*ctx, &gatewayv1.EvaluateAuthDelegationRequest{IncomingPort: int32(r.port)})
 
-	var auth AuthService
-	if len(authService) > 0 {
-		auth = authService[0]
-	} else {
-		auth = NewDefaultAuthService()
+	if err != nil {
+		provider.Logger(*ctx).WithError(err).Errorw(
+			fmt.Sprint(LOG_TAG, "Failed to evaluate auth delegation policy. Assuming delegation is disabled."),
+			map[string]interface{}{
+				"port": r.port,
+			})
+		return false, err
 	}
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return res.GetIsAuthDelegated(), nil
+}
 
-		// TODO: Refactor auth type handling to a dedicated type
+func (r *RouterServer) AuthHandler(ctx *context.Context, h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		if isAuth, _ := r.isAuthDelegated(ctx); isAuth {
+			// TODO: Refactor auth type handling to a dedicated type
 
-		// BasicAuth
-		username, password, isBasicAuth := r.BasicAuth()
+			// BasicAuth
+			username, password, isBasicAuth := req.BasicAuth()
 
-		// CustomAuth
-		if !isBasicAuth {
-			provider.Logger(*ctx).Debug("Custom Auth type")
-			username = trinoheaders.Get(trinoheaders.User, r)
-			password = trinoheaders.Get(trinoheaders.Password, r)
-		} else {
-			if u := trinoheaders.Get(trinoheaders.User, r); u != username {
-				errorMsg := fmt.Sprintf("Username from basicauth - %s does not match with User principal - %s", username, u)
-				provider.Logger(*ctx).Debug(errorMsg)
-				http.Error(w, errorMsg, http.StatusUnauthorized)
+			// CustomAuth
+			if !isBasicAuth {
+				provider.Logger(*ctx).Debug("Custom Auth type")
+				username = trinoheaders.Get(trinoheaders.User, req)
+				password = trinoheaders.Get(trinoheaders.Password, req)
+			} else {
+				if u := trinoheaders.Get(trinoheaders.User, req); u != username {
+					errorMsg := fmt.Sprintf("Username from basicauth - %s does not match with User principal - %s", username, u)
+					provider.Logger(*ctx).Debug(errorMsg)
+					http.Error(w, errorMsg, http.StatusUnauthorized)
+				}
+
+				// Remove auth details from request
+				req.Header.Del("Authorization")
 			}
 
-			// Remove auth details from request
-			r.Header.Del("Authorization")
-		}
+			// NoAuth
+			isNoAuth := password == ""
+			if isNoAuth {
+				provider.Logger(*ctx).Debug("No Auth type detected")
+				errorMsg := fmt.Sprintf("Password required")
+				http.Error(w, errorMsg, http.StatusUnauthorized)
+				return
+			}
 
-		// NoAuth
-		isNoAuth := password == ""
-		if isNoAuth {
-			provider.Logger(*ctx).Debug("No Auth type detected")
-			errorMsg := fmt.Sprintf("Password required")
-			http.Error(w, errorMsg, http.StatusUnauthorized)
-			return
-		}
+			isAuthenticated, err := r.authService.Authenticate(ctx, username, password)
 
-		isAuthenticated, err := auth.Authenticate(ctx, username, password)
-
-		if err != nil {
-			errorMsg := fmt.Sprintf("Unable to Authenticate users. Getting error - %s", err)
-			provider.Logger(*ctx).Error(errorMsg)
-			http.Error(w, "Unable to Authenticate the user", http.StatusNotFound)
-			return
+			if err != nil {
+				errorMsg := fmt.Sprintf("Unable to Authenticate users. Getting error - %s", err)
+				provider.Logger(*ctx).Error(errorMsg)
+				http.Error(w, "Unable to Authenticate the user", http.StatusNotFound)
+				return
+			}
+			if !isAuthenticated {
+				provider.Logger(*ctx).Debug(fmt.Sprintf("User - %s not authenticated", username))
+				http.Error(w, "User not authenticated", http.StatusUnauthorized)
+				return
+			}
+			h.ServeHTTP(w, req)
+		} else {
+			h.ServeHTTP(w, req)
 		}
-		if !isAuthenticated {
-			provider.Logger(*ctx).Debug(fmt.Sprintf("User - %s not authenticated", username))
-			http.Error(w, "User not authenticated", http.StatusUnauthorized)
-			return
-		}
-
-		h.ServeHTTP(w, r)
 	})
 }

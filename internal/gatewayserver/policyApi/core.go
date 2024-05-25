@@ -25,6 +25,7 @@ type ICore interface {
 	DisablePolicy(ctx context.Context, id string) error
 
 	EvaluateGroupsForClient(ctx context.Context, c *EvaluateClientParams) ([]string, error)
+	EvaluateAuthDelegation(ctx context.Context, p int32) (bool, error)
 	// EvaluatePolicy(ctx context.Context, group string) (string, error)
 	// FindPolicyForQuery(ctx context.Context, q string) (string, error)
 }
@@ -35,12 +36,13 @@ func NewCore(policy repo.IPolicyRepo) *Core {
 
 // CreateParams has attributes that are required for policy.Create()
 type PolicyCreateParams struct {
-	ID            string
-	RuleType      string
-	RuleValue     string
-	Group         string
-	FallbackGroup string
-	IsEnabled     bool
+	ID              string
+	RuleType        string
+	RuleValue       string
+	Group           string
+	FallbackGroup   string
+	IsEnabled       bool
+	IsAuthDelegated bool
 }
 
 func (c *Core) CreateOrUpdatePolicy(ctx context.Context, params *PolicyCreateParams) error {
@@ -50,6 +52,7 @@ func (c *Core) CreateOrUpdatePolicy(ctx context.Context, params *PolicyCreatePar
 		GroupId:         params.Group,
 		FallbackGroupId: &params.FallbackGroup,
 		IsEnabled:       &params.IsEnabled,
+		IsAuthDelegated: &params.IsAuthDelegated,
 	}
 	policy.ID = params.ID
 
@@ -95,9 +98,10 @@ type FindManyParams struct {
 	// To    int32
 
 	// custom
-	IsEnabled bool   `json:"is_enabled"`
-	RuleType  string `json:"rule_type"`
-	RuleValue string `json:"rule_value"`
+	IsEnabled       bool   `json:"is_enabled"`
+	RuleType        string `json:"rule_type"`
+	RuleValue       string `json:"rule_value"`
+	IsAuthDelegated bool   `json:"is_auth_delegated,omitempty"`
 }
 
 func (p *FindManyParams) GetIsEnabled() bool {
@@ -212,6 +216,28 @@ func (c *Core) EvaluateGroupsForClient(ctx context.Context, params *EvaluateClie
 		i++
 	}
 	return res, nil
+}
+
+func (c *Core) EvaluateAuthDelegation(ctx context.Context, port int32) (bool, error) {
+	res, err := c.FindMany(
+		ctx,
+		&FindManyParams{
+			IsEnabled:       true,
+			RuleType:        "listening_port",
+			RuleValue:       strconv.Itoa(int(port)),
+			IsAuthDelegated: true,
+		})
+	if err != nil {
+		return false, err
+	}
+	provider.Logger(ctx).Debugw("Is Auth Delegated For Port", map[string]interface{}{
+		"listeningPort": port,
+		"matchingRules": res,
+	})
+	if len(res) > 0 {
+		return true, nil
+	}
+	return false, nil
 }
 
 // Implementing "set" collection methods here, :)
