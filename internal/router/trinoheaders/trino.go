@@ -14,6 +14,7 @@ const (
 	ConnectionProperties = "Connection-Properties"
 	TransactionId        = "Transaction-Id"
 	Password             = "Password"
+	Source               = "Source"
 )
 
 var allowedPrefixes = [...]string{"Presto", "Trino"}

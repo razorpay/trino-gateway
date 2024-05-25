@@ -321,6 +321,15 @@ func (r *RouterServer) prepareReqForRouting(ctx *context.Context, req *http.Requ
 	req.URL.Host = host
 	req.URL.Scheme = scheme
 	req.Host = host
+	sourceHeader, err := r.gatewayApiClient.Policy.EvaluateRequestSourceForClient(*ctx, &gatewayv1.EvaluateRequestSourceRequest{
+		IncomingPort: int32(r.port),
+	})
+	if err != nil {
+		return err
+	}
+	if s := sourceHeader.GetSetRequestSource(); s != "" {
+		req.Header.Set("X-Trino-Source", s)
+	}
 	// TODO - validate and refine parsing of X-Forwarded headers
 	req.Header.Set("X-Forwarded-Host", host)
 	provider.Logger(*ctx).Infow(
