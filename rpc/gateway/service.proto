@@ -245,6 +245,8 @@ service PolicyApi {
     };
 
     rpc EvaluateAuthDelegationForClient(EvaluateAuthDelegationRequest) returns (EvaluateAuthDelegationResponse);
+
+    rpc EvaluateRequestSourceForClient(EvaluateRequestSourceRequest) returns (EvaluateRequestSourceResponse);
 }
 
 message Policy {
@@ -264,6 +266,7 @@ message Policy {
     string fallback_group = 4;
     bool is_enabled = 5;
     bool is_auth_delegated = 6;
+    string set_request_source = 7;
 }
 
 message PolicyGetRequest {
@@ -307,6 +310,14 @@ message EvaluateAuthDelegationRequest {
 
 message EvaluateAuthDelegationResponse {
     bool is_auth_delegated = 1; // required
+}
+
+message EvaluateRequestSourceRequest {
+    int32 incoming_port = 1; // required
+}
+
+message EvaluateRequestSourceResponse {
+    string set_request_source = 1;
 }
 
 service QueryApi {

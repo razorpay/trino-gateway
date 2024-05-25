@@ -32,13 +32,14 @@ func (s *Server) CreateOrUpdatePolicy(ctx context.Context, req *gatewayv1.Policy
 	})
 
 	createParams := PolicyCreateParams{
-		ID:              req.GetId(),
-		RuleType:        req.GetRule().GetType().Enum().String(),
-		RuleValue:       req.GetRule().GetValue(),
-		Group:           req.GetGroup(),
-		FallbackGroup:   req.GetFallbackGroup(),
-		IsEnabled:       req.GetIsEnabled(),
-		IsAuthDelegated: req.GetIsAuthDelegated(),
+		ID:               req.GetId(),
+		RuleType:         req.GetRule().GetType().Enum().String(),
+		RuleValue:        req.GetRule().GetValue(),
+		Group:            req.GetGroup(),
+		FallbackGroup:    req.GetFallbackGroup(),
+		IsEnabled:        req.GetIsEnabled(),
+		IsAuthDelegated:  req.GetIsAuthDelegated(),
+		SetRequestSource: req.GetSetRequestSource(),
 	}
 
 	err := s.core.CreateOrUpdatePolicy(ctx, &createParams)
@@ -143,12 +144,13 @@ func toPolicyResponseProto(policy *models.Policy) (*gatewayv1.Policy, error) {
 		Value: policy.RuleValue,
 	}
 	response := gatewayv1.Policy{
-		Id:              policy.ID,
-		Rule:            &rule,
-		Group:           policy.GroupId,
-		FallbackGroup:   *policy.FallbackGroupId,
-		IsEnabled:       *policy.IsEnabled,
-		IsAuthDelegated: *policy.IsAuthDelegated,
+		Id:               policy.ID,
+		Rule:             &rule,
+		Group:            policy.GroupId,
+		FallbackGroup:    *policy.FallbackGroupId,
+		IsEnabled:        *policy.IsEnabled,
+		IsAuthDelegated:  *policy.IsAuthDelegated,
+		SetRequestSource: *policy.SetRequestSource,
 	}
 
 	return &response, nil
@@ -197,4 +199,25 @@ func (s *Server) EvaluateAuthDelegationForClient(ctx context.Context, req *gatew
 		return nil, err
 	}
 	return &gatewayv1.EvaluateAuthDelegationResponse{IsAuthDelegated: result}, nil
+}
+
+func (s *Server) EvaluateRequestSourceForClient(ctx context.Context, req *gatewayv1.EvaluateRequestSourceRequest) (*gatewayv1.EvaluateRequestSourceResponse, error) {
+	provider.Logger(ctx).Debugw("EvaluateRequestSource", map[string]interface{}{
+		"request": req.String(),
+	})
+
+	if req.GetIncomingPort() == 0 {
+		err := errors.New("Invalid port defined in `incoming_port`.")
+		provider.Logger(ctx).WithError(err).Error(err.Error())
+		return &gatewayv1.EvaluateRequestSourceResponse{SetRequestSource: ""}, nil
+	}
+
+	result, err := s.core.EvaluateRequestSource(
+		ctx,
+		req.GetIncomingPort(),
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &gatewayv1.EvaluateRequestSourceResponse{SetRequestSource: result}, nil
 }

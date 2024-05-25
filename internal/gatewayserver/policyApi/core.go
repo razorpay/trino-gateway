@@ -26,6 +26,7 @@ type ICore interface {
 
 	EvaluateGroupsForClient(ctx context.Context, c *EvaluateClientParams) ([]string, error)
 	EvaluateAuthDelegation(ctx context.Context, p int32) (bool, error)
+	EvaluateRequestSource(ctx context.Context, p int32) (string, error)
 	// EvaluatePolicy(ctx context.Context, group string) (string, error)
 	// FindPolicyForQuery(ctx context.Context, q string) (string, error)
 }
@@ -36,23 +37,25 @@ func NewCore(policy repo.IPolicyRepo) *Core {
 
 // CreateParams has attributes that are required for policy.Create()
 type PolicyCreateParams struct {
-	ID              string
-	RuleType        string
-	RuleValue       string
-	Group           string
-	FallbackGroup   string
-	IsEnabled       bool
-	IsAuthDelegated bool
+	ID               string
+	RuleType         string
+	RuleValue        string
+	Group            string
+	FallbackGroup    string
+	IsEnabled        bool
+	IsAuthDelegated  bool
+	SetRequestSource string
 }
 
 func (c *Core) CreateOrUpdatePolicy(ctx context.Context, params *PolicyCreateParams) error {
 	policy := models.Policy{
-		RuleType:        params.RuleType,
-		RuleValue:       params.RuleValue,
-		GroupId:         params.Group,
-		FallbackGroupId: &params.FallbackGroup,
-		IsEnabled:       &params.IsEnabled,
-		IsAuthDelegated: &params.IsAuthDelegated,
+		RuleType:         params.RuleType,
+		RuleValue:        params.RuleValue,
+		GroupId:          params.Group,
+		FallbackGroupId:  &params.FallbackGroup,
+		IsEnabled:        &params.IsEnabled,
+		IsAuthDelegated:  &params.IsAuthDelegated,
+		SetRequestSource: &params.SetRequestSource,
 	}
 	policy.ID = params.ID
 
@@ -238,6 +241,27 @@ func (c *Core) EvaluateAuthDelegation(ctx context.Context, port int32) (bool, er
 		return true, nil
 	}
 	return false, nil
+}
+
+func (c *Core) EvaluateRequestSource(ctx context.Context, port int32) (string, error) {
+	res, err := c.FindMany(
+		ctx,
+		&FindManyParams{
+			IsEnabled: true,
+			RuleType:  "listening_port",
+			RuleValue: strconv.Itoa(int(port)),
+		})
+	if err != nil {
+		return "", err
+	}
+	provider.Logger(ctx).Debugw("Evaluate Request Source For Port", map[string]interface{}{
+		"listeningPort": port,
+		"matchingRules": res,
+	})
+	if len(res) > 0 {
+		return *res[0].SetRequestSource, nil
+	}
+	return "", nil
 }
 
 // Implementing "set" collection methods here, :)
