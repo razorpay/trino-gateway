@@ -109,7 +109,7 @@ func startGatewayServers(_ctx *context.Context) []*http.Server {
 
 	servers := make([]*http.Server, len(boot.Config.Gateway.Ports))
 	for i, port := range boot.Config.Gateway.Ports {
-		server := router.Server(&ctx, port, &gatewayClient, boot.Config.App.ServiceExternalHostname, boot.Config.Auth.Router.Authenticate)
+		server := router.Server(&ctx, port, &gatewayClient, boot.Config.App.ServiceExternalHostname)
 		servers[i] = server
 
 		go listenHttp(&ctx, server, port)

@@ -92,6 +92,96 @@ func (suite *UtilsSuite) Test_parseBody() {
 	suite.Equalf(str, tst_gzipped(), "String extraction is not idempotent")
 }
 
+func (suite *UtilsSuite) Test_InMemorySimpleCache_Get() {
+	authCache := &InMemorySimpleCache{
+		Cache: make(map[string]struct {
+			Timestamp time.Time
+			Value     string
+		}),
+	}
+	key := "testKey"
+	value := "testValue"
+	authCache.Cache[key] = struct {
+		Timestamp time.Time
+		Value     string
+	}{
+		Timestamp: time.Now(),
+		Value:     value,
+	}
+
+	entry, exists := authCache.Get(key)
+	suite.Truef(exists, "Entry not found in cache.")
+	if exists {
+		suite.Equalf(value, entry, "Cached value doesn't match.")
+	}
+}
+
+func (suite *UtilsSuite) Test_InMemorySimpleCache_Get_InfiniteExpiry() {
+	authCache := &InMemorySimpleCache{
+		Cache: make(map[string]struct {
+			Timestamp time.Time
+			Value     string
+		}),
+		ExpiryInterval: 0 * time.Second,
+	}
+	key := "testKey"
+	value := "testValue"
+	authCache.Cache[key] = struct {
+		Timestamp time.Time
+		Value     string
+	}{
+		Timestamp: time.Now().Add(-1000 * time.Hour),
+		Value:     value,
+	}
+
+	entry, exists := authCache.Get(key)
+	suite.Truef(exists, "Entry not found in cache.")
+	if exists {
+		suite.Equalf(value, entry, "Cached value doesn't match.")
+	}
+}
+
+func (suite *UtilsSuite) Test_InMemorySimpleCache_Get_Expired() {
+	expiryInterval := 2 * time.Second
+	authCache := &InMemorySimpleCache{
+		Cache: make(map[string]struct {
+			Timestamp time.Time
+			Value     string
+		}),
+		ExpiryInterval: expiryInterval,
+	}
+	key := "testKey"
+	value := "testValue"
+	authCache.Cache[key] = struct {
+		Timestamp time.Time
+		Value     string
+	}{
+		Timestamp: time.Now().Add(-1 * expiryInterval).Add(-1 * time.Second),
+		Value:     value,
+	}
+
+	_, exists := authCache.Get(key)
+	suite.False(exists, "Entry not expired.")
+}
+
+func (suite *UtilsSuite) Test_InMemorySimpleCache_Update() {
+	authCache := &InMemorySimpleCache{
+		Cache: make(map[string]struct {
+			Timestamp time.Time
+			Value     string
+		}),
+	}
+	key := "testKey"
+	value := "testValue"
+	authCache.Update(key, value)
+
+	entry, exists := authCache.Cache[key]
+	suite.Truef(exists, "Entry not found in cache.")
+	if exists {
+		suite.Equalf(value, entry.Value, "Cached value doesn't match.")
+	}
+}
+
 func TestSuite(t *testing.T) {
 	suite.Run(t, new(UtilsSuite))
 }

@@ -243,6 +243,8 @@ service PolicyApi {
         description: "Evaluates routing policies and returns a list of groups eligible for this client request.";
       };
     };
+
+    rpc EvaluateAuthDelegationForClient(EvaluateAuthDelegationRequest) returns (EvaluateAuthDelegationResponse);
 }
 
 message Policy {
@@ -261,6 +263,7 @@ message Policy {
     string group = 3; // required
     string fallback_group = 4;
     bool is_enabled = 5;
+    bool is_auth_delegated = 6;
 }
 
 message PolicyGetRequest {
@@ -296,6 +299,14 @@ message EvaluateGroupsRequest {
 
 message EvaluateGroupsResponse {
     repeated string group_ids = 1; // required
+}
+
+message EvaluateAuthDelegationRequest {
+    int32 incoming_port = 1; // required
+}
+
+message EvaluateAuthDelegationResponse {
+    bool is_auth_delegated = 1; // required
 }
 
 service QueryApi {

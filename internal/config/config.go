@@ -30,10 +30,11 @@ type Auth struct {
 	Token          string
 	TokenHeaderKey string
 	Router         struct {
-		ValidationURL   string
-		ValidationToken string
-		CacheTTLMinutes string
-		Authenticate    string
+		DelegatedAuth struct {
+			ValidationProviderURL   string
+			ValidationProviderToken string
+			CacheTTLMinutes         string
+		}
 	}
 }
 

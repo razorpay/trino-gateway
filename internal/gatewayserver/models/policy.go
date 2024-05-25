@@ -10,6 +10,7 @@ type Policy struct {
 	GroupId         string  `json:"group_id"`
 	FallbackGroupId *string `json:"fallback_group_id"`
 	IsEnabled       *bool   `json:"is_enabled" sql:"DEFAULT:true"`
+	IsAuthDelegated *bool   `json:"is_auth_delegated" sql:"DEFAULT:false"`
 }
 
 func (u *Policy) TableName() string {

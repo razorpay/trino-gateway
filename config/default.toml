@@ -30,11 +30,10 @@
 [auth]
     token                        = "test123"
     tokenHeaderKey               = "X-Auth-Key"
-    [auth.router]
-        validationURL            = "localhost:28001"
-        validationToken          = "test123"
+    [auth.router.delegatedAuth]
+        validationProviderURL            = "localhost:28001"
+        validationProviderToken          = "test123"
         cacheTTLMinutes          = "10m"
-        authenticate             = "false"
 
 
 

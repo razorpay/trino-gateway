@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
+	"sync"
 	"time"
 
 	"github.com/razorpay/trino-gateway/internal/provider"
@@ -126,5 +127,51 @@ func ParseHttpPayloadBody(ctx *context.Context, body *io.ReadCloser, encoding st
 		return string(bb), nil
 	default:
 		return string(bodyBytes), nil
+	}
+}
+
+type ISimpleCache interface {
+	Get(key string) (string, bool)
+	Update(key, value string)
+}
+
+type InMemorySimpleCache struct {
+	Cache map[string]struct {
+		Timestamp time.Time
+		Value     string
+	}
+	ExpiryInterval time.Duration
+	mu             sync.Mutex
+}
+
+func (authCache *InMemorySimpleCache) Get(key string) (string, bool) {
+	authCache.mu.Lock()
+	defer authCache.mu.Unlock()
+
+	entry, found := authCache.Cache[key]
+
+	if !found {
+		return "", false
+	}
+
+	if authCache.ExpiryInterval > 0 &&
+		time.Since(entry.Timestamp) > authCache.ExpiryInterval {
+		// If entry is older than cachedDuration, then delete the record and return false
+		delete(authCache.Cache, key)
+		return "", false
+	}
+	return entry.Value, true
+}
+
+func (authCache *InMemorySimpleCache) Update(key, value string) {
+	authCache.mu.Lock()
+	defer authCache.mu.Unlock()
+
+	authCache.Cache[key] = struct {
+		Timestamp time.Time
+		Value     string
+	}{
+		Timestamp: time.Now(),
+		Value:     value,
 	}
 }
