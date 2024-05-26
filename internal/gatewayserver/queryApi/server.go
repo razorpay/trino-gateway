@@ -113,7 +113,7 @@ func (s *Server) FindBackendForQuery(ctx context.Context, req *gatewayv1.FindBac
 		"request": req.String(),
 	})
 
-	query, err := s.core.GetQuery(ctx, req.QueryId)
+	query, err := s.core.GetQuery(ctx, req.GetQueryId())
 	if err != nil {
 		return nil, err
 	}
@@ -121,4 +121,17 @@ func (s *Server) FindBackendForQuery(ctx context.Context, req *gatewayv1.FindBac
 		BackendId: query.BackendId,
 		GroupId:   query.GroupId,
 	}, nil
+}
+
+func (s *Server) PurgeOldQueries(ctx context.Context, req *gatewayv1.PurgeOldQueriesRequest) (*gatewayv1.Empty, error) {
+	provider.Logger(ctx).Debugw("PurgeOldQueries", map[string]interface{}{
+		"request": req.String(),
+	})
+
+	// google.protobuf.Timestamp maps to date / date-time of REST APIs
+	err := s.core.PurgeOldQueries(ctx, req.GetMaxAge().AsTime())
+	if err != nil {
+		return nil, err
+	}
+	return &gatewayv1.Empty{}, nil
 }

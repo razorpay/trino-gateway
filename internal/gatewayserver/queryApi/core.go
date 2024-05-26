@@ -2,10 +2,12 @@ package queryapi
 
 import (
 	"context"
+	"time"
 
 	"github.com/fatih/structs"
 	"github.com/razorpay/trino-gateway/internal/gatewayserver/models"
 	"github.com/razorpay/trino-gateway/internal/gatewayserver/repo"
+	"github.com/razorpay/trino-gateway/internal/provider"
 	fetcherPkg "github.com/razorpay/trino-gateway/pkg/fetcher"
 )
 
@@ -20,6 +22,7 @@ type ICore interface {
 	CreateOrUpdateQuery(ctx context.Context, params *QueryCreateParams) error
 	GetQuery(ctx context.Context, id string) (*models.Query, error)
 	FindMany(ctx context.Context, params IFindManyParams) ([]models.Query, error)
+	PurgeOldQueries(ctx context.Context, maxAge time.Time) error
 }
 
 func NewCore(query repo.IQueryRepo, fetcher fetcherPkg.IClient) *Core {
@@ -129,4 +132,19 @@ func (c *Core) FindMany(ctx context.Context, params IFindManyParams) ([]models.Q
 	queries := (resp.GetEntities().(map[string]interface{})[entityName]).(*[]models.Query)
 
 	return *queries, nil
+}
+
+func (c *Core) PurgeOldQueries(ctx context.Context, maxAge time.Time) error {
+	maxAgeUnix := maxAge.Unix()
+	provider.Logger(ctx).Debugw("PurgeOldQueries", map[string]interface{}{
+		"maxAgeUnix": maxAgeUnix,
+	})
+
+	conditions := map[string]interface{}{
+		"created_at <= ?": maxAgeUnix,
+	}
+
+	var emptyQueryModel []models.Query
+	err := c.queryRepo.DeleteMany(ctx, conditions, emptyQueryModel)
+	return err
 }

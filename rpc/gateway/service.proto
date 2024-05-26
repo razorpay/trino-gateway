@@ -4,6 +4,9 @@ package razorpay.gateway;
 
 // import "google/protobuf/struct.proto";
 
+// Maps to date-time format of REST APIs
+import "google/protobuf/timestamp.proto";
+
 // OpenApi Spec config
 // Refer to https://github.com/grpc-ecosystem/grpc-gateway/blob/main/protoc-gen-openapiv2/options/openapiv2.proto
 
@@ -341,6 +344,12 @@ service QueryApi {
         description: "Finds backend used for routing this query. Returns error message if backend is not found.";
       };
     };
+    rpc PurgeOldQueries (PurgeOldQueriesRequest) returns (Empty){
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+        summary: "Purges queries older than pprovided age.";
+        description: "Purges queries older than provided age in days.";
+      };
+    };
 }
 
 message Query {
@@ -393,4 +402,8 @@ message FindBackendForQueryRequest {
 message FindBackendForQueryResponse {
     string backend_id = 1; // required
     string group_id = 2; // required
+}
+
+message PurgeOldQueriesRequest {
+  google.protobuf.Timestamp max_age = 1; // required
 }

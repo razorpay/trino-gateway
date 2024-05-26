@@ -13,7 +13,15 @@ type IQueryRepo interface {
 	Create(ctx context.Context, query *models.Query) error
 	Update(ctx context.Context, query *models.Query) error
 	Find(ctx context.Context, id string) (*models.Query, error)
-	FindMany(ctx context.Context, conditions map[string]interface{}) ([]models.Query, error)
+	FindMany(
+		ctx context.Context,
+		conditions map[string]interface{},
+	) ([]models.Query, error)
+	DeleteMany(
+		ctx context.Context,
+		conditionStatements map[string]interface{},
+		queries []models.Query,
+	) error
 	// Find(ctx context.Context, id string) (*Query, error)
 	// FindAll(ctx context.Context) ([]Query, error)
 }
@@ -80,4 +88,17 @@ func (r *QueryRepo) FindMany(ctx context.Context, conditions map[string]interfac
 	}
 
 	return queries, nil
+}
+
+func (r *QueryRepo) DeleteMany(ctx context.Context, conditionStatements map[string]interface{}, queryModels []models.Query) error {
+	provider.Logger(ctx).Debugw("DeleteMany", map[string]interface{}{
+		"conditions":  conditionStatements,
+		"queryModels": queryModels,
+	})
+	err := r.repo.DeleteMany(ctx, &queryModels, conditionStatements)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

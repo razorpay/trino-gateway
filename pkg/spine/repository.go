@@ -86,6 +86,23 @@ func (repo Repo) Delete(ctx context.Context, receiver IModel) error {
 	return GetDBError(q)
 }
 
+// Deletes many models
+// If `receivers` is not empty, ID will be provided as a filter.
+func (repo Repo) DeleteMany(
+	ctx context.Context,
+	receivers interface{},
+	conditionStatements map[string]interface{},
+) error {
+	q := repo.DBInstance(ctx)
+
+	for k, v := range conditionStatements {
+		q = q.Where(k, v)
+	}
+	q = q.Delete(receivers)
+
+	return GetDBError(q)
+}
+
 func (repo Repo) ClearAssociations(ctx context.Context, receiver IModel, name string) error {
 	err := repo.DBInstance(ctx).Model(receiver).Association(name).Clear()
 
@@ -105,6 +122,7 @@ func (repo Repo) FindMany(
 	receivers interface{},
 	condition map[string]interface{}) error {
 
+	// TODO: add support for conditions other than equality, similar to `DeleteMany`
 	q := repo.DBInstance(ctx).Where(condition).Find(receivers)
 
 	return GetDBError(q)
@@ -153,7 +171,6 @@ func (repo Repo) IsTransactionActive(ctx context.Context) bool {
 // DBInstance returns gorm instance.
 // If replicas are specified, for Query, Row callback, will use replicas, unless Write mode specified.
 // For Raw callback, statements are considered read-only and will use replicas if the SQL starts with SELECT.
-//
 func (repo Repo) DBInstance(ctx context.Context) *gorm.DB {
 	return repo.Db.Instance(ctx)
 }

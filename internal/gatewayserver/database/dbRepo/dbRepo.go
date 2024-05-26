@@ -17,6 +17,7 @@ type IDbRepo interface {
 	FindWithConditionByIDs(ctx context.Context, receivers interface{}, condition map[string]interface{}, ids []string) error
 	FindMany(ctx context.Context, receivers interface{}, condition map[string]interface{}) error
 	Delete(ctx context.Context, receiver spine.IModel) error
+	DeleteMany(ctx context.Context, receivers interface{}, conditionStatements map[string]interface{}) error
 	Update(ctx context.Context, receiver spine.IModel, attrList ...string) error
 	Preload(ctx context.Context, query string, args ...interface{}) *spine.Repo
 	ClearAssociations(ctx context.Context, receiver spine.IModel, name string) error
