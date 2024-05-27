@@ -20,6 +20,7 @@ import (
 type ITrinoClient interface {
 	IsClusterUp(ctx *context.Context) (bool, error)
 	RunQuery(ctx *context.Context, query string) (*sql.Rows, error)
+	Teardown(ctx *context.Context) error
 }
 
 type TrinoClient struct {
@@ -221,4 +222,18 @@ func (t *TrinoClient) RunQuery(ctx *context.Context, q string) (*sql.Rows, error
 		map[string]interface{}{"query": q, "trinoHost": t.url.Host})
 
 	return rows, nil
+}
+
+func (t *TrinoClient) Teardown(ctx *context.Context) error {
+	if t.db != nil {
+		// log
+		err := t.db.Close()
+		if err != nil {
+			provider.Logger(*ctx).WithError(err).Errorw(
+				"error closing trino db client",
+				map[string]interface{}{"trinoHost": t.url.Host})
+			return err
+		}
+	}
+	return nil
 }

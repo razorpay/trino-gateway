@@ -168,6 +168,7 @@ func (c *Core) isBackendUp(ctx *context.Context, b *gatewayv1.Backend) (bool, er
 		user: boot.Config.Monitor.Trino.User,
 		url:  url.URL{Scheme: b.GetScheme().Enum().String(), Host: b.GetHostname()},
 	}
+	defer trinoClient.Teardown(ctx)
 	isUp, err := trinoClient.IsClusterUp(ctx)
 	if err != nil {
 		provider.Logger(*ctx).WithError(err).Errorw(
@@ -220,6 +221,7 @@ func (c *Core) getBackendLoad(ctx *context.Context, b *gatewayv1.Backend) (int32
 		url:  url.URL{Scheme: b.GetScheme().Enum().String(), Host: b.GetHostname()},
 		pass: boot.Config.Monitor.Trino.Password,
 	}
+	defer trinoClient.Teardown(ctx)
 
 	type StateStat struct {
 		state string
