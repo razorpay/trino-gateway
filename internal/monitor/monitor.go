@@ -6,40 +6,60 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-co-op/gocron"
+	"github.com/go-co-op/gocron/v2"
 	"github.com/razorpay/trino-gateway/internal/provider"
 	gatewayv1 "github.com/razorpay/trino-gateway/rpc/gateway"
 )
 
 type Monitor struct {
-	core ICore
+	core      ICore
+	scheduler gocron.Scheduler
 }
 
 func init() {
 	initMetrics()
 }
 
-func NewMonitor(core ICore) *Monitor {
-	return &Monitor{
-		core: core,
+func NewMonitor(core ICore) (*Monitor, error) {
+	s, err := gocron.NewScheduler()
+	if err != nil {
+		return nil, err
 	}
+	return &Monitor{
+		core:      core,
+		scheduler: s,
+	}, nil
 }
 
 func (m *Monitor) Schedule(ctx *context.Context, interval string) error {
-	s := gocron.NewScheduler(time.UTC)
-	j, err := s.Every(interval).Do(m.Execute, ctx)
+	parsedInterval, err := time.ParseDuration(interval)
 	if err != nil {
 		return err
 	}
-	s.SetMaxConcurrentJobs(1, gocron.RescheduleMode)
-	s.StartImmediately().StartAsync()
+	j, err := m.scheduler.NewJob(
+		gocron.DurationJob(parsedInterval),
+		gocron.NewTask(m.Execute, ctx),
+		gocron.WithSingletonMode(gocron.LimitModeReschedule),
+		gocron.WithStartAt(gocron.WithStartImmediately()),
+	)
+	if err != nil {
+		return err
+	}
+	// m.scheduler.StartAsync()
 
+	nextRunAt, _ := j.NextRun()
 	provider.Logger(*ctx).Infow("Scheduled Monitoring Job", map[string]interface{}{
 		"job":        fmt.Sprintf("%v", j),
-		"nextRunUTC": j.NextRun().Local().UTC(),
+		"nextRunUTC": nextRunAt.Local().UTC(),
 	})
 
 	return nil
+}
+
+func (m *Monitor) Teardown(ctx *context.Context) error {
+	// when you're done, shut it down
+	err := m.scheduler.Shutdown()
+	return err
 }
 
 func (m *Monitor) Execute(ctx *context.Context) {

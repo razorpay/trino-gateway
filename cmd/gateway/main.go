@@ -74,7 +74,7 @@ func main() {
 	metricServer := startMetricsServer(&ctx)
 
 	// start backend health monitor
-	startMonitor(&ctx)
+	mon := startMonitor(&ctx)
 
 	c := make(chan os.Signal, 1)
 
@@ -85,7 +85,7 @@ func main() {
 	// Block until signal is received.
 	<-c
 	// shutDown(ctx, httpServers, healthCore)
-	shutDown(ctx, append(append(gatewayServers, apiServer), metricServer)...)
+	shutDown(ctx, mon, append(append(gatewayServers, apiServer), metricServer)...)
 }
 
 func startGatewayServers(_ctx *context.Context) []*http.Server {
@@ -128,7 +128,7 @@ func listenHttp(ctx *context.Context, server *http.Server, port int) {
 	}
 }
 
-func startMonitor(_ctx *context.Context) {
+func startMonitor(_ctx *context.Context) *monitor.Monitor {
 	// Start backend health check monitors
 	gatewayApiUrl := fmt.Sprint("http://localhost:", boot.Config.App.Port)
 	client := gatewayv1.NewBackendApiProtobufClient(gatewayApiUrl, &http.Client{})
@@ -139,16 +139,18 @@ func startMonitor(_ctx *context.Context) {
 	ctx, err := twirp.WithHTTPRequestHeaders(*_ctx, header)
 	if err != nil {
 		log.Printf("twirp error setting headers: %s", err)
-		return
+		return nil
 	}
 
-	m := monitor.NewMonitor(core)
+	m, err := monitor.NewMonitor(core)
 	err = m.Schedule(&ctx, boot.Config.Monitor.Interval)
 	if err != nil {
 		provider.Logger(ctx).WithError(err).Fatal(
 			"Unable to start Monitoring module",
 		)
+		return nil
 	}
+	return m
 }
 
 // Unused, gui is launched from apiServer, till frontend is fixed
@@ -239,7 +241,7 @@ func twirpHooks() *twirp.ServerHooks {
 }
 
 // shutDown the application, gracefully
-func shutDown(ctx context.Context, servers ...*http.Server) {
+func shutDown(ctx context.Context, mon *monitor.Monitor, servers ...*http.Server) {
 	// send unhealthy status to the healthcheck probe and let
 	// it mark this pod OOR first before shutting the server down
 	// logger.Ctx(ctx).Info("Marking server unhealthy")
@@ -253,6 +255,7 @@ func shutDown(ctx context.Context, servers ...*http.Server) {
 	defer cancel()
 
 	provider.Logger(ctx).Info("Shutting down trino-gateway")
+	mon.Teardown(&ctx)
 
 	for _, server := range servers {
 		go func(server *http.Server) {
