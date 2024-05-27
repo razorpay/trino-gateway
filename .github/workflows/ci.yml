@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - ci
 
 jobs:
   build-public-image:
@@ -29,7 +30,9 @@ jobs:
           file: build/docker/prod/Dockerfile
           push: true
           tags: razorpay/presto_gateway:${{ github.sha }}
-          build-args: GIT_COMMIT_HASH=${{ github.sha }}
+          build-args: |
+            GIT_COMMIT_HASH=${{ github.sha }}
+            TARGET_PLATFORM=amd64
       -
         name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
