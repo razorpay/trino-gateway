@@ -1,0 +1,24 @@
+[app]
+    appEnv              = "default"
+    serviceName         = "trino-client"
+    hostname            = "trino.client.com"
+    port                = 8000
+    metricsPort         = 8080
+    shutdownTimeout     = 2
+    shutdownDelay       = 2
+
+[db]
+    dialect             = "trino"
+    protocol            = "tcp"
+    url                 = "127.0.0.1"
+    port                = 8080
+    username            = "trino-client"
+    password            = "trino-client"
+    catalog             = "trino-client-catalog"
+    schema              = "trino-client-schema"
+    DSN                 = "http://user@trino_local:8080?catalog=default&schema=public"
+
+[auth]
+    [auth.token]
+        api             = "1234"
+        debug           = "4567"

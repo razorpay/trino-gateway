@@ -1,0 +1,12 @@
+title = "Config file for testing, should merge with Default one"
+
+[db]
+    dialect             = "trino"
+    protocol            = "tcp"
+    host                = "localhost"
+    port                = 8090
+    username            = "trino-client"
+    password            = "trino-client"
+    catalog             = "trino-client-catalog"
+    schema              = "trino-client-schema"
+    dsn                 = "mysql://trino-client:trino-client@127.0.0.1:8090/trino-client-catalog/trino-client-schema"
