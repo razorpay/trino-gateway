@@ -1,6 +1,6 @@
 services:
   trino:
-    image: trinodb/trino:latest
+    image: harbor.razorpay.com/razorpay/trino:356
     container_name: trino_local
     ports:
       - "8080:8080"
