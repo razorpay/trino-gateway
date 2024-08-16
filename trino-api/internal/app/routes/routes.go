@@ -7,6 +7,6 @@ import (
 )
 
 func RegisterRoutes(router *mux.Router, h *handler.Handler) {
-	router.HandleFunc("/api/v1/query", h.QueryHandler()).Methods("POST")
-	router.HandleFunc("/api/v1/health", h.HealthCheck()).Methods("GET")
+	router.HandleFunc("/v1/query", h.QueryHandler()).Methods("POST")
+	router.HandleFunc("/v1/health", h.HealthCheck()).Methods("GET")
 }

@@ -8,7 +8,7 @@ type RespData struct {
 	Status  string    `json:"status,omitempty"`
 	Columns []Column  `json:"columns,omitempty"`
 	Data    [][]Datum `json:"data,omitempty"`
-	Error   Error     `json:"error,omitempty"`
+	Error   *Error    `json:"error,omitempty"`
 }
 
 type Column struct {
@@ -22,6 +22,4 @@ type Datum struct {
 type Error struct {
 	Message   string `json:"message"`
 	ErrorCode int64  `json:"errorCode"`
-	ErrorName string `json:"errorName"`
-	ErrorType string `json:"errorType"`
 }

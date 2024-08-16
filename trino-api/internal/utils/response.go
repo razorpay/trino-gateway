@@ -17,7 +17,7 @@ func RespondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 func RespondWithError(w http.ResponseWriter, code int, message string) {
 	resp := model.RespData{
 		Status: "Error",
-		Error: model.Error{
+		Error: &model.Error{
 			Message:   message,
 			ErrorCode: int64(code),
 		},
@@ -28,6 +28,7 @@ func RespondWithError(w http.ResponseWriter, code int, message string) {
 func RespondWithRunningStatus(w http.ResponseWriter, code int, message string) {
 	resp := model.RespData{
 		Status: "Running",
+		Error:  nil,
 	}
 	RespondWithJSON(w, code, resp)
 }

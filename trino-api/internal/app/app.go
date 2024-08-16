@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"trino-api/internal/app/handler"
 	"trino-api/internal/app/routes"
+	"trino-api/internal/config"
 	"trino-api/internal/services/trino"
 
 	"github.com/gorilla/mux"
@@ -15,18 +16,18 @@ type App struct {
 	Handler     *handler.Handler
 }
 
-func NewApp(dsn string) (*App, error) {
+func NewApp(cfg *config.Config) (*App, error) {
 
-	if dsn == "" {
+	if cfg.Db.DSN == "" {
 		return nil, fmt.Errorf("configuration or database settings are missing")
 	}
 
-	trinoClient, err := trino.NewTrinoClient(dsn)
+	trinoClient, err := trino.NewTrinoClient(cfg.Db.DSN)
 	if err != nil {
 		return nil, err
 	}
 
-	handler := *handler.NewHandler(trinoClient)
+	handler := *handler.NewHandler(trinoClient, cfg)
 
 	router := mux.NewRouter()
 	routes.RegisterRoutes(router, &handler)

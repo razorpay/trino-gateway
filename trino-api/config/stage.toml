@@ -1,0 +1,19 @@
+[app]
+    appEnv              = "default"
+    serviceName         = "trino-client"
+    hostname            = "stage-trino.client.razorpay.com"
+    port                = 8000
+    metricsPort         = 8080
+    shutdownTimeout     = 2
+    shutdownDelay       = 2
+    maxRecords          = 5000
+[db]
+    dialect             = "trino"
+    protocol            = "tcp"
+    url                 = "stage-trino-rzp.com"
+    port                = 8080
+    username            = "user"
+    password            = "user"
+    catalog             = "default"
+    schema              = "public"
+    DSN                 = "http://user@stage-trino-rzp.com:8080?catalog=default&schema=public"

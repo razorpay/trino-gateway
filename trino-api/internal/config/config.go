@@ -1,9 +1,8 @@
 package config
 
 type Config struct {
-	App  App
-	Db   DB
-	Auth Auth
+	App App
+	Db  DB
 }
 
 type App struct {
@@ -14,6 +13,7 @@ type App struct {
 	MetricsPort     int
 	ShutDownTimeout int
 	ShutDownDelay   int
+	MaxRecords      int
 }
 
 type DB struct {
@@ -26,8 +26,4 @@ type DB struct {
 	Catalog  string
 	Schema   string
 	DSN      string
-}
-
-type Auth struct {
-	Token map[string]string `toml:"token"`
 }
