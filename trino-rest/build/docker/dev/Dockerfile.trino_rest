@@ -1,0 +1,41 @@
+# Use a lightweight Go image
+FROM golang:1.21.5-alpine AS builder
+
+ENV CGO_ENABLED 0
+
+RUN mkdir /src
+
+WORKDIR /src
+
+RUN apk add --update --no-cache --repository https://dl-4.alpinelinux.org/alpine/latest-stable/community/ make
+
+ADD Makefile /src
+
+COPY go.mod .
+COPY go.sum .
+
+RUN go mod download
+
+COPY . /src/
+
+RUN make go-build-api
+
+# stage 2
+
+FROM alpine:latest
+
+COPY --from=builder /src/bin/api /app/
+COPY --from=builder /src/config/ /app/config/
+COPY build/docker/entrypoint.sh /app/
+
+ENV WORKDIR=/app
+ENV DUMB_INIT_SETSID=0
+WORKDIR /app
+
+RUN apk add --update --no-cache dumb-init su-exec ca-certificates curl
+
+EXPOSE 8000
+
+RUN chmod +x entrypoint.sh
+
+ENTRYPOINT ["./api"]

@@ -56,10 +56,3 @@ func (h *Handler) QueryHandler() http.HandlerFunc {
 		})
 	}
 }
-
-func (h *Handler) HealthCheck() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		response := map[string]string{"status": "OK"}
-		utils.RespondWithJSON(w, http.StatusOK, response)
-	}
-}

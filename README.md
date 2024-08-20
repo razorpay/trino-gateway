@@ -119,7 +119,7 @@ Rest of this section covers non-container based build environment.
 
 1. Install [Golang](https://go.dev)(It is recommended that the version matches exactly as defined in go.mod)
 
-2. [Protobuf compiler](https://github.com/protocolbuffers/protobuf/releases)  
+2. [Protobuf compiler](https://github.com/protocolbuffers/protobuf/releases)
 
 3. Install dependencies
 
@@ -178,7 +178,7 @@ go run ./cmd/gateway | jq
 1. Extract https://github.com/swagger-api/swagger-ui/tree/<version>/dist -> third_party/swaggerui
 2. Modify swagger-initializer.js to point to generated openApi spec
 
-## TODO 
+## TODO
 
 _rough notes_
 
@@ -225,24 +225,11 @@ This module exposes an API to interact with Trino. It retrieves data using the T
 
 ## Base URL
 
-The base URL for the API is: `http://rzp-trino-client:8000`
+The base URL for the API is: `http://rzp-trino-rest:8000`
 
-### 1. `GET /v1/health`
+### `POST /v1/query`
 
-**Description:**  
-Checks the health of the trino client API service.
-
-**Response:**
-
-```json
-{
-  "status": "string",  // Service health status
-}
-```
-
-### 2. `POST /v1/query`
-
-**Description:**  
+**Description:**
 Executes a SQL query against Trino.
 
 **Request:**
@@ -257,7 +244,7 @@ Executes a SQL query against Trino.
 
 ```json
 {
-  "status": "string",  // "Success/ Error/ Running"
+  "status": "string",  // "Success/ Error"
   "columns": [
     {
       "name": "string",  // Column name
@@ -265,19 +252,18 @@ Executes a SQL query against Trino.
     }
   ],
   "data": [
-    [
-      {
-        "data": "string"  // Data for each cell
-      }
-    ]
+        {
+            "col1": "val1"
+        },
+        {
+            "col1": "val2"
+        }
   ],
   "error": {
     "message": "string",   // Error message (if any)
     "errorCode": "integer",// Error code (if any)
-    "errorName": "string", // Error name (if any)
-    "errorType": "string"  // Error type (if any)
   }
-} 
+}
 ```
 
 **Reponse(Success example):**
@@ -304,146 +290,66 @@ Executes a SQL query against Trino.
         }
     ],
     "data": [
-        [
-            {
-                "data": 0
-            },
-            {
-                "data": "ALGERIA"
-            },
-            {
-                "data": 0
-            },
-            {
-                "data": " haggle. carefully final deposits detect slyly agai"
-            }
-        ],
-        [
-            {
-                "data": 1
-            },
-            {
-                "data": "ARGENTINA"
-            },
-            {
-                "data": 1
-            },
-            {
-                "data": "al foxes promise slyly according to the regular accounts. bold requests alon"
-            }
-        ],
-        [
-            {
-                "data": 2
-            },
-            {
-                "data": "BRAZIL"
-            },
-            {
-                "data": 1
-            },
-            {
-                "data": "y alongside of the pending deposits. carefully special packages are about the ironic forges. slyly special "
-            }
-        ],
-        [
-            {
-                "data": 3
-            },
-            {
-                "data": "CANADA"
-            },
-            {
-                "data": 1
-            },
-            {
-                "data": "eas hang ironic, silent packages. slyly regular packages are furiously over the tithes. fluffily bold"
-            }
-        ],
-        [
-            {
-                "data": 4
-            },
-            {
-                "data": "EGYPT"
-            },
-            {
-                "data": 4
-            },
-            {
-                "data": "y above the carefully unusual theodolites. final dugouts are quickly across the furiously regular d"
-            }
-        ],
-        [
-            {
-                "data": 5
-            },
-            {
-                "data": "ETHIOPIA"
-            },
-            {
-                "data": 0
-            },
-            {
-                "data": "ven packages wake quickly. regu"
-            }
-        ],
-        [
-            {
-                "data": 6
-            },
-            {
-                "data": "FRANCE"
-            },
-            {
-                "data": 3
-            },
-            {
-                "data": "refully final requests. regular, ironi"
-            }
-        ],
-        [
-            {
-                "data": 7
-            },
-            {
-                "data": "GERMANY"
-            },
-            {
-                "data": 3
-            },
-            {
-                "data": "l platelets. regular accounts x-ray: unusual, regular acco"
-            }
-        ],
-        [
-            {
-                "data": 8
-            },
-            {
-                "data": "INDIA"
-            },
-            {
-                "data": 2
-            },
-            {
-                "data": "ss excuses cajole slyly across the packages. deposits print aroun"
-            }
-        ],
-        [
-            {
-                "data": 9
-            },
-            {
-                "data": "INDONESIA"
-            },
-            {
-                "data": 2
-            },
-            {
-                "data": " slyly express asymptotes. regular deposits haggle slyly. carefully ironic hockey players sleep blithely. carefull"
-            }
-        ]
+        {
+            "comment": " haggle. carefully final deposits detect slyly agai",
+            "name": "ALGERIA",
+            "nationkey": 0,
+            "regionkey": 0
+        },
+        {
+            "comment": "al foxes promise slyly according to the regular accounts. bold requests alon",
+            "name": "ARGENTINA",
+            "nationkey": 1,
+            "regionkey": 1
+        },
+        {
+            "comment": "y alongside of the pending deposits. carefully special packages are about the ironic forges. slyly special ",
+            "name": "BRAZIL",
+            "nationkey": 2,
+            "regionkey": 1
+        },
+        {
+            "comment": "eas hang ironic, silent packages. slyly regular packages are furiously over the tithes. fluffily bold",
+            "name": "CANADA",
+            "nationkey": 3,
+            "regionkey": 1
+        },
+        {
+            "comment": "y above the carefully unusual theodolites. final dugouts are quickly across the furiously regular d",
+            "name": "EGYPT",
+            "nationkey": 4,
+            "regionkey": 4
+        },
+        {
+            "comment": "ven packages wake quickly. regu",
+            "name": "ETHIOPIA",
+            "nationkey": 5,
+            "regionkey": 0
+        },
+        {
+            "comment": "refully final requests. regular, ironi",
+            "name": "FRANCE",
+            "nationkey": 6,
+            "regionkey": 3
+        },
+        {
+            "comment": "l platelets. regular accounts x-ray: unusual, regular acco",
+            "name": "GERMANY",
+            "nationkey": 7,
+            "regionkey": 3
+        },
+        {
+            "comment": "ss excuses cajole slyly across the packages. deposits print aroun",
+            "name": "INDIA",
+            "nationkey": 8,
+            "regionkey": 2
+        },
+        {
+            "comment": " slyly express asymptotes. regular deposits haggle slyly. carefully ironic hockey players sleep blithely. carefull",
+            "name": "INDONESIA",
+            "nationkey": 9,
+            "regionkey": 2
+        }
     ]
 }
 ```
@@ -456,63 +362,61 @@ Executes a SQL query against Trino.
     "error": {
         "message": "Unable to query trino: trino: query failed (200 OK): \"USER_ERROR: line 1:31: mismatched input '10'. Expecting: ',', '.', 'AS', 'CROSS', 'EXCEPT', 'FETCH', 'FOR', 'FULL', 'GROUP', 'HAVING', 'INNER', 'INTERSECT', 'JOIN', 'LEFT', 'LIMIT', 'MATCH_RECOGNIZE', 'NATURAL', 'OFFSET', 'ORDER', 'RIGHT', 'TABLESAMPLE', 'UNION', 'WHERE', 'WINDOW', <EOF>, <identifier>\"",
         "errorCode": 500,
-        "errorName": "",
-        "errorType": ""
     }
 }
 ```
 ## Project Structure
 
 ```plaintext
-trino-api/
+trino-rest/
 │
 ├── build/
 │   ├── docker/
-│       ├── dev/                   
-│       │   ├── Dockerfile.api       
-│       ├── entrypoint.sh  
+│       ├── dev/
+│       │   ├── Dockerfile.api
+│       ├── entrypoint.sh
 │
 ├── cmd/
 │   ├── api/
-│       ├── main.go                  
+│       ├── main.go
 │
 ├── config/
-│   ├── default.toml                
-│   ├── dev_docker.toml              
-│   ├── stage.toml                   
-│   ├── prod.toml                    
+│   ├── default.toml
+│   ├── dev_docker.toml
+│   ├── stage.toml
+│   ├── prod.toml
 │
 ├── deployment/
 │   ├── dev/
-│       ├── docker-compose.yml       
+│       ├── docker-compose.yml
 │
 ├── internal/
 │   ├── app/
 │   │   ├── handler/
-│   │   │    ├── handler.go          
-│   │   │    ├── handler_test.go 
+│   │   │    ├── handler.go
+│   │   │    ├── handler_test.go
 │   │   ├── process/
-│   │   │    ├── processor.go        
+│   │   │    ├── processor.go
 │   │   ├── routes/
-│   │   │    ├── routes.go           
-│   │   ├── app.go                   
+│   │   │    ├── routes.go
+│   │   ├── app.go
 │   │
 │   ├── config/
-│   │   ├── config.go                
+│   │   ├── config.go
 │   ├── model/
-│   │   ├── model.go                 
+│   │   ├── model.go
 │   ├── utils/
-│   │   ├── response.go              
+│   │   ├── response.go
 │   ├── services/
 │   │   ├── trino/
-│   │        ├── client.go           
+│   │        ├── client.go
 │   └── boot/
-│       ├── boot.go                  
+│       ├── boot.go
 │
 ├── pkg/
 │   ├── config/
-│       ├── config.go                
-│       ├── config_test.go 
+│       ├── config.go
+│       ├── config_test.go
 │
 ├── go.mod
 │

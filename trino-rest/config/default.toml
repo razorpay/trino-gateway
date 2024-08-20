@@ -1,27 +1,19 @@
-[app]
-    logLevel              = "info"
-[monitor]
-    interval              = "20s"
-    healthCheckSql        = "SHOW SCHEMAS FROM hive"
-[gateway]
-    ports                 = [8080, 8081, 8082, 8083]
-
 [trino-rest]
     appEnv              = "default"
     serviceName         = "trino-rest"
-    hostname            = "stage-trino.rest.razorpay.com"
+    hostname            = "localhost"
     port                = 8000
     metricsPort         = 8080
     shutdownTimeout     = 2
     shutdownDelay       = 2
     maxRecords          = 5000
-    [trino-rest.trino-backend-db]
+    [trino-backend-db]
         dialect             = "trino"
         protocol            = "tcp"
-        url                 = "stage-trino-rest.com"
+        url                 = "localhost"
         port                = 8080
         username            = "user"
         password            = "user"
         catalog             = "default"
         schema              = "public"
-        DSN                 = "http://user@stage-trino-rest.com:8080?catalog=default&schema=public"
+        DSN                 = "http://user@trino_rest:8080?catalog=default&schema=public"

@@ -1,15 +1,3 @@
-[app]
-    gitCommitHash                = "dev-docker"
-    logLevel                     = "debug"
-
-[db]
-    [db.ConnectionConfig]
-        url                      = "trino_gateway_mysql"
-        port                     = 3306
-
-[gateway]
-    defaultRoutingGroup          = "dev"
-
 [trino-rest]
     appEnv              = "default"
     serviceName         = "trino-rest"
@@ -19,7 +7,7 @@
     shutdownTimeout     = 2
     shutdownDelay       = 2
     maxRecords          = 5000
-    [trino-rest.trino-backend-db]
+    [trino-backend-db]
         dialect             = "trino"
         protocol            = "tcp"
         url                 = "trino_local"

@@ -1,11 +1,3 @@
-[app]
-    logLevel              = "info"
-[monitor]
-    interval              = "20s"
-    healthCheckSql        = "SHOW SCHEMAS FROM hive"
-[gateway]
-    ports                 = [8080, 8081, 8082, 8083]
-
 [trino-rest]
     appEnv              = "default"
     serviceName         = "trino-rest"
@@ -15,7 +7,7 @@
     shutdownTimeout     = 2
     shutdownDelay       = 2
     maxRecords          = 5000
-    [trino-rest.trino-backend-db]
+    [trino-backend-db]
         dialect             = "trino"
         protocol            = "tcp"
         url                 = "stage-trino-rest.com"
