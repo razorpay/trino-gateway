@@ -3,7 +3,8 @@ package utils
 import (
 	"encoding/json"
 	"net/http"
-	"trino-api/internal/model"
+
+	"github.com/razorpay/trino-gateway/internal/trino_rest/model"
 )
 
 // send back the response in the json format
@@ -21,14 +22,6 @@ func RespondWithError(w http.ResponseWriter, code int, message string) {
 			Message:   message,
 			ErrorCode: int64(code),
 		},
-	}
-	RespondWithJSON(w, code, resp)
-}
-
-func RespondWithRunningStatus(w http.ResponseWriter, code int, message string) {
-	resp := model.RespData{
-		Status: "Running",
-		Error:  nil,
 	}
 	RespondWithJSON(w, code, resp)
 }

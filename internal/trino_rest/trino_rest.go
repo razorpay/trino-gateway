@@ -1,11 +1,12 @@
-package app
+package trino_rest
 
 import (
 	"fmt"
-	"trino-api/internal/app/handler"
-	"trino-api/internal/app/routes"
-	"trino-api/internal/config"
-	"trino-api/internal/services/trino"
+
+	"github.com/razorpay/trino-gateway/internal/config"
+	"github.com/razorpay/trino-gateway/internal/trino_rest/handler"
+	"github.com/razorpay/trino-gateway/internal/trino_rest/routes"
+	"github.com/razorpay/trino-gateway/internal/trino_rest/services/trino"
 
 	"github.com/gorilla/mux"
 )
@@ -18,16 +19,16 @@ type App struct {
 
 func NewApp(cfg *config.Config) (*App, error) {
 
-	if cfg.Db.DSN == "" {
+	if cfg.TrinoRest.TrinoBackendDB.DSN == "" {
 		return nil, fmt.Errorf("configuration or database settings are missing")
 	}
 
-	trinoClient, err := trino.NewTrinoClient(cfg.Db.DSN)
+	trinoClient, err := trino.NewTrinoClient(cfg.TrinoRest.TrinoBackendDB.DSN)
 	if err != nil {
 		return nil, err
 	}
 
-	handler := *handler.NewHandler(trinoClient, cfg)
+	handler := *handler.NewHandler(trinoClient, cfg, nil)
 
 	router := mux.NewRouter()
 	routes.RegisterRoutes(router, &handler)

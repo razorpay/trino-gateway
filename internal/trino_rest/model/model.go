@@ -5,19 +5,15 @@ type ReqData struct {
 }
 
 type RespData struct {
-	Status  string    `json:"status,omitempty"`
-	Columns []Column  `json:"columns,omitempty"`
-	Data    [][]Datum `json:"data,omitempty"`
-	Error   *Error    `json:"error,omitempty"`
+	Status  string                   `json:"status,omitempty"`
+	Columns []Column                 `json:"columns,omitempty"`
+	Data    []map[string]interface{} `json:"data,omitempty"`
+	Error   *Error                   `json:"error,omitempty"`
 }
 
 type Column struct {
 	Name string `json:"name"`
 	Type string `json:"type"`
-}
-
-type Datum struct {
-	Data interface{} `json:"data"`
 }
 type Error struct {
 	Message   string `json:"message"`

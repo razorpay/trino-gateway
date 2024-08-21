@@ -1,7 +1,7 @@
 package routes
 
 import (
-	"trino-api/internal/app/handler"
+	"github.com/razorpay/trino-gateway/internal/trino_rest/handler"
 
 	"github.com/gorilla/mux"
 )

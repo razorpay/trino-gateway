@@ -3,23 +3,29 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
-	"trino-api/internal/app/process"
-	"trino-api/internal/config"
-	"trino-api/internal/model"
-	"trino-api/internal/services/trino"
-	"trino-api/internal/utils"
+
+	"github.com/razorpay/trino-gateway/internal/config"
+	"github.com/razorpay/trino-gateway/internal/trino_rest/model"
+	"github.com/razorpay/trino-gateway/internal/trino_rest/process"
+	"github.com/razorpay/trino-gateway/internal/trino_rest/services/trino"
+	"github.com/razorpay/trino-gateway/internal/trino_rest/utils"
 )
 
 type Handler struct {
-	TrinoClient *trino.Client
-	cfg         *config.Config
+	TrinoClient    *trino.Client
+	cfg            *config.Config
+	queryProcessor process.QueryProcessor
 }
 
 // NewHandler initializes the Handler with the TrinoClient and config.
-func NewHandler(trinoClient *trino.Client, cfg *config.Config) *Handler {
+func NewHandler(trinoClient *trino.Client, cfg *config.Config, processor process.QueryProcessor) *Handler {
+	if processor == nil {
+		processor = &process.DefaultProcessor{}
+	}
 	return &Handler{
-		TrinoClient: trinoClient,
-		cfg:         cfg,
+		TrinoClient:    trinoClient,
+		cfg:            cfg,
+		queryProcessor: processor,
 	}
 }
 func (h *Handler) QueryHandler() http.HandlerFunc {
@@ -39,12 +45,12 @@ func (h *Handler) QueryHandler() http.HandlerFunc {
 			return
 		}
 		defer rows.Close()
-		columns, rowData, err := process.QueryResult(rows)
+		columns, rowData, err := h.queryProcessor.QueryResult(rows)
 		if err != nil {
 			utils.RespondWithError(w, http.StatusUnprocessableEntity, "Unable to process: "+err.Error())
 			return
 		}
-		if len(rowData) > h.cfg.App.MaxRecords {
+		if len(rowData) > h.cfg.TrinoRest.MaxRecords {
 			utils.RespondWithError(w, http.StatusRequestEntityTooLarge, "Response data is too big")
 			return
 		}

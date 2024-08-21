@@ -46,6 +46,15 @@ func init() {
 	}
 }
 
+func TrinoRestInit() {
+	// Init config
+	err := config_reader.NewDefaultConfig().Load(GetEnv(), &Config)
+	if err != nil {
+		log.Fatal(err)
+	}
+	InitLoggerTrinoRest(context.Background())
+}
+
 // Fetch env for bootstrapping
 func GetEnv() string {
 	environment := os.Getenv("APP_ENV")
@@ -151,6 +160,13 @@ func NewContext(ctx context.Context) context.Context {
 	return ctx
 }
 
+func TrinoRestNewContext(ctx context.Context) context.Context {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	return ctx
+}
+
 func InitLogger(ctx context.Context) *logger.ZapLogger {
 	lgrConfig := logger.Config{
 		LogLevel:      Config.App.LogLevel,
@@ -158,6 +174,21 @@ func InitLogger(ctx context.Context) *logger.ZapLogger {
 	}
 
 	Logger, err := logger.NewLogger(lgrConfig)
+	if err != nil {
+		panic("failed to initialize logger")
+	}
+
+	return Logger
+}
+
+func InitLoggerTrinoRest(ctx context.Context) *logger.ZapLogger {
+	lgrConfig := logger.Config{
+		LogLevel:      logger.Info,
+		ContextString: "trino_client",
+	}
+
+	Logger, err := logger.NewLogger(lgrConfig)
+
 	if err != nil {
 		panic("failed to initialize logger")
 	}

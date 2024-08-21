@@ -1,15 +1,18 @@
 package config
 
 import (
+	"time"
+
 	"github.com/razorpay/trino-gateway/pkg/spine/db"
 )
 
 type Config struct {
-	App     App
-	Auth    Auth
-	Db      db.Config
-	Gateway Gateway
-	Monitor Monitor
+	App       App
+	Auth      Auth
+	Db        db.Config
+	Gateway   Gateway
+	Monitor   Monitor
+	TrinoRest TrinoRestConfig
 }
 
 // App contains application-specific config values
@@ -52,4 +55,28 @@ type Monitor struct {
 		Password string
 	}
 	HealthCheckSql string
+}
+
+type TrinoRestConfig struct {
+	AppEnv          string
+	ServiceName     string
+	Hostname        string
+	Port            int
+	MetricsPort     int
+	ShutdownTimeout time.Duration
+	ShutdownDelay   time.Duration
+	MaxRecords      int
+	TrinoBackendDB  TrinoBackendDB
+}
+
+type TrinoBackendDB struct {
+	Dialect  string
+	Protocol string
+	URL      string
+	Port     int
+	Username string
+	Password string
+	Catalog  string
+	Schema   string
+	DSN      string
 }

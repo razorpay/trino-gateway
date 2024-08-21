@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"trino-api/internal/app"
-	"trino-api/internal/boot"
+
+	"github.com/razorpay/trino-gateway/internal/boot"
+	trino_rest "github.com/razorpay/trino-gateway/internal/trino_rest"
 )
 
 func main() {
@@ -14,10 +15,10 @@ func main() {
 	ctx, cancel := context.WithCancel(boot.NewContext(context.Background()))
 	defer cancel()
 
-	boot.Init()
-	logger := boot.InitLogger(ctx)
+	boot.TrinoRestInit()
+	logger := boot.InitLoggerTrinoRest(ctx)
 
-	app, err := app.NewApp(&boot.Config)
+	app, err := trino_rest.NewApp(&boot.Config)
 	if err != nil {
 		logger.Fatal(fmt.Sprintf("Failed to initialize app: %v", err))
 	}

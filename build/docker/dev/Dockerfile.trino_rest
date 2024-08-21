@@ -26,7 +26,7 @@ FROM alpine:latest
 
 COPY --from=builder /src/bin/api /app/
 COPY --from=builder /src/config/ /app/config/
-COPY build/docker/entrypoint.sh /app/
+COPY build/docker/dev/trino-rest_entrypoint.sh /app/
 
 ENV WORKDIR=/app
 ENV DUMB_INIT_SETSID=0
@@ -36,6 +36,6 @@ RUN apk add --update --no-cache dumb-init su-exec ca-certificates curl
 
 EXPOSE 8000
 
-RUN chmod +x entrypoint.sh
+RUN chmod +x trino-rest_entrypoint.sh
 
 ENTRYPOINT ["./api"]
