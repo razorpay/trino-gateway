@@ -12,13 +12,13 @@ import (
 )
 
 type Handler struct {
-	TrinoClient    *trino.Client
+	TrinoClient    trino.TrinoClient
 	cfg            *config.Config
 	queryProcessor process.QueryProcessor
 }
 
 // NewHandler initializes the Handler with the TrinoClient and config.
-func NewHandler(trinoClient *trino.Client, cfg *config.Config, processor process.QueryProcessor) *Handler {
+func NewHandler(trinoClient trino.TrinoClient, cfg *config.Config, processor process.QueryProcessor) *Handler {
 	if processor == nil {
 		processor = &process.DefaultProcessor{}
 	}
