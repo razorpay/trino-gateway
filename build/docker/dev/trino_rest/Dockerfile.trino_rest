@@ -26,7 +26,7 @@ FROM alpine:latest
 
 COPY --from=builder /src/bin/api /app/
 COPY --from=builder /src/config/ /app/config/
-COPY build/docker/dev/trino-rest_entrypoint.sh /app/
+COPY build/docker/dev/trino_rest/trino-rest_entrypoint.sh /app/
 
 ENV WORKDIR=/app
 ENV DUMB_INIT_SETSID=0

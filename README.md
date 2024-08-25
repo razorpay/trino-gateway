@@ -368,17 +368,22 @@ Executes a SQL query against Trino.
 ## Project Structure
 
 ```plaintext
-trino-rest/
+trino-gateway/
 │
 ├── build/
 │   ├── docker/
 │       ├── dev/
-│       │   ├── Dockerfile.api
-│       ├── entrypoint.sh
+│       │    ├── trino_rest/
+│       │    │   ├── Dockerfile.trino_rest
+│       │    │   ├── trino_rest_entrypoint.sh
+│       │    │   ├── docker_compose.yml
+│       ├── prod/
+│       │    ├── Dockerfile.razorpay_trino_rest
+│       │    ├── trino_rest_entrypoint.sh
 │
 ├── cmd/
-│   ├── api/
-│       ├── main.go
+│   ├── trino_rest/
+│   │   ├── main.go
 │
 ├── config/
 │   ├── default.toml
@@ -386,12 +391,8 @@ trino-rest/
 │   ├── stage.toml
 │   ├── prod.toml
 │
-├── deployment/
-│   ├── dev/
-│       ├── docker-compose.yml
-│
 ├── internal/
-│   ├── app/
+│   ├── trino_rest/
 │   │   ├── handler/
 │   │   │    ├── handler.go
 │   │   │    ├── handler_test.go
@@ -399,24 +400,13 @@ trino-rest/
 │   │   │    ├── processor.go
 │   │   ├── routes/
 │   │   │    ├── routes.go
-│   │   ├── app.go
-│   │
-│   ├── config/
-│   │   ├── config.go
-│   ├── model/
-│   │   ├── model.go
-│   ├── utils/
-│   │   ├── response.go
-│   ├── services/
-│   │   ├── trino/
-│   │        ├── client.go
-│   └── boot/
-│       ├── boot.go
-│
-├── pkg/
-│   ├── config/
-│       ├── config.go
-│       ├── config_test.go
+│   │   ├── model/
+│   │   │    ├── model.go
+│   │   ├── utils/
+│   │   │    ├── response.go
+│   │   ├── services/trino/
+│   │   │    ├── client.go
+│   │   ├── trino_rest.go
 │
 ├── go.mod
 │
