@@ -1,0 +1,55 @@
+name: Code Review
+
+on:
+  pull_request:
+    types: [labeled]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: ${{ github.repository }}-${{ github.event.pull_request.number || github.head_ref || github.sha }}-${{ github.workflow }}
+  cancel-in-progress: true
+
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  review:
+    name: Code Review
+    runs-on: [self-hosted]
+    if: ${{ github.event.label.name == 'AI-PR-Review' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Count specific reviews
+        id: review-counter
+        shell: python
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          import os
+          import requests
+          import sys
+
+          reviews_url = f"https://api.github.com/repos/{os.getenv('GITHUB_REPOSITORY')}/pulls/{os.getenv('PR_NUMBER')}/reviews"
+          headers = {
+            'Authorization': f"Bearer {os.getenv('GITHUB_TOKEN')}",
+            'Accept': 'application/vnd.github+json',
+          }
+
+          response = requests.get(reviews_url, headers=headers)
+          response.raise_for_status()  # Raises an error for bad responses
+          reviews = response.json()
+          count = sum(1 for review in reviews if 'RazorGenius' in review.get('body', ''))
+          print(f"::set-output name=review-count::{count}")
+
+      - name: Run review process
+        uses: razorpay/ai-pr-reviewer@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_CODEREVIEW_SECRET }}
