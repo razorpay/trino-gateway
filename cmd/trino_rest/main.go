@@ -22,7 +22,6 @@ func main() {
 	if err != nil {
 		logger.Fatal(fmt.Sprintf("Failed to initialize app: %v", err))
 	}
-	defer app.Close()
 
 	logger.Info(fmt.Sprintf("Starting server on: %d", boot.Config.App.Port))
 	logger.Fatal(fmt.Sprint(http.ListenAndServe(":"+strconv.Itoa(boot.Config.App.Port), app.Router)))

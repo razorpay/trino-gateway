@@ -15,6 +15,7 @@ type Client struct {
 
 type TrinoClient interface {
 	Query(query string) (*sql.Rows, error)
+	Close() error
 }
 
 func NewTrinoClient(dsn string) (*Client, error) {

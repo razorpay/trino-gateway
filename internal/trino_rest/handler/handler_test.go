@@ -78,9 +78,8 @@ func (m *MockQueryProcessor) QueryResult(rows *sql.Rows) ([]model.Column, []map[
 }
 
 func TestQueryHandler_InvalidJSONPayload(t *testing.T) {
-	mockClient := new(MockTrinoClient)
 	mockProcessor := new(MockQueryProcessor)
-	handler := NewHandler(mockClient, &config.Config{}, mockProcessor)
+	handler := NewHandler(&config.Config{}, mockProcessor)
 
 	// Create a new HTTP POST request with an invalid JSON payload
 	query := "SELECT * FROM table"
@@ -113,7 +112,7 @@ func TestQueryHandler_SuccessfulDecode(t *testing.T) {
 	mockTrinoClient := new(MockTrinoClient)
 	mockQueryProcessor := new(MockQueryProcessor)
 	mockCfg := &config.Config{TrinoRest: config.TrinoRestConfig{MaxRecords: 100}}
-	handler := NewHandler(mockTrinoClient, mockCfg, mockQueryProcessor)
+	handler := NewHandler(mockCfg, mockQueryProcessor)
 
 	query := "SELECT * FROM table"
 	reqData := &model.ReqData{SQL: query}
@@ -150,7 +149,7 @@ func TestQueryHandler_SuccessfulDecode(t *testing.T) {
 func TestQueryHnadler_TrinoQueryError(t *testing.T) {
 	mockClient := new(MockTrinoClient)
 	mockProcessor := new(MockQueryProcessor)
-	handler := NewHandler(mockClient, &config.Config{}, mockProcessor)
+	handler := NewHandler(&config.Config{}, mockProcessor)
 
 	// Set up the mock client so that it will return an error when
 	// called with the query.
@@ -188,7 +187,7 @@ func TestQueryHnadler_TrinoQueryError(t *testing.T) {
 func TestQueryHandler_QueryResultProcessingError(t *testing.T) {
 	mockClient := new(MockTrinoClient)
 	mockProcessor := new(MockQueryProcessor)
-	handler := NewHandler(mockClient, &config.Config{}, mockProcessor)
+	handler := NewHandler(&config.Config{}, mockProcessor)
 
 	// Define a query string that will be used to test the handler.
 	query := "SELECT * FROM table"
@@ -241,7 +240,7 @@ func TestQueryHandler_ResponseDataExceedMaxRecords(t *testing.T) {
 	cfg.TrinoRest.MaxRecords = 5
 	mockProcessor := new(MockQueryProcessor)
 
-	handler := NewHandler(mockClient, cfg, mockProcessor)
+	handler := NewHandler(cfg, mockProcessor)
 	query := "SELECT * FROM tpch.sf1.nation limit 10"
 
 	columns := []model.Column{
@@ -297,7 +296,7 @@ func TestQueryHandler_QuerySuccess(t *testing.T) {
 	cfg := &config.Config{}
 	cfg.TrinoRest.MaxRecords = 10
 	mockProcessor := new(MockQueryProcessor)
-	handler := NewHandler(mockClient, cfg, mockProcessor)
+	handler := NewHandler(cfg, mockProcessor)
 
 	query := "SELECT count(*) FROM tpch.sf1.nation"
 

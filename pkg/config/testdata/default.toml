@@ -12,6 +12,7 @@ title = "Default config file for testing."
     maxOpenConnections    = 10
     maxIdleConnections    = 10
     connectionMaxLifetime = 0
+    isAuthDelegated       = false
     [db.trino-backend-db]
         dialect             = "trino"
         protocol            = "tcp"

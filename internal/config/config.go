@@ -66,6 +66,7 @@ type TrinoRestConfig struct {
 	ShutdownTimeout time.Duration
 	ShutdownDelay   time.Duration
 	MaxRecords      int
+	IsAuthDelegated bool
 	TrinoBackendDB  TrinoBackendDB
 }
 

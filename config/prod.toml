@@ -15,13 +15,14 @@
     shutdownTimeout     = 2
     shutdownDelay       = 2
     maxRecords          = 5000
+    isAuthDelegated     = false
     [trino-rest.trino-backend-db]
         dialect             = "trino"
         protocol            = "tcp"
         url                 = "trino-rest.com"
         port                = 8080
         username            = "user"
-        password            = "user"
+        password            = ""
         catalog             = "default"
         schema              = "public"
         DSN                 = "http://user@trino-rest.com:8080?catalog=default&schema=public"

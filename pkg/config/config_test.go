@@ -26,6 +26,7 @@ type TestDbConfig struct {
 	MaxOpenConnections    int
 	MaxIdleConnections    int
 	ConnectionMaxLifetime time.Duration
+	IsAuthDelegated       bool
 	TrinoBackendDB        TrinoBackendDB `mapstructure:"trino-backend-db"`
 }
 

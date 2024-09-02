@@ -12,18 +12,16 @@ import (
 )
 
 type Handler struct {
-	TrinoClient    trino.TrinoClient
 	cfg            *config.Config
 	queryProcessor process.QueryProcessor
 }
 
 // NewHandler initializes the Handler with the TrinoClient and config.
-func NewHandler(trinoClient trino.TrinoClient, cfg *config.Config, processor process.QueryProcessor) *Handler {
+func NewHandler(cfg *config.Config, processor process.QueryProcessor) *Handler {
 	if processor == nil {
 		processor = &process.DefaultProcessor{}
 	}
 	return &Handler{
-		TrinoClient:    trinoClient,
 		cfg:            cfg,
 		queryProcessor: processor,
 	}
@@ -35,11 +33,17 @@ func (h *Handler) QueryHandler() http.HandlerFunc {
 			err error
 		)
 
+		trinoClient, err := trino.NewTrinoClient(h.cfg.TrinoRest.TrinoBackendDB.DSN)
+		if err != nil {
+			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to connect to trino server: "+err.Error())
+			return
+		}
+		defer trinoClient.Close()
 		if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
 			utils.RespondWithError(w, http.StatusBadRequest, "Invalid request payload")
 			return
 		}
-		rows, err := h.TrinoClient.Query(req.SQL)
+		rows, err := trinoClient.Query(req.SQL)
 		if err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, err.Error())
 			return
