@@ -10,7 +10,7 @@
 [gateway]
     defaultRoutingGroup          = "dev"
 
-[trino-rest]
+[trinoRest]
     appEnv              = "default"
     serviceName         = "trino-rest"
     hostname            = "localhost"
@@ -20,7 +20,7 @@
     shutdownDelay       = 2
     maxRecords          = 5000
     isAuthDelegated     = false
-    [trino-rest.trino-backend-db]
+    [trinoRest.trinoBackendDb]
         dialect             = "trino"
         protocol            = "tcp"
         url                 = "trino_local"

@@ -52,7 +52,7 @@
         user              = "trino-gateway"
         password          = ""
 
-[trino-rest]
+[trinoRest]
     appEnv              = "default"
     serviceName         = "trino-rest"
     hostname            = "localhost"
@@ -62,7 +62,7 @@
     shutdownDelay       = 2
     maxRecords          = 5000
     isAuthDelegated     = false
-    [trino_rest.trino-backend-db]
+    [trinoRest.trinoBackendDb]
         dialect             = "trino"
         protocol            = "tcp"
         url                 = "localhost"

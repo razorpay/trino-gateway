@@ -51,11 +51,7 @@ func (h *Handler) QueryHandler() http.HandlerFunc {
 		defer rows.Close()
 		columns, rowData, err := h.queryProcessor.QueryResult(rows)
 		if err != nil {
-			utils.RespondWithError(w, http.StatusUnprocessableEntity, "Unable to process: "+err.Error())
-			return
-		}
-		if len(rowData) > h.cfg.TrinoRest.MaxRecords {
-			utils.RespondWithError(w, http.StatusRequestEntityTooLarge, "Response data is too big")
+			utils.RespondWithError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 		utils.RespondWithJSON(w, http.StatusAccepted, model.RespData{

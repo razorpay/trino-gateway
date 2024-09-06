@@ -29,7 +29,3 @@ func NewApp(cfg *config.Config) (*App, error) {
 		AuthService: authService,
 	}, nil
 }
-
-func (app *App) Close() error {
-	return app.TrinoClient.Close()
-}

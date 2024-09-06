@@ -283,13 +283,13 @@ func TestQueryHandler_ResponseDataExceedMaxRecords(t *testing.T) {
 	result := w.Result()
 	defer result.Body.Close()
 
-	// Assert that the response status code is 413 (Request Entity Too Large).
-	assert.Equal(t, http.StatusRequestEntityTooLarge, result.StatusCode)
+	// Assert that the response status code is 500 (Internal Server Error).
+	assert.Equal(t, http.StatusInternalServerError, result.StatusCode)
 	var resp model.RespData
 	err = json.NewDecoder(result.Body).Decode(&resp)
 	assert.NoError(t, err)
-	assert.Equal(t, http.StatusRequestEntityTooLarge, resp.Error.ErrorCode)
-	assert.Equal(t, "Response data is too big", resp.Error.Message)
+	assert.Equal(t, http.StatusInternalServerError, resp.Error.ErrorCode)
+	assert.Equal(t, "exceeded allowed maximum number of records", resp.Error.Message)
 }
 func TestQueryHandler_QuerySuccess(t *testing.T) {
 	mockClient := new(MockTrinoClient)

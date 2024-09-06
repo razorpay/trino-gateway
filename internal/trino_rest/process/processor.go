@@ -2,7 +2,9 @@ package process
 
 import (
 	"database/sql"
+	"errors"
 
+	"github.com/razorpay/trino-gateway/internal/boot"
 	"github.com/razorpay/trino-gateway/internal/trino_rest/model"
 )
 
@@ -35,7 +37,11 @@ func (p *DefaultProcessor) QueryResult(rows *sql.Rows) ([]model.Column, []map[st
 		})
 	}
 
+	rowCount := 1
 	for rows.Next() {
+		if rowCount > boot.Config.TrinoRest.MaxRecords {
+			return nil, nil, errors.New("exceeded allowed maximum number of records")
+		}
 		columns := make([]interface{}, len(resultColumns))
 		colPtrs := make([]interface{}, len(resultColumns))
 		rowMap := make(map[string]interface{})
@@ -52,6 +58,7 @@ func (p *DefaultProcessor) QueryResult(rows *sql.Rows) ([]model.Column, []map[st
 			rowMap[resultColumns[i].Name] = col
 		}
 		dataRows = append(dataRows, rowMap)
+		rowCount++
 	}
 	return resultColumns, dataRows, nil
 }
