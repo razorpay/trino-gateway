@@ -1,6 +1,13 @@
 SCRIPT_DIR := "./scripts"
-
 BUILD_OUT_DIR := "bin/"
+API_OUT := "bin/api"
+API_MAIN_FILE := "cmd/trino_rest/main.go"
+
+GOVERSION=$(shell go version)
+UNAME_OS=$(shell go env GOOS)
+UNAME_ARCH=$(shell go env GOARCH)
+
+GO = go
 
 PWD = $(shell pwd)
 
@@ -54,3 +61,23 @@ test-integration:
 .PHONY: test-unit
 test-unit:
 	go test
+
+.PHONY: go-build-trino-rest-api ## Build trino rest api
+go-build-trino-rest-api:
+	@CGO_ENABLED=0 GOOS=$(UNAME_OS) GOARCH=$(UNAME_ARCH) $(GO) build -v -o $(API_OUT) $(API_MAIN_FILE)
+
+.PHONY: local_trino_rest_up
+local_trino_rest_up:
+	$(SCRIPT_DIR)/trino_rest_docker.sh up
+
+.PHONY: local_trino_rest_down
+local_trino_rest_down:
+	$(SCRIPT_DIR)/trino_rest_docker.sh down
+
+.PHONY: local_trino_rest_logs
+local_trino_rest_logs:
+	$(SCRIPT_DIR)/trino_rest_docker.sh logs
+
+.PHONY: local_trino_rest_clean
+local_trino_rest_clean:
+	$(SCRIPT_DIR)/trino_rest_docker.sh clean

@@ -51,3 +51,24 @@
     [monitor.trino]
         user              = "trino-gateway"
         password          = ""
+
+[trinoRest]
+    appEnv              = "default"
+    serviceName         = "trino-rest"
+    hostname            = "localhost"
+    port                = 8000
+    metricsPort         = 8080
+    shutdownTimeout     = 2
+    shutdownDelay       = 2
+    maxRecords          = 5000
+    isAuthDelegated     = false
+    [trinoRest.trinoBackendDb]
+        dialect             = "trino"
+        protocol            = "tcp"
+        url                 = "localhost"
+        port                = 8080
+        username            = "user"
+        password            = "user"
+        catalog             = "default"
+        schema              = "public"
+        DSN                 = "http://user@localhost:8080?catalog=default&schema=public"

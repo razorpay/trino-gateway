@@ -119,7 +119,7 @@ Rest of this section covers non-container based build environment.
 
 1. Install [Golang](https://go.dev)(It is recommended that the version matches exactly as defined in go.mod)
 
-2. [Protobuf compiler](https://github.com/protocolbuffers/protobuf/releases)  
+2. [Protobuf compiler](https://github.com/protocolbuffers/protobuf/releases)
 
 3. Install dependencies
 
@@ -178,7 +178,7 @@ go run ./cmd/gateway | jq
 1. Extract https://github.com/swagger-api/swagger-ui/tree/<version>/dist -> third_party/swaggerui
 2. Modify swagger-initializer.js to point to generated openApi spec
 
-## TODO 
+## TODO
 
 _rough notes_
 
@@ -208,3 +208,211 @@ Explore victoriaMetrics go client <https://github.com/VictoriaMetrics/metrics>
 
 
 Handle routing errors properly instead of returning HTTP500 in all cases, eg: sql transaction request must return HTTP400 instead of HTTP500
+
+
+# RZP-Trino REST Client
+
+## Overview
+
+This module exposes an API to interact with Trino. It retrieves data using the Trino Go client, processes it, and returns it in JSON format to the client.
+
+### Features:
+- **Trino Integration:** Connects to a Trino instance and executes SQL queries.
+- **Data Processing:** Applies business logic to the data before sending it to the client.
+- **JSON API:** Communicates with clients using JSON format.
+- **Request/Response Limitation:** Throws an error if response data exceeds 5,000 records.
+- **Configurable:** Uses TOML files for different environments (development, staging, production).
+
+## Base URL
+
+The base URL for the API is: `http://rzp-trino-rest:8000`
+
+### `POST /v1/query`
+
+**Description:**
+Executes a SQL query against Trino.
+
+**Request:**
+
+```json
+{
+  "sql": "string"  // SQL query to be executed on trino
+}
+```
+
+**Reponse:**
+
+```json
+{
+  "status": "string",  // "Success/ Error"
+  "columns": [
+    {
+      "name": "string",  // Column name
+      "type": "string"   // Column type
+    }
+  ],
+  "data": [
+        {
+            "col1": "val1"
+        },
+        {
+            "col1": "val2"
+        }
+  ],
+  "error": {
+    "message": "string",   // Error message (if any)
+    "errorCode": "integer",// Error code (if any)
+  }
+}
+```
+
+**Reponse(Success example):**
+
+```json
+{
+    "status": "Success",
+    "columns": [
+        {
+            "name": "nationkey",
+            "type": "BIGINT"
+        },
+        {
+            "name": "name",
+            "type": "VARCHAR"
+        },
+        {
+            "name": "regionkey",
+            "type": "BIGINT"
+        },
+        {
+            "name": "comment",
+            "type": "VARCHAR"
+        }
+    ],
+    "data": [
+        {
+            "comment": " haggle. carefully final deposits detect slyly agai",
+            "name": "ALGERIA",
+            "nationkey": 0,
+            "regionkey": 0
+        },
+        {
+            "comment": "al foxes promise slyly according to the regular accounts. bold requests alon",
+            "name": "ARGENTINA",
+            "nationkey": 1,
+            "regionkey": 1
+        },
+        {
+            "comment": "y alongside of the pending deposits. carefully special packages are about the ironic forges. slyly special ",
+            "name": "BRAZIL",
+            "nationkey": 2,
+            "regionkey": 1
+        },
+        {
+            "comment": "eas hang ironic, silent packages. slyly regular packages are furiously over the tithes. fluffily bold",
+            "name": "CANADA",
+            "nationkey": 3,
+            "regionkey": 1
+        },
+        {
+            "comment": "y above the carefully unusual theodolites. final dugouts are quickly across the furiously regular d",
+            "name": "EGYPT",
+            "nationkey": 4,
+            "regionkey": 4
+        },
+        {
+            "comment": "ven packages wake quickly. regu",
+            "name": "ETHIOPIA",
+            "nationkey": 5,
+            "regionkey": 0
+        },
+        {
+            "comment": "refully final requests. regular, ironi",
+            "name": "FRANCE",
+            "nationkey": 6,
+            "regionkey": 3
+        },
+        {
+            "comment": "l platelets. regular accounts x-ray: unusual, regular acco",
+            "name": "GERMANY",
+            "nationkey": 7,
+            "regionkey": 3
+        },
+        {
+            "comment": "ss excuses cajole slyly across the packages. deposits print aroun",
+            "name": "INDIA",
+            "nationkey": 8,
+            "regionkey": 2
+        },
+        {
+            "comment": " slyly express asymptotes. regular deposits haggle slyly. carefully ironic hockey players sleep blithely. carefull",
+            "name": "INDONESIA",
+            "nationkey": 9,
+            "regionkey": 2
+        }
+    ]
+}
+```
+
+**Reponse(error example):**
+
+```json
+{
+    "status": "Error",
+    "error": {
+        "message": "Unable to query trino: trino: query failed (200 OK): \"USER_ERROR: line 1:31: mismatched input '10'. Expecting: ',', '.', 'AS', 'CROSS', 'EXCEPT', 'FETCH', 'FOR', 'FULL', 'GROUP', 'HAVING', 'INNER', 'INTERSECT', 'JOIN', 'LEFT', 'LIMIT', 'MATCH_RECOGNIZE', 'NATURAL', 'OFFSET', 'ORDER', 'RIGHT', 'TABLESAMPLE', 'UNION', 'WHERE', 'WINDOW', <EOF>, <identifier>\"",
+        "errorCode": 500,
+    }
+}
+```
+## Project Structure
+
+```plaintext
+trino-gateway/
+│
+├── build/
+│   ├── docker/
+│       ├── dev/
+│       │    ├── trino_rest/
+│       │    │   ├── Dockerfile.trino_rest
+│       │    │   ├── trino_rest_entrypoint.sh
+│       │    │   ├── docker_compose.yml
+│       ├── prod/
+│       │    ├── Dockerfile.razorpay_trino_rest
+│       │    ├── trino_rest_entrypoint.sh
+│
+├── cmd/
+│   ├── trino_rest/
+│   │   ├── main.go
+│
+├── config/
+│   ├── default.toml
+│   ├── dev_docker.toml
+│   ├── stage.toml
+│   ├── prod.toml
+│
+├── internal/
+│   ├── trino_rest/
+│   │   ├── handler/
+│   │   │    ├── handler.go
+│   │   │    ├── handler_test.go
+│   │   ├── process/
+│   │   │    ├── processor.go
+│   │   ├── routes/
+│   │   │    ├── routes.go
+│   │   ├── model/
+│   │   │    ├── model.go
+│   │   ├── utils/
+│   │   │    ├── response.go
+│   │   ├── services/trino/
+│   │   │    ├── client.go
+│   │   ├── trino_rest.go
+│
+├── go.mod
+│
+├── go.sum
+│
+├── Makefile
+│
+├── README.md
+│

@@ -12,3 +12,14 @@ title = "Default config file for testing."
     maxOpenConnections    = 10
     maxIdleConnections    = 10
     connectionMaxLifetime = 0
+    isAuthDelegated       = false
+    [db.trino-backend-db]
+        dialect             = "trino"
+        protocol            = "tcp"
+        url                 = "localhost"
+        port                = 8080
+        username            = "user"
+        password            = "user"
+        catalog             = "default"
+        schema              = "public"
+        DSN                 = "http://user@trino_rest:8080?catalog=default&schema=public"

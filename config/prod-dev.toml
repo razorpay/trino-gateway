@@ -5,3 +5,24 @@
     healthCheckSql        = "SHOW SCHEMAS FROM hive"
 [gateway]
     ports                 = [8080, 8081, 8082, 8083]
+
+[trinoRest]
+    appEnv              = "default"
+    serviceName         = "trino-rest"
+    hostname            = "stage-trino.rest.razorpay.com"
+    port                = 8000
+    metricsPort         = 8080
+    shutdownTimeout     = 2
+    shutdownDelay       = 2
+    maxRecords          = 5000
+    isAuthDelegated     = false
+    [trinoRest.trinoBackendDb]
+        dialect             = "trino"
+        protocol            = "tcp"
+        url                 = "stage-trino-rest.com"
+        port                = 8080
+        username            = "user"
+        password            = ""
+        catalog             = "default"
+        schema              = "public"
+        DSN                 = "http://user@stage-trino-rest.com:8080?catalog=default&schema=public"

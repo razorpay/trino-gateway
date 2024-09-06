@@ -1,0 +1,26 @@
+services:
+  trino:
+    image: harbor.razorpay.com/razorpay/trino:356
+    container_name: trino_dev
+    ports:
+      - "8080:8080"
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xmx4g"
+    networks:
+      - trino-rest-network
+  api:
+    build:
+      context: ../../
+      dockerfile: build/docker/dev/trino_rest/Dockerfile.trino_rest
+    ports:
+      - "8000:8000"
+    container_name: trino_rest_server
+    networks:
+      - trino-rest-network
+    environment:
+      - APP_ENV=dev_docker
+    depends_on:
+      - trino
+networks:
+  trino-rest-network:
+    driver: bridge
