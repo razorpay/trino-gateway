@@ -37,12 +37,12 @@ db_migrations() {
 }
 
 initialize
-check_db_connection
+# check_db_connection
 # run db migrations
-db_migrations
+# db_migrations
 
 # run app
 
 # CompileDaemon -polling-interval=10 -exclude-dir=.git -exclude-dir=vendor --build="gopherjs build ./internal/frontend/main --output "./web/frontend/js/frontend.js" --verbose && go build cmd/gateway/main.go -o gateway" --command=./gateway
-go run ./cmd/gateway/main.go
+go run ./cmd/trino_rest/main.go
 # tail -f /dev/null

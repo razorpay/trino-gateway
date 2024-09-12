@@ -6,7 +6,7 @@
 [gateway]
     ports                 = [8080, 8081, 8082, 8083, 8084, 8085, 8086, 8087]
 
-[trioRest]
+[trinoRest]
     appEnv              = "default"
     serviceName         = "trino-rest"
     hostname            = "trino.rest.razorpay.com"
@@ -14,15 +14,15 @@
     metricsPort         = 8080
     shutdownTimeout     = 2
     shutdownDelay       = 2
-    maxRecords          = 5000
-    isAuthDelegated     = false
+    maxRecords          = 30000
+    isAuthDelegated     = true
     [trinoRest.trinoBackendDb]
         dialect             = "trino"
         protocol            = "tcp"
-        url                 = "trino-rest.com"
+        url                 = "trino-adhoc-coordinator-service.trino-adhoc.svc.cluster.local"
         port                = 8080
         username            = "user"
-        password            = ""
-        catalog             = "default"
-        schema              = "public"
-        DSN                 = "http://user@trino-rest.com:8080?catalog=default&schema=public"
+        password            = "user"
+        catalog             = "hive"
+        schema              = "realtime_hudi_api"
+        DSN                 = "http://user@trino-adhoc-coordinator-service.trino-adhoc.svc.cluster.local:8080?catalog=hive&schema=realtime_hudi_api"

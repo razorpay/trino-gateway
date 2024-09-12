@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	//Initialize context
+	// Initialize context
 	ctx, cancel := context.WithCancel(boot.NewContext(context.Background()))
 	defer cancel()
 

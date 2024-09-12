@@ -12,7 +12,7 @@ type Config struct {
 	Db        db.Config
 	Gateway   Gateway
 	Monitor   Monitor
-	TrinoRest TrinoRestConfig
+	TrinoRest TrinoRest
 }
 
 // App contains application-specific config values
@@ -57,7 +57,7 @@ type Monitor struct {
 	HealthCheckSql string
 }
 
-type TrinoRestConfig struct {
+type TrinoRest struct {
 	AppEnv          string
 	ServiceName     string
 	Hostname        string

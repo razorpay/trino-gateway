@@ -188,7 +188,6 @@ func InitLoggerTrinoRest(ctx context.Context) *logger.ZapLogger {
 	}
 
 	Logger, err := logger.NewLogger(lgrConfig)
-
 	if err != nil {
 		panic("failed to initialize logger")
 	}

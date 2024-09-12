@@ -111,7 +111,7 @@ func TestQueryHandler_InvalidJSONPayload(t *testing.T) {
 func TestQueryHandler_SuccessfulDecode(t *testing.T) {
 	mockTrinoClient := new(MockTrinoClient)
 	mockQueryProcessor := new(MockQueryProcessor)
-	mockCfg := &config.Config{TrinoRest: config.TrinoRestConfig{MaxRecords: 100}}
+	mockCfg := &config.Config{TrinoRest: config.TrinoRest{MaxRecords: 100}}
 	handler := NewHandler(mockCfg, mockQueryProcessor)
 
 	query := "SELECT * FROM table"
@@ -146,6 +146,7 @@ func TestQueryHandler_SuccessfulDecode(t *testing.T) {
 	assert.Equal(t, rowData, resp.Data)
 	assert.Nil(t, resp.Error)
 }
+
 func TestQueryHnadler_TrinoQueryError(t *testing.T) {
 	mockClient := new(MockTrinoClient)
 	mockProcessor := new(MockQueryProcessor)
@@ -184,6 +185,7 @@ func TestQueryHnadler_TrinoQueryError(t *testing.T) {
 	assert.Equal(t, "Error", resp.Status)
 	assert.Equal(t, "trino error", resp.Error.Message)
 }
+
 func TestQueryHandler_QueryResultProcessingError(t *testing.T) {
 	mockClient := new(MockTrinoClient)
 	mockProcessor := new(MockQueryProcessor)
@@ -234,6 +236,7 @@ func TestQueryHandler_QueryResultProcessingError(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "Unable to process: processing error", resp.Error.Message)
 }
+
 func TestQueryHandler_ResponseDataExceedMaxRecords(t *testing.T) {
 	mockClient := new(MockTrinoClient)
 	cfg := &config.Config{}
@@ -291,6 +294,7 @@ func TestQueryHandler_ResponseDataExceedMaxRecords(t *testing.T) {
 	assert.Equal(t, http.StatusInternalServerError, resp.Error.ErrorCode)
 	assert.Equal(t, "exceeded allowed maximum number of records", resp.Error.Message)
 }
+
 func TestQueryHandler_QuerySuccess(t *testing.T) {
 	mockClient := new(MockTrinoClient)
 	cfg := &config.Config{}
