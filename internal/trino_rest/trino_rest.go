@@ -16,7 +16,10 @@ type App struct {
 }
 
 func NewApp(cfg *config.Config) (*App, error) {
-	authService := &router.AuthService{}
+	authService := &router.AuthService{
+		ValidationProviderURL:   cfg.Auth.Router.DelegatedAuth.ValidationProviderURL,
+		ValidationProviderToken: cfg.Auth.Router.DelegatedAuth.ValidationProviderToken,
+	}
 
 	handler := *handler.NewHandler(cfg, nil)
 

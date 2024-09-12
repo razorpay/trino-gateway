@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/razorpay/trino-gateway/internal/config"
+	"github.com/razorpay/trino-gateway/internal/provider"
 	"github.com/razorpay/trino-gateway/internal/router"
 	"github.com/razorpay/trino-gateway/internal/trino_rest/utils"
 )
@@ -28,7 +29,14 @@ func (m *AuthMiddleware) BasicAuthenticator(next http.Handler) http.Handler {
 		if m.cfg.TrinoRest.IsAuthDelegated {
 			ctx := r.Context()
 			isValid, err := m.authService.ValidateFromValidationProvider(&ctx, username, password)
-			if err != nil || !isValid {
+			if err != nil {
+				errorMsg := fmt.Sprintf("Unable to Authenticate users. Getting error - %s", err)
+				provider.Logger(ctx).Error(errorMsg)
+				utils.RespondWithError(w, http.StatusNotFound, "Unable to Authenticate the user")
+				return
+			}
+			if !isValid {
+				provider.Logger(ctx).Error(fmt.Sprintf("User - %s not authenticated", username))
 				utils.RespondWithError(w, http.StatusUnauthorized, "invalid credentials")
 				return
 			}
