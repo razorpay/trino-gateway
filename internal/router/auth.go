@@ -117,7 +117,6 @@ func (s *AuthService) GetInMemoryAuthCache(ctx *context.Context) utils.ISimpleCa
 
 func (r *RouterServer) isAuthDelegated(ctx *context.Context) (bool, error) {
 	res, err := r.gatewayApiClient.Policy.EvaluateAuthDelegationForClient(*ctx, &gatewayv1.EvaluateAuthDelegationRequest{IncomingPort: int32(r.port)})
-
 	if err != nil {
 		provider.Logger(*ctx).WithError(err).Errorw(
 			fmt.Sprint(LOG_TAG, "Failed to evaluate auth delegation policy. Assuming delegation is disabled."),
@@ -163,7 +162,6 @@ func (r *RouterServer) AuthHandler(ctx *context.Context, h http.Handler) http.Ha
 			}
 
 			isAuthenticated, err := r.authService.Authenticate(ctx, username, password)
-
 			if err != nil {
 				errorMsg := fmt.Sprintf("Unable to Authenticate users. Getting error - %s", err)
 				provider.Logger(*ctx).Error(errorMsg)

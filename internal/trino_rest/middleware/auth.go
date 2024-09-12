@@ -27,7 +27,7 @@ func (m *AuthMiddleware) BasicAuthenticator(next http.Handler) http.Handler {
 		}
 		if m.cfg.TrinoRest.IsAuthDelegated {
 			ctx := r.Context()
-			isValid, err := m.authService.Authenticate(&ctx, username, password)
+			isValid, err := m.authService.ValidateFromValidationProvider(&ctx, username, password)
 			if err != nil || !isValid {
 				utils.RespondWithError(w, http.StatusUnauthorized, "invalid credentials")
 				return
