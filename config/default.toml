@@ -60,7 +60,7 @@
     metricsPort         = 8080
     shutdownTimeout     = 2
     shutdownDelay       = 2
-    maxRecords          = 5000
+    maxRecords          = 50000
     isAuthDelegated     = false
     [trinoRest.trinoBackendDb]
         dialect             = "trino"
