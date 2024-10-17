@@ -61,7 +61,7 @@
     shutdownTimeout     = 2
     shutdownDelay       = 2
     maxRecords          = 50000
-    isAuthDelegated     = false
+    isAuthDelegated     = true
     [trinoRest.trinoBackendDb]
         dialect             = "trino"
         protocol            = "tcp"
