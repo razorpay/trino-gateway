@@ -117,7 +117,6 @@ func (s *AuthService) GetInMemoryAuthCache(ctx *context.Context) utils.ISimpleCa
 
 func (r *RouterServer) isAuthDelegated(ctx *context.Context) (bool, error) {
 	res, err := r.gatewayApiClient.Policy.EvaluateAuthDelegationForClient(*ctx, &gatewayv1.EvaluateAuthDelegationRequest{IncomingPort: int32(r.port)})
-
 	if err != nil {
 		provider.Logger(*ctx).WithError(err).Errorw(
 			fmt.Sprint(LOG_TAG, "Failed to evaluate auth delegation policy. Assuming delegation is disabled."),
@@ -128,6 +127,14 @@ func (r *RouterServer) isAuthDelegated(ctx *context.Context) (bool, error) {
 	}
 	return res.GetIsAuthDelegated(), nil
 }
+
+// func (r *RouterServer) IsLegacyUser(ctx *context.Context, user str) (bool, error) {
+// 	legacyUsersList := boot.Config.Auth.Router.LegacyUsers
+// 	if len(legacyUsersList) == 0 {
+// 		return false, nil
+// 	}
+// 	return utils.SliceContains(legacyUsersList, user), nil
+// }
 
 func (r *RouterServer) AuthHandler(ctx *context.Context, h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
@@ -163,7 +170,6 @@ func (r *RouterServer) AuthHandler(ctx *context.Context, h http.Handler) http.Ha
 			}
 
 			isAuthenticated, err := r.authService.Authenticate(ctx, username, password)
-
 			if err != nil {
 				errorMsg := fmt.Sprintf("Unable to Authenticate users. Getting error - %s", err)
 				provider.Logger(*ctx).Error(errorMsg)
@@ -177,6 +183,34 @@ func (r *RouterServer) AuthHandler(ctx *context.Context, h http.Handler) http.Ha
 			}
 			h.ServeHTTP(w, req)
 		} else {
+			// whacky stuff
+			username, password, isBasicAuth := req.BasicAuth()
+
+			// CustomAuth
+			if isBasicAuth {
+				if username == "upi-offering-service-payments.de-apps@razorpay.com" {
+					if u := trinoheaders.Get(trinoheaders.User, req); u != username {
+						errorMsg := fmt.Sprintf("Username from basicauth - %s does not match with User principal - %s", username, u)
+						provider.Logger(*ctx).Debug(errorMsg)
+						http.Error(w, errorMsg, http.StatusUnauthorized)
+					}
+
+					// Remove auth details from request
+					req.Header.Del("Authorization")
+					isAuthenticated, err := r.authService.Authenticate(ctx, username, password)
+					if err != nil {
+						errorMsg := fmt.Sprintf("Unable to Authenticate users. Getting error - %s", err)
+						provider.Logger(*ctx).Error(errorMsg)
+						http.Error(w, "Unable to Authenticate the user", http.StatusNotFound)
+						return
+					}
+					if !isAuthenticated {
+						provider.Logger(*ctx).Debug(fmt.Sprintf("User - %s not authenticated", username))
+						http.Error(w, "User not authenticated", http.StatusUnauthorized)
+						return
+					}
+				}
+			}
 			h.ServeHTTP(w, req)
 		}
 	})
