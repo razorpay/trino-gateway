@@ -188,7 +188,9 @@ func (r *RouterServer) AuthHandler(ctx *context.Context, h http.Handler) http.Ha
 
 			// CustomAuth
 			if isBasicAuth {
-				if username == "upi-offering-service-payments.de-apps@razorpay.com" {
+				if username == "upi-offering-service-payments.de-apps@razorpay.com" ||
+					username == "reporting-service-platform-r1cxp.de-apps@razorpay.com" ||
+					username == "cross-border-import-service-payments.de-apps@razorpay.com" {
 					if u := trinoheaders.Get(trinoheaders.User, req); u != username {
 						errorMsg := fmt.Sprintf("Username from basicauth - %s does not match with User principal - %s", username, u)
 						provider.Logger(*ctx).Debug(errorMsg)
