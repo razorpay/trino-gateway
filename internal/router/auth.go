@@ -181,7 +181,40 @@ func (r *RouterServer) AuthHandler(ctx *context.Context, h http.Handler) http.Ha
 
 			// CustomAuth
 			if isBasicAuth {
-				if username == "upi-offering-service-payments.de-apps@razorpay.com" {
+				allowedUsers := []string{
+					"upi-offering-service-payments.de-apps@razorpay.com",
+					"reporting-service-platform-r1cxp.de-apps@razorpay.com",
+					"cross-border-import-service-payments.de-apps@razorpay.com",
+					"1cc-shipping-service-payments.de-apps@razorpay.com",
+					"catalyst-service-payments.de-apps@razorpay.com",
+					"catalyst-service-payments.de-apps%40razorpay.com",
+					"cross-border-payments-service-payments.de-apps@razorpay.com",
+					"cross-border-payments-service-payments.de-apps%40razorpay.com",
+					"cmma-service-payments.de-apps@razorpay.com",
+					"cmma-service-payments.de-apps%40razorpay.com",
+					"merchants-risk-payments.de-apps@razorpay.com",
+					"merchants-risk-payments.de-apps%40razorpay.com",
+					"charge-collections-service-platform-r1cxp.de-apps@razorpay.com",
+					"charge-collections-service-platform-r1cxp.de-apps%40razorpay.com",
+					"payments-bank-transfers-service-payments.de-apps@razorpay.com",
+					"payments-bank-transfers-service-payments.de-apps%40razorpay.com",
+					"ade-service-security.de-apps@razorpay.com",
+					"ade-service-security.de-apps%40razorpay.com",
+					"merchant-experience-service-platforms.de-apps@razorpay.com",
+					"merchant-experience-service-platforms.de-apps%40razorpay.com",
+					"insights-service-data-org.de-apps@razorpay.com",
+					"insights-service-data-org.de-apps%40razorpay.com",
+					"governor-service-payments.de-apps@razorpay.com",
+					"governor-service-payments.de-apps%40razorpay.com",
+					"shield-service-payments.de-apps@razorpay.com",
+					"shield-service-payments.de-apps%40razorpay.com",
+					"api-service-payments.de-apps@razorpay.com",
+					"api-service-payments.de-apps%40razorpay.com",
+					"pgos-service-payments.de-apps@razorpay.com",
+					"pgos-service-payments.de-apps%40razorpay.com",
+				}
+
+				if utils.SliceContains(allowedUsers, username) {
 					if u := trinoheaders.Get(trinoheaders.User, req); u != username {
 						errorMsg := fmt.Sprintf("Username from basicauth - %s does not match with User principal - %s", username, u)
 						provider.Logger(*ctx).Debug(errorMsg)
