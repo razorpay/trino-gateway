@@ -1,6 +1,6 @@
 module github.com/razorpay/trino-gateway
 
-go 1.22.2
+go 1.22.10
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
@@ -14,7 +14,7 @@ require (
 	github.com/gobuffalo/nulls v0.4.2
 	github.com/golang/protobuf v1.5.4
 	github.com/gopherjs/gopherjs v1.19.0-beta1
-	github.com/grpc-ecosystem/grpc-gateway/v2 v2.20.0
+	github.com/grpc-ecosystem/grpc-gateway/v2 v2.24.0
 	github.com/hexops/vecty v0.6.0
 	github.com/lib/pq v1.10.9
 	github.com/pressly/goose/v3 v3.20.0
@@ -95,7 +95,7 @@ require (
 	golang.org/x/tools v0.21.1-0.20240508182429-e35e4ccd0d2d // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20241118233622-e639e219e697 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20241118233622-e639e219e697 // indirect
-	google.golang.org/grpc v1.67.1 // indirect
+	google.golang.org/grpc v1.68.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
