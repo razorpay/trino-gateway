@@ -188,14 +188,20 @@ func (r *RouterServer) AuthHandler(ctx *context.Context, h http.Handler) http.Ha
 
 			// CustomAuth
 			if isBasicAuth {
-				if username == "upi-offering-service-payments.de-apps@razorpay.com" ||
-					username == "reporting-service-platform-r1cxp.de-apps@razorpay.com" ||
-					username == "cross-border-import-service-payments.de-apps@razorpay.com" ||
-					username == "1cc-shipping-service-payments.de-apps@razorpay.com" ||
-					username == "catalyst-service-payments.de-apps@razorpay.com" ||
-					username == "catalyst-service-payments.de-apps%40razorpay.com" ||
-					username == "cross-border-payments-service-payments.de-apps@razorpay.com" ||
-					username == "cross-border-payments-service-payments.de-apps%40razorpay.com" {
+				allowedUsers := []string{
+					"upi-offering-service-payments.de-apps@razorpay.com",
+					"reporting-service-platform-r1cxp.de-apps@razorpay.com",
+					"cross-border-import-service-payments.de-apps@razorpay.com",
+					"1cc-shipping-service-payments.de-apps@razorpay.com",
+					"catalyst-service-payments.de-apps@razorpay.com",
+					"catalyst-service-payments.de-apps%40razorpay.com",
+					"cross-border-payments-service-payments.de-apps@razorpay.com",
+					"cross-border-payments-service-payments.de-apps%40razorpay.com",
+					"cmma-service-payments.de-apps@razorpay.com",
+					"cmma-service-payments.de-apps%40razorpay.com",
+				}
+
+				if utils.SliceContains(allowedUsers, username) {
 					if u := trinoheaders.Get(trinoheaders.User, req); u != username {
 						errorMsg := fmt.Sprintf("Username from basicauth - %s does not match with User principal - %s", username, u)
 						provider.Logger(*ctx).Debug(errorMsg)
