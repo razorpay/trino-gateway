@@ -154,6 +154,7 @@ func (r *RouterServer) AuthHandler(ctx *context.Context, h http.Handler) http.Ha
 					errorMsg := fmt.Sprintf("Username from basicauth - %s does not match with User principal - %s", username, u)
 					provider.Logger(*ctx).Debug(errorMsg)
 					http.Error(w, errorMsg, http.StatusUnauthorized)
+					return
 				}
 
 				// Remove auth details from request
@@ -164,7 +165,7 @@ func (r *RouterServer) AuthHandler(ctx *context.Context, h http.Handler) http.Ha
 			isNoAuth := password == ""
 			if isNoAuth {
 				provider.Logger(*ctx).Debug("No Auth type detected")
-				errorMsg := fmt.Sprintf("Password required")
+				errorMsg := "Password required"
 				http.Error(w, errorMsg, http.StatusUnauthorized)
 				return
 			}
@@ -206,6 +207,7 @@ func (r *RouterServer) AuthHandler(ctx *context.Context, h http.Handler) http.Ha
 						errorMsg := fmt.Sprintf("Username from basicauth - %s does not match with User principal - %s", username, u)
 						provider.Logger(*ctx).Debug(errorMsg)
 						http.Error(w, errorMsg, http.StatusUnauthorized)
+						return
 					}
 
 					// Remove auth details from request
