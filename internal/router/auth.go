@@ -200,6 +200,8 @@ func (r *RouterServer) AuthHandler(ctx *context.Context, h http.Handler) http.Ha
 					"cross-border-payments-service-payments.de-apps%40razorpay.com",
 					"cmma-service-payments.de-apps@razorpay.com",
 					"cmma-service-payments.de-apps%40razorpay.com",
+					"merchants-risk-payments.de-apps@razorpay.com",
+					"merchants-risk-payments.de-apps%40razorpay.com",
 				}
 
 				if utils.SliceContains(allowedUsers, username) {
