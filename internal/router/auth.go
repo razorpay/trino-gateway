@@ -204,6 +204,8 @@ func (r *RouterServer) AuthHandler(ctx *context.Context, h http.Handler) http.Ha
 					"merchants-risk-payments.de-apps%40razorpay.com",
 					"charge-collections-service-platform-r1cxp.de-apps@razorpay.com",
 					"charge-collections-service-platform-r1cxp.de-apps%40razorpay.com",
+					"payments-bank-transfers-service-payments.de-apps@razorpay.com",
+					"payments-bank-transfers-service-payments.de-apps%40razorpay.com",
 				}
 
 				if utils.SliceContains(allowedUsers, username) {
