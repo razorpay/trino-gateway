@@ -1,6 +1,7 @@
 ## Dockerfile used for Rzp deployment
 
-FROM c.rzp.io/razorpay/onggi-multi-arch:rzp-golden-image-base-golang-1.22
+FROM c.rzp.io/razorpay/onggi_testing:trino_gatewayrzp-golden-image-go1.20@sha256:6a32b8c64433560e5f3742a883b47dcd61c5c33b98adca98a28d27f86127aba8
+# FROM c.rzp.io/razorpay/onggi-multi-arch:rzp-golden-image-base-golang-1.22
 # TODO: c.rzp.io/razorpay/rzp-docker-image-inventory-multi-arch:rzp-golden-image-base-golang-1.22
 
 ARG GIT_COMMIT_HASH
