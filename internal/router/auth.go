@@ -198,6 +198,7 @@ func (r *RouterServer) AuthHandler(ctx *context.Context, h http.Handler) http.Ha
 					"magic-checkout",
 					"partnerships",
 					"prod_api",
+					"api-service-payments.de-apps@razorpay.com",
 					"settlements",
 				}
 
@@ -213,7 +214,7 @@ func (r *RouterServer) AuthHandler(ctx *context.Context, h http.Handler) http.Ha
 					req.Header.Del("Authorization")
 					isAuthenticated, err := r.authService.Authenticate(ctx, username, password)
 					if err != nil {
-						errorMsg := fmt.Sprintf("Unable to Authenticate users. Getting error - %s", err)
+						errorMsg := fmt.Sprintf("Unable to Authenticate user: %s. Getting error - %s", username, err)
 						provider.Logger(*ctx).Error(errorMsg)
 						http.Error(w, "Unable to Authenticate the user", http.StatusNotFound)
 						return
