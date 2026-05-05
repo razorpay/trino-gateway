@@ -1,0 +1,110 @@
+# =============================================================================
+# Baseline Alerting — Input Configuration Template
+# =============================================================================
+#
+# Copy this file to `inputs.yaml` and fill in all REQUIRED fields.
+# Delete any OPTIONAL sections that do not apply to your service.
+#
+# The agent uses this config to render Prometheus alert rules
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# team — ownership & routing metadata
+# ---------------------------------------------------------------------------
+team:
+  bu: ""                    # REQUIRED — Business unit: Platform | Payments | RazorpayX | Capital | etc.
+  pod: ""                   # REQUIRED — Pod / team name (e.g., "platform-engg")
+  slack:
+    channel: ""             # REQUIRED — Slack channel for alert routing (e.g., "#my-team-alerts")
+    handle: ""              # REQUIRED — Slack mention handle (e.g., "<!subteam^SXXXXXX>")
+  runbook: ""               # REQUIRED — Runbook URL (e.g., "https://docs.google.com/...")
+  dashboardLink: ""         # REQUIRED — Vajra / Grafana base dashboard URL
+                            #   The templates append panel IDs via addViewPanel, so provide the base only.
+                            #   Example: "https://vajra.razorpay.com/d/abc123"
+
+# ---------------------------------------------------------------------------
+# cmd — service identity
+# ---------------------------------------------------------------------------
+cmd:
+  appName: ""               # REQUIRED — Service / application name (e.g., "my-service")
+
+# ---------------------------------------------------------------------------
+# metrics — metric naming & analysis config
+# ---------------------------------------------------------------------------
+metrics:
+  prefix: ""                # REQUIRED — Metric name prefix (e.g., "myapp_")
+                            #   Must match the prefix used in your instrumentation code.
+
+  # OPTIONAL — StatusCake uptime monitoring
+  # Delete this block if your service does not use StatusCake.
+  statusCake:
+    testId: ""              # StatusCake test ID (e.g., "12345678")
+
+  # OPTIONAL — Anomaly detection offsets
+  # Used for week-over-week (or other offset) comparisons.
+  # Delete if you do not need anomaly alerts.
+  anomalyOffsets:           # List of Prometheus offset durations
+    - "1w"                  #   Example: compare against 1 week ago
+
+# ---------------------------------------------------------------------------
+# application — language & interface surface toggles
+# ---------------------------------------------------------------------------
+application:
+  language: ""              # OPTIONAL — "GOLANG" | "JAVA" | etc.
+                            #   Needed for outbox worker alerts (GOLANG only).
+
+  # OPTIONAL — Network interface toggles.
+  # Enable the protocols your service exposes. Delete those it does not.
+  interface:
+    rest: false             # OPTIONAL — Set true if service exposes REST / HTTP endpoints
+    grpc: false             # OPTIONAL — Set true if service exposes gRPC endpoints
+
+  # OPTIONAL — Utility worker toggles.
+  # Delete this block if not applicable.
+  utils:
+    hasOutboxWorkers: false  # OPTIONAL — Set true if service uses outbox workers (GOLANG only)
+
+# ---------------------------------------------------------------------------
+# infra — infrastructure topology
+# ---------------------------------------------------------------------------
+infra:
+  kubernetes:
+    namespace: ""           # REQUIRED — Kubernetes namespace (e.g., "my-service")
+    containers:             # REQUIRED — List of container names to monitor
+      - "my-container"      #   Example entry — replace with actual container names
+
+    # OPTIONAL — Cluster names for node-count alerts.
+    # Delete if you do not need min/max node count alerts.
+    clusters:               # List of K8s cluster names
+      - "prod-cluster-1"    #   Example entry
+
+  # OPTIONAL — Traefik reverse proxy config.
+  # Delete this block if your service is not behind Traefik.
+  traefik:
+    services:               # List of Traefik service names (matched with regex join)
+      - "my-traefik-svc"    #   Example entry
+
+  # OPTIONAL — Kong edge service name.
+  # Delete if your service is not exposed via Kong edge.
+  edgeService: ""           # Kong edge service name (e.g., "my-edge-service")
+
+  # OPTIONAL — Kafka topics consumed by this service.
+  # Delete this block if the service does not consume from Kafka.
+  kafka:
+    topics:                 # List of Kafka topic names
+      - "my-topic"          #   Example entry
+
+  # OPTIONAL — AWS resource identifiers.
+  # Delete any sub-sections that do not apply.
+  aws:
+    rds:                    # List of RDS instance identifiers
+      - "my-db-instance"    #   Example entry
+
+    elasticCache:           # List of ElastiCache cluster IDs
+      - "my-cache-001"      #   Example entry
+
+    sqs:                    # List of SQS queue names
+      - "my-queue"          #   Example entry
+
+    asg:                    # List of Auto Scaling Group names (for node-level alerts)
+      - "my-asg"            #   Example entry

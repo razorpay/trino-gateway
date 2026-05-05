@@ -1,0 +1,37 @@
+  #
+  # Uptime alerts
+  #
+  - name: Uptime alerts
+    interval: 30s
+    rules:
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] Status cake observed service downtime"
+        expr: sum(statuscake_test_up{test_id="{{ metrics.statusCake.testId }}"}) by (name) < 1
+        for: 1m
+        labels:
+          severity: critical
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          live: true
+        annotations:
+          identifier: Service = "{{ '{{' }} $labels.test_id {{ '}}' }}",  Cluster = "{{ '{{' }} $labels.name {{ '}}' }}"
+          description: "{{ team.slack.handle }} Status cake observed service downtime"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "4001") }}
+
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] SLA breach for P99 latency for liveliness"
+        expr: histogram_quantile(0.99, sum by (le) (rate({{ metrics.prefix }}http_durations_ms_histogram_bucket{kubernetes_namespace="{{ infra.kubernetes.namespace }}"}[4m]))) > 100
+        for: 1m
+        labels:
+          severity: critical
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          live: true
+        annotations:
+          identifier: Service = "{{ '{{' }} $labels.kubernetes_namespace {{ '}}' }}",  Cluster = "{{ '{{' }} $labels.cluster {{ '}}' }}"
+          description: "{{ team.slack.handle }} P99 latency is > 100ms.\n  VALUE = {{ '{{' }}  $value {{ '}}' }}\n  LABELS = {{ '{{' }}  $labels {{ '}}' }}\n"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "6006") }}

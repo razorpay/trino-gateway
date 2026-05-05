@@ -1,0 +1,152 @@
+  #
+  # External request alerts
+  #
+  # TODO: repeat these for reflect per host level alert
+  #
+  # RPS level alerts
+  - name: Egress Request Count
+    interval: 1m
+    rules:
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] Max RPS per egress call per host"
+        expr: sum(rate(httpclient_http_requests_count{kubernetes_namespace="{{ infra.kubernetes.namespace }}"}[4m])) by (host) > 50
+        for: 1m
+        labels:
+          severity: critical
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          live: true
+        annotations:
+          identifier: Service = "{{ '{{' }} $labels.kubernetes_namespace {{ '}}' }}", Host = "{{ '{{' }} $labels.host {{ '}}' }}"
+          description: "{{ team.slack.handle }} Egress RPS per host is > 50.\n  VALUE = {{ '{{' }} $value {{ '}}' }}\n  LABELS = {{ '{{' }} $labels {{ '}}' }}\n"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "10001") }}
+
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] Min RPS per egress call per host"
+        expr: sum(rate(httpclient_http_requests_count{kubernetes_namespace="{{ infra.kubernetes.namespace }}"}[4m])) by (host) > 10
+        for: 1m
+        labels:
+          severity: critical
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          live: true
+        annotations:
+          identifier: Service = "{{ '{{' }} $labels.kubernetes_namespace {{ '}}' }}", Host = "{{ '{{' }} $labels.host {{ '}}' }}"
+          description: "{{ team.slack.handle }} Egress RPS per host is < 10.\n  VALUE = {{ '{{' }} $value {{ '}}' }}\n  LABELS = {{ '{{' }} $labels {{ '}}' }}\n"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "10001") }}
+
+        # Error rate alerts
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] Egress rate of 5xx is > 0.5% of overall request"
+        expr: (
+                sum(rate(httpclient_http_requests_count{kubernetes_namespace="{{ infra.kubernetes.namespace }}", code=~"5.."}[4m])) by (host, code) or 0
+                /
+                sum(rate(httpclient_http_requests_count{kubernetes_namespace="{{ infra.kubernetes.namespace }}"}[4m])) by (host, code)
+              ) > 0.005
+        for: 1m
+        labels:
+          severity: critical
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          live: true
+        annotations:
+          identifier: Service = "{{ '{{' }} $labels.kubernetes_namespace {{ '}}' }}", Host = "{{ '{{' }} $labels.host {{ '}}' }}"
+          description: "{{ team.slack.handle }} Number of 5xx > 0.5%.\n  VALUE = {{ '{{' }}  $value {{ '}}' }}\n  LABELS = {{ '{{' }}  $labels {{ '}}' }}\n"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "10006") }}
+
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] Egress rate of 4xx is > 0.5% of overall request"
+        expr: (
+                  sum(rate(httpclient_http_requests_count{kubernetes_namespace="{{ infra.kubernetes.namespace }}", code=~"4.."}[4m])) by (host, code) or 0
+                  /
+                  sum(rate(httpclient_http_requests_count{kubernetes_namespace="{{ infra.kubernetes.namespace }}"}[4m])) by (host, code)
+              ) > 0.005
+        for: 1m
+        labels:
+          severity: critical
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          live: true
+        annotations:
+          identifier: Service = "{{ '{{' }} $labels.kubernetes_namespace {{ '}}' }}", Host = "{{ '{{' }} $labels.host {{ '}}' }}"
+          description: "{{ team.slack.handle }} Egress number of 4xx > 0.5%.\n  VALUE = {{ '{{' }}  $value {{ '}}' }}\n  LABELS = {{ '{{' }}  $labels {{ '}}' }}\n"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "10004") }}
+
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] Egress rate of non 2xx is > 1% of overall request"
+        expr: (
+                sum(rate(httpclient_http_requests_count{kubernetes_namespace="{{ infra.kubernetes.namespace }}", code!~"2.."}[4m])) by (host, code) or 0
+                /
+                sum(rate(httpclient_http_requests_count{kubernetes_namespace="{{ infra.kubernetes.namespace }}"}[4m])) by (host, code)
+              ) > 0.01
+        for: 1m
+        labels:
+          severity: critical
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          live: true
+        annotations:
+          identifier: Service = "{{ '{{' }} $labels.kubernetes_namespace {{ '}}' }}", Host = "{{ '{{' }} $labels.host {{ '}}' }}"
+          description: "{{ team.slack.handle }} Egress number of non 2xx > 1%.\n  VALUE = {{ '{{' }}  $value {{ '}}' }}\n  LABELS = {{ '{{' }}  $labels {{ '}}' }}\n"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "10003") }}
+
+  - name: Egress Latency SLA
+    interval: 1m
+    rules:
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] Egress SLA breach for P99 latency"
+        expr: histogram_quantile(0.99, sum(rate(httpclient_http_request_duration_ms_hist_bucket{kubernetes_namespace="{{ infra.kubernetes.namespace }}"}[4m])) by (host, le)) > 100
+        for: 1m
+        labels:
+          severity: critical
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          live: true
+        annotations:
+          identifier: Service = "{{ '{{' }} $labels.kubernetes_namespace {{ '}}' }}",  le = "{{ '{{' }} $labels.le {{ '}}' }}", Host = "{{ '{{' }} $labels.host {{ '}}' }}"
+          description: "{{ team.slack.handle }} Egress P99 latency is > 100ms.\n  VALUE = {{ '{{' }}  $value {{ '}}' }}\n  LABELS = {{ '{{' }}  $labels {{ '}}' }}\n"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "10008") }}
+
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] Egress SLA breach for P95 latency"
+        expr: histogram_quantile(0.95, sum(rate(httpclient_http_request_duration_ms_hist_bucket{kubernetes_namespace="{{ infra.kubernetes.namespace }}"}[4m])) by (host, le)) > 80
+        for: 1m
+        labels:
+          severity: critical
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          live: true
+        annotations:
+          identifier: Service = "{{ '{{' }} $labels.kubernetes_namespace {{ '}}' }}",  le = "{{ '{{' }} $labels.le {{ '}}' }}"
+          description: "{{ team.slack.handle }} Egress P95 latency is > 800ms.\n  VALUE = {{ '{{' }}  $value {{ '}}' }}\n  LABELS = {{ '{{' }}  $labels {{ '}}' }}\n"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "10009") }}
+
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] Egress SLA breach for P90 latency"
+        expr: histogram_quantile(0.90, sum(rate(httpclient_http_request_duration_ms_hist_bucket{kubernetes_namespace="{{ infra.kubernetes.namespace }}"}[4m])) by (host, le)) > 100
+        for: 1m
+        labels:
+          severity: critical
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          live: true
+        annotations:
+          identifier: Service = "{{ '{{' }} $labels.kubernetes_namespace {{ '}}' }}",  le = "{{ '{{' }} $labels.le {{ '}}' }}", Host = "{{ '{{' }} $labels.host {{ '}}' }}"
+          description: "{{ team.slack.handle }} Egress P90 latency is > 60ms. Value:\n  VALUE = {{ '{{' }}  $value {{ '}}' }}\n  LABELS = {{ '{{' }}  $labels {{ '}}' }}\n"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "10010") }}

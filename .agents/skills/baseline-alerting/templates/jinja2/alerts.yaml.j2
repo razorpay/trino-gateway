@@ -1,0 +1,15 @@
+groups:
+{% include "modules/uptime.yaml.j2" %}
+{% include "modules/ingress.yaml.j2" %}
+{% include "modules/egress.yaml.j2" %}
+{% include "modules/latency.yaml.j2" %}
+{% include "modules/traefik_request_drop.yaml.j2" %}
+{% include "modules/edge.yaml.j2" %}
+{% include "modules/anomaly.yaml.j2" %}
+{% include "modules/outbox.yaml.j2" %}
+{% include "modules/pod.yaml.j2" %}
+{% include "modules/aws/node.yaml.j2" %}
+{% include "modules/aws/rds.yaml.j2" %}
+{% include "modules/aws/elastic_cache.yaml.j2" %}
+{% include "modules/aws/sqs.yaml.j2" %}
+{% include "modules/kafka.yaml.j2" %}

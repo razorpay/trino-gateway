@@ -1,0 +1,45 @@
+{%- if infra.kafka.topics -%}
+{%- for topicName in infra.kafka.topics -%}
+  #
+  # kafka alerts {{ topicName }}
+  #
+  # Topic: {{ topicName }}
+  - name: Kafka {{ topicName }}
+    interval: 5m
+    rules:
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] Increased Kafka Consumer Lag"
+        expr: >
+          sum(kafka_consumergroup_lag{topic="{{ topicName }}"}) by (consumergroup, topic) > 1000
+        for: 5m
+        labels:
+          severity: critical
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          topic: "{{ topicName }}"
+          live: true
+        annotations:
+          identifier: "Topic: {{ '{{' }} $labels.topic {{ '}}' }}"
+          description: "{{ team.slack.handle }} Consumer Lag is > 1000 Value= {{ '{{' }}  $value {{ '}}' }}"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "15004", "kafka_topics", topicName) }}
+
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] Kafka Queue Topic Offset Lag"
+        expr: sum(increase(kafka_cluster_partition_laststableoffsetlag{topic="{{ topicName }}"}[15m])) by (partition, topic) > 15
+        for: 5m
+        labels:
+          severity: critical
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          topic: "{{ topicName }}"
+          live: true
+        annotations:
+          identifier: "Topic: {{ '{{' }} $labels.topic {{ '}}' }}"
+          description: "{{ team.slack.handle }} Last stable offset Lag per partition is > 15ms, Value= {{ '{{' }}  $value {{ '}}' }}"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "15005", "kafka_topics", topicName) }}
+{%- endfor -%}
+{%- endif -%}

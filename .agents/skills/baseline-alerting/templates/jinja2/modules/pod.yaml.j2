@@ -1,0 +1,147 @@
+  #
+  # k8s pod alerts
+  #
+  # Pod resource utilisation
+  - name: POD Usage
+    rules:
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] Pod memory usage crossed 75%"
+        expr: max(
+                sum(container_memory_working_set_bytes{namespace="{{ infra.kubernetes.namespace }}", container=~"{{ infra.kubernetes.containers | join('|') }}"}) by (pod, cluster)
+                /
+                sum(kube_pod_container_resource_limits{namespace="{{ infra.kubernetes.namespace }}", container=~"{{ infra.kubernetes.containers | join('|') }}", resource="memory"}) by (pod, cluster)
+              ) > 0.75
+        for: 3m
+        labels:
+          severity: critical
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          live: true
+        annotations:
+          identifier: pod = "{{ '{{' }} $labels.k8s_pod {{ '}}' }}", cluster = "{{ '{{' }} $labels.cluster {{ '}}' }}"
+          description: "{{ team.slack.handle }} Pod memory usage is > 75%.\n  VALUE = {{ '{{' }}  $value {{ '}}' }}\n  LABELS = {{ '{{' }}  $labels {{ '}}' }}\n"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "12008") }}
+
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] Pod OOM"
+        expr: sum(increase(container_oom_events_total{namespace="{{ infra.kubernetes.namespace }}"}[4m])) by (container) > 0
+        for: 3m
+        labels:
+          severity: critical
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          live: true
+        annotations:
+          identifier: pod = "{{ '{{' }} $labels.pod {{ '}}' }}", cluster = "{{ '{{' }} $labels.cluster {{ '}}' }}"
+          description: "{{ team.slack.handle }} More than one pod has OOMed.\n  VALUE = {{ '{{' }}  $value {{ '}}' }}\n  LABELS = {{ '{{' }}  $labels {{ '}}' }}\n"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "12008") }}
+
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] Pod CPU usage > 75%"
+        expr: max(
+                sum(rate(container_cpu_usage_seconds_total{namespace="{{ infra.kubernetes.namespace }}", container=~"{{ infra.kubernetes.containers | join('|') }}"}[5m])) by (pod, cluster)
+                /
+                sum(kube_pod_container_resource_limits{resource="cpu", namespace="{{ infra.kubernetes.namespace }}", container=~"{{ infra.kubernetes.containers | join('|') }}"}) by (pod, cluster)
+              ) > 0.75
+        for: 1m
+        labels:
+          severity: critical
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          live: true
+        annotations:
+          identifier: pod = "{{ '{{' }} $labels.k8s_pod {{ '}}' }}", cluster = "{{ '{{' }} $labels.cluster {{ '}}' }}"
+          description: "{{ team.slack.handle }} Pod CPU usage is > 75%.\n  VALUE = {{ '{{' }}  $value {{ '}}' }}\n  LABELS = {{ '{{' }}  $labels {{ '}}' }}\n"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "12004") }}
+
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] Increased pod restarts"
+        expr: sum(increase(kube_pod_container_status_restarts_total{namespace="{{ infra.kubernetes.namespace }}", container=~"{{ infra.kubernetes.containers | join('|') }}"}[1m])) > 2
+        for: 2m
+        labels:
+          severity: critical
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          live: true
+        annotations:
+          identifier: Cluster = "{{ '{{' }} $labels.cluster {{ '}}' }}", Pod in crash loop (instance {{ '{{' }} $labels.instance {{ '}}' }})
+          description: "{{ team.slack.handle }} Pod {{ '{{' }} $labels.pod {{ '}}' }} is crash looping\n  VALUE = {{ '{{' }}  $value {{ '}}' }}\n  LABELS = {{ '{{' }}  $labels {{ '}}' }}\n"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "12002") }}
+
+  # pod state level alerts
+  - name: Pods state
+    interval: 2m
+    rules:
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] One or more pods are in non-ready state for last 10 mins"
+        expr: sum by (pod, cluster) (kube_pod_status_phase{phase=~"Pending|Unknown|Failed", namespace="{{ infra.kubernetes.namespace }}"}) > 0
+        for: 10m
+        labels:
+          severity: critical
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          live: true
+        annotations:
+          identifier: cluster = "{{ '{{' }} $labels.cluster {{ '}}' }}", pod = "{{ '{{' }} $labels.pod {{ '}}' }}"
+          summary: Some of the pods are in non-ready state (instance {{ '{{' }} $labels.instance {{ '}}' }})
+          description: "{{ team.slack.handle }} One or more pods are in non-ready state \n  VALUE = {{ '{{' }}  $value {{ '}}' }}\n  LABELS = {{ '{{' }}  $labels {{ '}}' }}"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "12001") }}
+
+      # Number of pods
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] Pod count is less than < 5"
+        expr: sum(kube_pod_container_status_running{namespace="{{ infra.kubernetes.namespace }}", container=~"{{ infra.kubernetes.containers | join('|') }}"}) < 5
+        for: 1m
+        labels:
+          severity: critical
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          live: true
+        annotations:
+          identifier: Instance = "{{ '{{' }} $labels.instance {{ '}}' }}", cluster = "{{ '{{' }} $labels.cluster {{ '}}' }}"
+          description: "{{ team.slack.handle }} Pod count is less than 3. Which is below min pod count. \n  VALUE = {{ '{{' }}  $value {{ '}}' }}\n  LABELS = {{ '{{' }}  $labels {{ '}}' }}\n"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "12001") }}
+
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] Pod count is more than > 25"
+        expr: sum(kube_pod_container_status_running{namespace="{{ infra.kubernetes.namespace }}", container=~"{{ infra.kubernetes.containers | join('|') }}"}) > 25
+        for: 1m
+        labels:
+          severity: critical
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          live: true
+        annotations:
+          identifier: Instance = "{{ '{{' }} $labels.instance {{ '}}' }}", cluster = "{{ '{{' }} $labels.cluster {{ '}}' }}"
+          description: "{{ team.slack.handle }} Pod count is more than 25. Which is near to max pod count. \n  VALUE = {{ '{{' }}  $value {{ '}}' }}\n  LABELS = {{ '{{' }}  $labels {{ '}}' }}\n"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "12001") }}
+
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] Pod memory limit failure > 0"
+        expr: sum(container_memory_failcnt{namespace="{{ infra.kubernetes.namespace }}", container=~"{{ infra.kubernetes.containers | join('|') }}"}) by (pod) > 0
+        for: 1m
+        labels:
+          severity: critical
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          live: true
+        annotations:
+          identifier: Pod = "{{ '{{' }} $labels.pod {{ '}}' }}"
+          description: "{{ team.slack.handle }} There has been some memory allocation failures. This could potentially lead to OOM for pods and abrupt termination. \n  VALUE = {{ '{{' }}  $value {{ '}}' }}\n  LABELS = {{ '{{' }}  $labels {{ '}}' }}\n"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "12006") }}

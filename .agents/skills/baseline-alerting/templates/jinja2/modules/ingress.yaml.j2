@@ -1,0 +1,187 @@
+{%- if application.interface.rest %}
+  #
+  # Application level metric alerts
+  #
+  # RPS level alerts
+  - name: REST Request Count
+    interval: 1m
+    rules:
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] Max RPS is at alarming rate"
+        expr: sum(rate({{ metrics.prefix }}http_requests_total{kubernetes_namespace="{{ infra.kubernetes.namespace }}"}[4m])) > 100
+        for: 1m
+        labels:
+          severity: critical
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          interface: rest
+          live: true
+        annotations:
+          identifier: Service = "{{ '{{' }} $labels.kubernetes_namespace {{ '}}' }}"
+          description: "{{ team.slack.handle }} RPS per cluster is > 100.\n  VALUE = {{ '{{' }} $value {{ '}}' }}\n  LABELS = {{ '{{' }} $labels {{ '}}' }}\n"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "6000") }}
+
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] Min RPS is at alarming rate"
+        expr: sum(rate({{ metrics.prefix }}http_requests_total{kubernetes_namespace="{{ infra.kubernetes.namespace }}"}[4m])) < 10
+        for: 1m
+        labels:
+          severity: critical
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          interface: rest
+          live: true
+        annotations:
+          identifier: Service = "{{ '{{' }} $labels.kubernetes_namespace {{ '}}' }}"
+          description: "{{ team.slack.handle }} RPS per cluster is < 10.\n  VALUE = {{ '{{' }}  $value {{ '}}' }}\n  LABELS = {{ '{{' }}  $labels {{ '}}' }}\n"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "6000") }}
+
+        # Error rate alerts
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] Rate of 5xx is > 0.5% of overall request"
+        expr: (
+                sum(rate({{ metrics.prefix }}http_responses_total{kubernetes_namespace="{{ infra.kubernetes.namespace }}", code=~"5.."}[4m]))
+                /
+                sum(rate({{ metrics.prefix }}http_requests_total{kubernetes_namespace="{{ infra.kubernetes.namespace }}"}[4m]))
+              ) > 0.005
+        for: 1m
+        labels:
+          severity: critical
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          interface: rest
+          live: true
+        annotations:
+          identifier: Service = "{{ '{{' }} $labels.kubernetes_namespace {{ '}}' }}"
+          description: "{{ team.slack.handle }} Number of 5xx > 0.5%.\n  VALUE = {{ '{{' }}  $value {{ '}}' }}\n  LABELS = {{ '{{' }}  $labels {{ '}}' }}\n"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "6007") }}
+
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] Rate of 4xx is > 0.5% of overall request"
+        expr: (
+                sum(rate({{ metrics.prefix }}http_responses_total{kubernetes_namespace="{{ infra.kubernetes.namespace }}", code=~"4.."}[4m]))
+                /
+                sum(rate({{ metrics.prefix }}http_requests_total{kubernetes_namespace="{{ infra.kubernetes.namespace }}"}[4m]))
+              ) > 0.005
+        for: 1m
+        labels:
+          severity: critical
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          interface: rest
+          live: true
+        annotations:
+          identifier: Service = "{{ '{{' }} $labels.kubernetes_namespace {{ '}}' }}"
+          description: "{{ team.slack.handle }} Number of 4xx > 0.5%.\n  VALUE = {{ '{{' }}  $value {{ '}}' }}\n  LABELS = {{ '{{' }}  $labels {{ '}}' }}\n"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "6008") }}
+
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] Rate of non 2xx is > 1% of overall request"
+        expr: (
+                sum(rate({{ metrics.prefix }}http_responses_total{kubernetes_namespace="{{ infra.kubernetes.namespace }}", code!~"2.."}[4m]))
+                /
+                sum(rate({{ metrics.prefix }}http_requests_total{kubernetes_namespace="{{ infra.kubernetes.namespace }}"}[4m]))
+              ) > 0.01
+        for: 1m
+        labels:
+          severity: critical
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          interface: rest
+          live: true
+        annotations:
+          identifier: Service = "{{ '{{' }} $labels.kubernetes_namespace {{ '}}' }}"
+          description: "{{ team.slack.handle }} Number of non 2xx > 1%.\n  VALUE = {{ '{{' }}  $value {{ '}}' }}\n  LABELS = {{ '{{' }}  $labels {{ '}}' }}\n"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "6002") }}
+{%- endif %}
+{%- if application.interface.grpc %}
+  - name: GRPC Request Count
+    interval: 1m
+    rules:
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] Max RPS is at alarming rate"
+        expr: sum(rate({{ metrics.prefix }}server_requests_total{kubernetes_namespace="{{ infra.kubernetes.namespace }}"}[4m])) > 100
+        for: 1m
+        labels:
+          severity: critical
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          interface: grpc
+          live: true
+        annotations:
+          identifier: Service = "{{ '{{' }} $labels.kubernetes_namespace {{ '}}' }}"
+          description: "{{ team.slack.handle }} RPS per cluster is > 100.\n  VALUE = {{ '{{' }} $value {{ '}}' }}\n  LABELS = {{ '{{' }} $labels {{ '}}' }}\n"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "18000") }}
+
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] Min RPS is at alarming rate"
+        expr: sum(rate({{ metrics.prefix }}server_requests_total{kubernetes_namespace="{{ infra.kubernetes.namespace }}"}[4m])) < 10
+        for: 1m
+        labels:
+          severity: critical
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          interface: grpc
+          live: true
+        annotations:
+          identifier: Service = "{{ '{{' }} $labels.kubernetes_namespace {{ '}}' }}"
+          description: "{{ team.slack.handle }} RPS per cluster is < 10.\n  VALUE = {{ '{{' }}  $value {{ '}}' }}\n  LABELS = {{ '{{' }}  $labels {{ '}}' }}\n"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "18000") }}
+
+        # Error rate alerts
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] Internal error rate is > 0.5% of overall request"
+        expr: (
+                sum(rate({{ metrics.prefix }}grpc_server_handled_total{kubernetes_namespace="{{ infra.kubernetes.namespace }}", grpc_code="Internal"}[4m]))
+                /
+                sum(rate({{ metrics.prefix }}server_requests_total{kubernetes_namespace="{{ infra.kubernetes.namespace }}"}[4m]))
+              ) > 0.005
+        for: 1m
+        labels:
+          severity: critical
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          interface: grpc
+          live: true
+        annotations:
+          identifier: Service = "{{ '{{' }} $labels.kubernetes_namespace {{ '}}' }}"
+          description: "{{ team.slack.handle }} Number of 5xx > 0.5%.\n  VALUE = {{ '{{' }}  $value {{ '}}' }}\n  LABELS = {{ '{{' }}  $labels {{ '}}' }}\n"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "18007") }}
+
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] Rate of 4xx is > 0.5% of overall request"
+        expr: (
+                sum(rate({{ metrics.prefix }}grpc_server_handled_total{kubernetes_namespace="{{ infra.kubernetes.namespace }}", grpc_code="InvalidArgument"}[4m]))
+                /
+                sum(rate({{ metrics.prefix }}server_requests_total{kubernetes_namespace="{{ infra.kubernetes.namespace }}"}[4m]))
+              ) > 0.005
+        for: 1m
+        labels:
+          severity: critical
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          interface: grpc
+          live: true
+        annotations:
+          identifier: Service = "{{ '{{' }} $labels.kubernetes_namespace {{ '}}' }}"
+          description: "{{ team.slack.handle }} Number of 4xx > 0.5%.\n  VALUE = {{ '{{' }}  $value {{ '}}' }}\n  LABELS = {{ '{{' }}  $labels {{ '}}' }}\n"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "18008") }}
+{%- endif %}

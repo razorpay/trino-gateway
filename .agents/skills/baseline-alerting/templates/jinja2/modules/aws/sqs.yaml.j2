@@ -1,0 +1,43 @@
+{%- if infra.aws.sqs -%}
+{%- for queueName in infra.aws.sqs -%}
+  #
+  # SQS message level alerts
+  #
+  # Queue: {{ queueName }}
+  - name: SQS {{ queueName }}
+    rules:
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] Number of visible messages in SQS > 25"
+        expr: sum(aws_sqs_approximate_number_of_messages_visible_sum{cluster="prod-cloudwatch-exporter", queue_name="{{ queueName }}"}) by (queue_name) > 25
+        for: 1m
+        labels:
+          severity: critical
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          sqs_queue: "{{ queueName }}"
+          live: true
+        annotations:
+          identifier: Instance = "{{ '{{' }} $labels.instance {{ '}}' }}", cluster = "{{ '{{' }} $labels.cluster {{ '}}' }}"
+          description: "{{ team.slack.handle }} Number of visible SQS message is more than 25. \n  VALUE = {{ '{{' }}  $value {{ '}}' }}\n  LABELS = {{ '{{' }}  $labels {{ '}}' }}\n"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "17002", "sqs_queue_names", queueName) }}
+
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] Message consumption rate is slow."
+        expr: sum(aws_sqs_approximate_age_of_oldest_message_sum{cluster="prod-cloudwatch-exporter", queue_name="{{ queueName }}"}) by (queue_name) > 60
+        for: 1m
+        labels:
+          severity: critical
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          sqs_queue: "{{ queueName }}"
+          live: true
+        annotations:
+          identifier: Instance = "{{ '{{' }} $labels.instance {{ '}}' }}", cluster = "{{ '{{' }} $labels.cluster {{ '}}' }}"
+          description: "{{ team.slack.handle }} Message processing is delayed by more than 60 sec. \n  VALUE = {{ '{{' }}  $value {{ '}}' }}\n  LABELS = {{ '{{' }}  $labels {{ '}}' }}\n"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "17003", "sqs_queue_names", queueName) }}
+{%- endfor -%}
+{%- endif -%}

@@ -1,0 +1,78 @@
+{%- if infra.aws.elasticCache -%}
+{%- for instance in infra.aws.elasticCache -%}
+  #
+  # Elastic Cache alerts
+  #
+  # Cluster ID: {{ instance }}
+  - name: ElasticCache {{ instance }}
+    interval: 1m
+    rules:
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] ElasticCache CPU usage is more than 75%"
+        expr: avg(aws_elasticache_cpuutilization_maximum{cache_cluster_id="{{ instance }}"}) > 75
+        for: 1m
+        labels:
+          severity: critical
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          cache_instance: "{{ instance }}"
+          live: true
+        annotations:
+          identifier: Cluster = "{{ '{{' }} $labels.cache_cluster_id {{ '}}' }}"
+          description: "{{ team.slack.handle }} ElasticCache CPU usage is more than 75%. Value: {{ '{{' }}  $value {{ '}}' }}"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "13000", "elastic_cache_clusters", instance) }}
+
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] ElasticCache active connection > 100"
+        expr: avg(aws_elasticache_curr_connections_average{cache_cluster_id="{{ instance }}"}) > 100
+        for: 1m
+        labels:
+          severity: critical
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          cache_instance: "{{ instance }}"
+          live: true
+        annotations:
+          identifier: Cluster = "{{ '{{' }} $labels.cache_cluster_id {{ '}}' }}"
+          description: "{{ team.slack.handle }} ElasticCache active connection is above 100. Value: {{ '{{' }}  $value {{ '}}' }}"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "13004", "elastic_cache_clusters", instance) }}
+
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] ElasticCache active connection > 75"
+        expr: avg(aws_elasticache_database_memory_usage_percentage_average{cache_cluster_id="{{ instance }}"}) > 75
+        for: 1m
+        labels:
+          severity: critical
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          cache_instance: "{{ instance }}"
+          live: true
+        annotations:
+          identifier: Cluster = "{{ '{{' }} $labels.cache_cluster_id {{ '}}' }}"
+          description: "{{ team.slack.handle }} ElasticCache average memory is above 75%. Value: {{ '{{' }}  $value {{ '}}' }}"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "13002", "elastic_cache_clusters", instance) }}
+
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] ElasticCache free memory is < 5GB"
+        expr: avg(aws_elasticache_freeable_memory_average{cache_cluster_id="{{ instance }}"})/1000000000 < 5
+        for: 1m
+        labels:
+          severity: critical
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          cache_instance: "{{ instance }}"
+          live: true
+        annotations:
+          identifier: Cluster = "{{ '{{' }} $labels.cache_cluster_id {{ '}}' }}"
+          description: "{{ team.slack.handle }} ElasticCache storage is less than 5GB. Value: {{ '{{' }}  $value {{ '}}' }}"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "13003", "elastic_cache_clusters", instance) }}
+{%- endfor -%}
+{%- endif -%}
