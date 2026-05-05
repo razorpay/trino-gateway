@@ -1,0 +1,195 @@
+# AI Week Score — Signal Exceptions & Aliases
+#
+# Two supported formats per repo:
+#
+# Format 1 — Exceptions only (shorthand, existing convention):
+#   <repo-name>:
+#     - signal: <id>
+#       reason: <why>
+#       owner: <handle>
+#       added: YYYY-MM-DD
+#
+# Format 2 — Dict with optional keys (needed for aliases or both):
+#   <repo-name>:
+#     exceptions:                       # same list as Format 1
+#       - signal: <id>
+#         reason: <why>
+#         owner: <handle>
+#         added: YYYY-MM-DD
+#     spinacode_aliases:                # for monorepos where Spinnaker app ≠ repo name
+#       - <spinnaker-app-1>
+#       - <spinnaker-app-2>
+#
+# The scorer handles both: if the value is a list, it's exceptions.
+# If it's a dict, read .exceptions and .spinacode_aliases.
+#
+# Signal IDs:
+#   Context  : C1, C2, C3
+#   Testing  : T1-UT, T1-SLIT, T1-E2E, T2, T3, T4-Uptime, T4-E2E
+#   CI/CD    : D1, D2, D3, D4
+#
+# How exceptions work:
+#   - Excepted signals are marked N/A in the output table.
+#   - Their max points are subtracted from the pillar denominator before
+#     computing the pillar % and the aggregate.
+#   - All other signals are scored normally.
+#
+# How spinacode_aliases work:
+#   - D2 checks each alias folder in spinacode and scores using the best match.
+#   - Skips the standard 3-pass lookup when aliases are present.
+#
+# To add an entry: open a PR, get one peer approval.
+# Keep entries sorted alphabetically by repo name.
+# ─────────────────────────────────────────────────────────────────────────────
+
+batch:
+  - signal: T1-E2E
+    reason: Common Platform infra repo — no end-to-end user flows; E2E gates don't apply to this leaf-node service
+    owner: kartikey.jaiswal
+    added: 2026-05-05
+
+emv-card-auth-server:
+  owner: divyanshu.singh
+  added: 2026-05-05
+  spinacode_aliases:
+    - cas-acs
+    - cas-acs-common
+    - cas-acs-sbic
+    - cas-acs-dark
+
+ufh:
+  - signal: T1-E2E
+    reason: File-handling utility service — no end-to-end user flows; integration tests via SLITs cover the API surface
+    owner: ridham.sood
+    added: 2026-05-05
+dcs:
+  - signal: T1-E2E
+    reason: Platform repo — no user-facing flows to drive through a browser or API stack; E2E gates don't apply
+    owner: kousikmitra
+    added: 2026-05-05
+
+governor:
+  - signal: T1-E2E
+    reason: Rule Engine platform service — no end-to-end user-facing flows; integration tests via SLITs cover the API surface; E2E gates don't apply to this internal leaf-node service
+    owner: aravind.raj
+    added: 2026-05-05
+
+integrations-utils:
+  - signal: T1-SLIT
+    reason: Go SDK/library — not deployed independently; no SLIT flows measured via MCC; integration coverage is tracked in consuming services
+    owner: ritik.kumar
+    added: 2026-05-05
+  - signal: T1-E2E
+    reason: Go SDK/library — no end-to-end user flows; library is imported as a Go module, not deployed as a service
+    owner: ritik.kumar
+    added: 2026-05-05
+  - signal: T4-Uptime
+    reason: Go SDK/library — not deployed to nonprod/devstack; statically linked into consuming services, no devstack uptime to measure
+    owner: ritik.kumar
+    added: 2026-05-05
+  - signal: T4-E2E
+    reason: Go SDK/library — not deployed independently; no E2E success rate applicable
+    owner: ritik.kumar
+    added: 2026-05-05
+  - signal: D2
+    reason: Go SDK/library — no Spinnaker/spinacode deployment pipeline; distributed as a Go module via go.mod version tags
+    owner: ritik.kumar
+    added: 2026-05-05
+  - signal: T3
+    reason: Go SDK/library — no deployable unit; not deployed to devstack; shared library statically linked into consuming services
+    owner: ritik.kumar
+    added: 2026-05-05
+  - signal: D4
+    reason: Go SDK/library — take-it-live config not applicable; no deployment workflow, released via go.mod semver tags
+    owner: ritik.kumar
+    added: 2026-05-05
+
+raven:
+  - signal: T1-E2E
+    reason: Common Platform infra repo — no end-to-end user flows; E2E gates don't apply to this leaf-node service
+    owner: kartikey.jaiswal
+    added: 2026-05-05
+
+reminders:
+  - signal: T1-E2E
+    reason: Async reminder scheduling microservice — no interactive user-facing flows; integration tests via SLITs cover the API surface
+    owner: ishitatyagi-rzp
+    added: 2026-05-05
+
+rewards-catalogue:
+  - signal: T1-E2E
+    reason: Rewards catalogue is a platform repo and a leaf service. E2E gates don't apply to this leaf-node service
+    owner: gowthamnkb
+    added: 2026-05-05
+
+stork:
+  - signal: T1-E2E
+    reason: Common Platform infra repo — no end-to-end user flows; E2E gates don't apply to this leaf-node service
+    owner: kartikey.jaiswal
+    added: 2026-05-05
+
+swe-agent:
+  - signal: T1-E2E
+    reason: Infrastructure tooling repo — no user-facing flows to drive through a browser or API stack; E2E gates don't apply
+    owner: nikhilesh.chamarthi
+    added: 2026-05-01
+
+tax-compliance:
+  - signal: T1-E2E
+    reason: Tax compliance service — no end-to-end user-facing flows; compliance logic is verified through integration tests
+    owner: rushil.parikh
+    added: 2026-05-05
+
+templating-service:
+  - signal: T1-E2E
+    reason: Common Platform infra repo — no end-to-end user flows; E2E gates don't apply to this leaf-node service
+    owner: kartikey.jaiswal
+    added: 2026-05-05
+
+x-payroll:
+  - signal: T1-SLIT
+    reason: Payroll platform PHP service — SLIT flows not measured via MCC for payroll domain
+    owner: rushil.parikh
+    added: 2026-05-05
+
+x-payroll-components-lib:
+  - signal: T1-E2E
+    reason: Pure gRPC endpoint service — E2E framework does not support gRPC; no E2E coverage applicable
+    owner: rushil.parikh
+    added: 2026-05-05
+  - signal: T1-SLIT
+    reason: Payroll components library — shared library not deployed independently; no SLIT flows measured via MCC
+    owner: rushil.parikh
+    added: 2026-05-05
+
+x-payroll-compliance:
+  - signal: T1-SLIT
+    reason: Payroll compliance service — SLIT flows not measured via MCC for payroll compliance domain
+    owner: rushil.parikh
+    added: 2026-05-05
+  - signal: T1-E2E
+    reason: Payroll compliance service — no end-to-end user-facing flows; compliance rules verified through integration testing
+    owner: rushil.parikh
+    added: 2026-05-05
+  - signal: T1-UT
+    reason: Payroll compliance service — unit test coverage not tracked via standard gates; compliance rules verified through integration testing
+    owner: rushil.parikh
+    added: 2026-05-05
+
+x-payroll-compute:
+  - signal: T1-E2E
+    reason: Pure gRPC endpoint service — E2E framework does not support gRPC; no E2E coverage applicable
+    owner: rushil.parikh
+    added: 2026-05-05
+
+x-salary-structure:
+  - signal: T1-E2E
+    reason: Pure gRPC endpoint service — E2E framework does not support gRPC; no E2E coverage applicable
+    owner: rushil.parikh
+    added: 2026-05-05
+
+x-payroll-flexible-benefits:
+  - signal: T1-E2E
+    reason: Pure gRPC endpoint service — E2E framework does not support gRPC; no E2E coverage applicable
+    owner: rushil.parikh
+    added: 2026-05-05

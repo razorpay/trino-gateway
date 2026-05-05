@@ -1,3 +1,11 @@
+---
+sources:
+  - rpc/gateway/service.proto
+  - cmd/gateway/main.go
+  - internal/gatewayserver/hooks/auth.go
+extracted_at: 2026-05-05
+---
+
 # Service Contracts
 
 Trino Gateway exposes two distinct interfaces: a Twirp RPC management API and a reverse proxy for Trino client traffic. They run on separate ports and have independent auth models.

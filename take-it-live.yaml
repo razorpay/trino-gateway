@@ -1,0 +1,48 @@
+service:
+  name: trino-gateway
+  team: data-platform
+  tier: 2
+  description: Trino query load balancer and reverse proxy
+
+phases:
+  - name: infrastructure
+    steps:
+      - MySQL 8+ database provisioned
+      - Credstash secrets configured (db credentials, auth token)
+      - Kubernetes namespace created
+      - Helm chart deployed via kube-manifests
+
+  - name: configuration
+    steps:
+      - Environment-specific TOML config (prod.toml) reviewed
+      - Gateway ports (8080-8091) configured and exposed via K8s service
+      - Trino backend clusters registered via BackendApi
+      - Routing groups created with appropriate strategies
+      - Routing policies configured per gateway port
+      - Auth token set in credstash
+
+  - name: deployment
+    steps:
+      - Spinacode pipeline verified (v3/datahub/)
+      - Docker image built and pushed to registry
+      - Health probe validated (HealthCheckAPI endpoint)
+      - Prometheus metrics scraped on port 8002
+
+  - name: validation
+    steps:
+      - Backend health monitoring verified (20s interval)
+      - Query routing tested through each gateway port
+      - Swagger UI accessible at /admin/swaggerui/
+      - Fallback routing group tested
+      - Auth delegation tested (if enabled)
+
+gng_readiness:
+  observability:
+    - Prometheus metrics exposed on :8002
+    - Grafana dashboard for request latency and backend health
+  monitoring:
+    - Backend health check runs every 20s
+    - Cluster load tracking via system.runtime.queries
+  deployment:
+    - Spinacode v3 templated pipeline
+    - Multi-region: ohio, hyd, mum-dr

@@ -1,3 +1,12 @@
+---
+sources:
+  - internal/monitor/trino.go
+  - internal/router/auth.go
+  - pkg/spine/db/db.go
+  - config/default.toml
+extracted_at: 2026-05-05
+---
+
 # External Dependencies
 
 What trino-gateway calls, how it connects, and what happens when things break.
