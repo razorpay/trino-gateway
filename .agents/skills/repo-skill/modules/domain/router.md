@@ -1,3 +1,13 @@
+---
+sources:
+  - internal/router/router.go
+  - internal/router/request.go
+  - internal/router/response.go
+  - internal/router/auth.go
+  - internal/router/metric.go
+extracted_at: 2026-05-05
+---
+
 # Router — Reverse Proxy Subsystem
 
 The Router is the HTTP reverse proxy that sits between Trino clients and Trino backends. It classifies incoming requests, evaluates routing policies via self-calls to the gateway's own Twirp API, selects a backend, proxies the request, and records query metadata on the response path. Each configured gateway port spawns an independent `http.Server` with its own `httputil.ReverseProxy`.

@@ -1,3 +1,13 @@
+---
+sources:
+  - internal/gatewayserver/models/backend.go
+  - internal/gatewayserver/backendApi/core.go
+  - internal/gatewayserver/backendApi/server.go
+  - internal/monitor/core.go
+  - internal/monitor/trino.go
+extracted_at: 2026-05-05
+---
+
 # Backend
 
 A Backend represents a Trino cluster coordinator instance that can receive and execute SQL queries. The gateway routes incoming client requests to one of several Backends based on group membership, routing strategy, and health/load state. Backends are the fundamental unit of capacity in the system.

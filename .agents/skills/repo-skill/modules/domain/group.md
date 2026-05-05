@@ -1,3 +1,12 @@
+---
+sources:
+  - internal/gatewayserver/models/group.go
+  - internal/gatewayserver/groupApi/core.go
+  - internal/gatewayserver/groupApi/server.go
+  - internal/gatewayserver/repo/group.go
+extracted_at: 2026-05-05
+---
+
 # Group
 
 A Group is a routing abstraction that maps a named cluster of Trino backends to a load-balancing strategy. Policies resolve client requests to one or more Groups; the Group then selects a single Backend to serve the query. Groups are the bridge between "who is asking" (Policy) and "where the query runs" (Backend).

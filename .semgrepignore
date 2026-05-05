@@ -1,0 +1,16 @@
+# Upstream agent skills installed from razorpay/agent-skills
+# These are third-party reference docs and scripts, not our source code
+.agents/skills/
+.claude/skills/
+.cursor/skills/
+.gemini/skills/
+
+# Vendor modules
+vendor/
+
+# Generated protobuf code
+rpc/*/*.pb.go
+rpc/*/*.twirp.go
+
+# Generated swagger
+third_party/swaggerui/

@@ -1,3 +1,13 @@
+---
+sources:
+  - internal/gatewayserver/models/backend.go
+  - internal/gatewayserver/models/group.go
+  - internal/gatewayserver/models/policy.go
+  - internal/gatewayserver/models/query.go
+  - internal/router/router.go
+extracted_at: 2026-05-05
+---
+
 # BUILD_CHECKLIST - Trino Gateway
 
 **Created:** 2026-05-05

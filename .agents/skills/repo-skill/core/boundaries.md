@@ -1,3 +1,13 @@
+---
+sources:
+  - cmd/gateway/main.go
+  - internal/config/config.go
+  - internal/boot/boot.go
+  - internal/router/router.go
+  - internal/monitor/monitor.go
+extracted_at: 2026-05-05
+---
+
 # Trino Gateway - Service Boundaries
 
 ## Purpose

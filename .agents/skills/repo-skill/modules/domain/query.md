@@ -1,3 +1,12 @@
+---
+sources:
+  - internal/gatewayserver/models/query.go
+  - internal/gatewayserver/queryApi/core.go
+  - internal/gatewayserver/queryApi/server.go
+  - internal/gatewayserver/repo/query.go
+extracted_at: 2026-05-05
+---
+
 # Query Entity
 
 An audit/tracking record created whenever the trino-gateway router successfully proxies a SQL query to a Trino backend. Each Query captures what was sent, who sent it, which backend served it, and which group was used for routing -- forming the gateway's query history and enabling backend lookup for in-flight queries.

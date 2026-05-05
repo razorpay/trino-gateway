@@ -1,0 +1,56 @@
+name: PR Checks
+
+on:
+  pull_request:
+    branches:
+      - master
+    paths:
+      - '**.go'
+      - 'go.mod'
+      - 'go.sum'
+      - 'rpc/**'
+      - 'config/**'
+      - 'build/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Run unit tests with coverage
+        run: go test ./... -coverprofile=coverage.out -json > test-report.json || true
+
+      - name: Upload coverage to SonarQube
+        if: always()
+        uses: sonarsource/sonarqube-scan-action@master
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: https://sonar.razorpay.com
+        continue-on-error: true
+
+  agent-review:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run pre-mortem checks
+        uses: razorpay/agent-skills/actions/pre-mortem@master
+        continue-on-error: true
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run code-review
+        uses: razorpay/agent-skills/actions/code-review@master
+        continue-on-error: true
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}

@@ -1,3 +1,12 @@
+---
+sources:
+  - internal/gatewayserver/models/policy.go
+  - internal/gatewayserver/policyApi/core.go
+  - internal/gatewayserver/policyApi/server.go
+  - internal/gatewayserver/repo/policy.go
+extracted_at: 2026-05-05
+---
+
 # Policy
 
 A Policy is a routing rule that maps incoming client requests to Trino backend Groups. Each policy binds a single rule (a type+value pair like "requests arriving on port 8443") to a target Group, with optional fallback. Policies are the core mechanism for multi-tenant routing -- different clients reach different Trino clusters based on how they connect.
