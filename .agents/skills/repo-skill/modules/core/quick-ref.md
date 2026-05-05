@@ -64,6 +64,7 @@ GitHub Actions on push to `master` only. Builds and pushes `razorpay/presto_gate
 |------|---------|
 | `config/default.toml` | Base config with all keys and dev-friendly defaults |
 | `config/dev.toml` | Local dev overrides (created empty by `make dev-setup`, gitignored) |
+| `config/dev-docker.toml` | Docker dev: `debug` log level, MySQL host=`trino_gateway_mysql`, routingGroup=`dev` |
 | `config/prod.toml` | Production: `warn` log level, 20s monitor interval, 12 gateway ports (8080-8091) |
 | `config/prod-dev.toml` | Prod-dev: same as prod but `info` log level |
 
@@ -135,6 +136,33 @@ Logging: uber/zap, single-line JSON. Pipe through `jq` for local readability.
 - **Vendor step:** `scripts/compile.sh` runs `go mod vendor` after protoc generation
 
 ---
+
+## Deployment
+
+### Docker Images
+- **Public:** `razorpay/presto_gateway:<git-sha>` (DockerHub, built by CI on master push)
+- **Internal:** `Dockerfile.razorpay` uses Razorpay golden image from `c.rzp.io`
+- Note: Image name is `presto_gateway` (historical), not `trino-gateway`
+
+### K8s Health Probe
+- Script: `build/docker/prod/probe.sh`
+- Calls: `POST http://localhost:8000/twirp/razorpay.gateway.HealthCheckAPI/Check` with `{"service": ""}`
+- Returns exit 0 on HTTP 200, exit 1 otherwise
+- Use for both liveness and readiness probes
+
+### Graceful Shutdown
+- `shutdownDelay: 2s` — wait before starting shutdown (drain connections)
+- `shutdownTimeout: 5s` — max wait for in-flight requests
+- Handles SIGTERM/SIGINT
+- Entrypoint waits up to 60s for MySQL before starting app
+
+### Ports (Production)
+- `8000` — Twirp API + Swagger UI
+- `8002` — Prometheus metrics
+- `8080-8091` — 12 gateway proxy ports (each port can have different routing policies)
+
+### Bootstrap Example
+`scripts/run-example.sh` creates a dev backend + group + policy via Twirp API calls. Useful for local testing.
 
 ## Gotchas
 
