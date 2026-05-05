@@ -1,0 +1,75 @@
+{%- if infra.edgeService -%}
+  #
+  # edge alerts
+  #
+  - name: Edge
+    interval: 1m
+    rules:
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] Some requests are being dropped at edge (in transit)"
+        expr: (
+                sum(rate(kong_request_total{service="{{ infra.edgeService }}", source="service"}[4m]))
+                -
+                sum(rate({{ metrics.prefix }}http_requests_total{kubernetes_namespace="{{ infra.kubernetes.namespace }}"}[4m]))
+              ) > 0
+        for: 1m
+        labels:
+          severity: critical
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          live: true
+        annotations:
+          identifier: Service = "{{ '{{' }} $labels.kubernetes_namespace {{ '}}' }}",  Cluster = "{{ '{{' }} $labels.cluster {{ '}}' }}"
+          description: "{{ team.slack.handle }} One or more request were dropped in transit between edge and application.\n  VALUE = {{ '{{' }}  $value {{ '}}' }}\n  LABELS = {{ '{{' }}  $labels {{ '}}' }}\n"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "9002") }}
+
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] Some requests were terminated at edge"
+        expr: sum(rate(kong_request_total{service="{{ infra.edgeService }}", source!~"service", status!="429", status!="401", status!="403"}[4m])) > 0
+        for: 1m
+        labels:
+          severity: critical
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          live: true
+        annotations:
+          identifier: Service = "{{ '{{' }} $labels.kubernetes_namespace {{ '}}' }}",  Cluster = "{{ '{{' }} $labels.cluster {{ '}}' }}"
+          description: "{{ team.slack.handle }} One or more request were dropped by edge ((excluding 429, 401, 403)).\n  VALUE = {{ '{{' }}  $value {{ '}}' }}\n  LABELS = {{ '{{' }}  $labels {{ '}}' }}\n"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "3001") }}
+
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] Request are being throttled is greater than 50 RPS"
+        expr: sum(rate(kong_request_total{service="{{ infra.edgeService }}", source="exit", status="429"}[4m])) > 50
+        for: 1m
+        labels:
+          severity: critical
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          live: true
+        annotations:
+          identifier: Service = "{{ '{{' }} $labels.kubernetes_namespace {{ '}}' }}",  Cluster = "{{ '{{' }} $labels.cluster {{ '}}' }}"
+          description: "{{ team.slack.handle }} More than 50 RPS were throttled.\n  VALUE = {{ '{{' }}  $value {{ '}}' }}\n  LABELS = {{ '{{' }}  $labels {{ '}}' }}\n"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "3006") }}
+
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] More than 10 RPS are having AuthN/AuthZ rejections"
+        expr: sum(rate(kong_request_total{service="{{ infra.edgeService }}", source="exit", status=~"401|403"}[4m])) > 10
+        for: 1m
+        labels:
+          severity: critical
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          live: true
+        annotations:
+          identifier: Service = "{{ '{{' }} $labels.kubernetes_namespace {{ '}}' }}",  Cluster = "{{ '{{' }} $labels.cluster {{ '}}' }}"
+          description: "{{ team.slack.handle }} More than 10 RPS are having AuthN/AuthZ rejections.\n  VALUE = {{ '{{' }}  $value {{ '}}' }}\n  LABELS = {{ '{{' }}  $labels {{ '}}' }}\n"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "3001") }}
+{%- endif -%}

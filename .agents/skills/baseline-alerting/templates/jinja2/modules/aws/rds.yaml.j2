@@ -1,0 +1,127 @@
+{%- if infra.aws.rds -%}
+{%- for instance in infra.aws.rds -%}
+  #
+  # RDS alerts
+  #
+  # Instance: {{ instance }}
+  - name: RDS {{ instance }}
+    rules:
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] DB CPU Usage is > 80%"
+        expr: aws_rds_cpuutilization_maximum{dbinstance_identifier="{{ instance }}"} > 80
+        for: 30s
+        labels:
+          severity: critical
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          rds_instance: "{{ instance }}"
+          live: true
+        annotations:
+          identifier: Instance = "{{ '{{' }} $labels.dbinstance_identifier {{ '}}' }}"
+          description: {{ team.slack.handle }} DB CPU is high for {{ '{{' }} $labels.dbinstance_identifier {{ '}}' }} - "{{ '{{' }}  $value {{ '}}' }}"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "14001", "db_instances", instance) }}
+
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] High DB Connections"
+        expr: aws_rds_database_connections_maximum{dbinstance_identifier="{{ instance }}"} > 300
+        for: 30s
+        labels:
+          severity: critical
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          rds_instance: "{{ instance }}"
+          live: true
+        annotations:
+          identifier: Instance = "{{ '{{' }} $labels.dbinstance_identifier {{ '}}' }}"
+          description: {{ team.slack.handle }} High DB connections for {{ '{{' }} $labels.dbinstance_identifier {{ '}}' }} - "{{ '{{' }}  $value {{ '}}' }}"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "14002", "db_instances", instance) }}
+
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] DB high Write Latency"
+        expr: aws_rds_write_latency_maximum{dbinstance_identifier="{{ instance }}"} > 1
+        for: 30s
+        labels:
+          severity: critical
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          rds_instance: "{{ instance }}"
+          live: true
+        annotations:
+          identifier: Instance = "{{ '{{' }} $labels.dbinstance_identifier {{ '}}' }}"
+          description: {{ team.slack.handle }} High DB write latency for {{ '{{' }} $labels.dbinstance_identifier {{ '}}' }} - "{{ '{{' }}  $value {{ '}}' }}"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "14009", "db_instances", instance) }}
+
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] DB high Reader Read Latency"
+        expr: aws_rds_read_latency_maximum{dbinstance_identifier="{{ instance }}"} > 1
+        for: 30s
+        labels:
+          severity: critical
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          rds_instance: "{{ instance }}"
+          live: true
+        annotations:
+          identifier: Instance = "{{ '{{' }} $labels.dbinstance_identifier {{ '}}' }}"
+          description: {{ team.slack.handle }} High DB read latency for {{ '{{' }} $labels.dbinstance_identifier {{ '}}' }} - "{{ '{{' }}  $value {{ '}}' }}"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "14009", "db_instances", instance) }}
+
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] Replication Lag"
+        expr: aws_rds_replica_lag_maximum{dbinstance_identifier="{{ instance }}"} > 10
+        for: 30s
+        labels:
+          severity: critical
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          rds_instance: "{{ instance }}"
+          live: true
+        annotations:
+          identifier: Instance = "{{ '{{' }} $labels.dbinstance_identifier {{ '}}' }}"
+          description: {{ team.slack.handle }} Replication lag is high for {{ '{{' }} $labels.dbinstance_identifier {{ '}}' }} - "{{ '{{' }}  $value {{ '}}' }}"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "14000", "db_instances", instance) }}
+
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] DB Replica Not running"
+        expr: sum(aws_rds_replica_lag_maximum{dbinstance_identifier="{{ instance }}"}) < 0
+        for: 2m
+        labels:
+          severity: critical
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          rds_instance: "{{ instance }}"
+          live: true
+        annotations:
+          description: {{ team.slack.handle }} DB Replica might not be running "{{ instance }}"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "14000", "db_instances", instance) }}
+
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] RDS free space"
+        expr: sum(aws_rds_free_storage_space_maximum{dbinstance_identifier="{{ instance }}"}/ 1000000000) by (dbinstance_identifier) < 50
+        for: 30s
+        labels:
+          severity: critical
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          rds_instance: "{{ instance }}"
+          live: true
+        annotations:
+          identifier: Instance = "{{ '{{' }} $labels.dbinstance_identifier {{ '}}' }}"
+          description: {{ team.slack.handle }} DB might run out of storage space {{ '{{' }} $labels.dbinstance_identifier {{ '}}' }} - free space "{{ '{{' }}  $value {{ '}}' }}Gib"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "14007", "db_instances", instance) }}
+{%- endfor -%}
+{%- endif -%}

@@ -1,0 +1,62 @@
+# Example input for a service with most surfaces enabled.
+# Use this to test the rendering pipeline:
+#   python scripts/render.py --inputs examples/checkout-service.input.yaml --output /tmp/baseline-checkout.yaml
+
+team:
+  bu: Payments
+  pod: checkout-engg
+  slack:
+    channel: "#checkout-alerts"
+    handle: "<!subteam^S0596LV7NMV>"
+  runbook: "https://docs.google.com/document/d/1abc-example-runbook"
+  dashboardLink: "https://vajra.razorpay.com/d/checkout-prod?orgId=1"
+
+cmd:
+  appName: checkout-service
+
+metrics:
+  prefix: "checkout_"
+  statusCake:
+    testId: "12345678"
+  anomalyOffsets:
+    - "1w"
+    - "2w"
+
+application:
+  language: GOLANG
+  interface:
+    rest: true
+    grpc: true
+  utils:
+    hasOutboxWorkers: true
+
+infra:
+  traefik:
+    services:
+      - "checkout-service-web"
+      - "checkout-service-api"
+  edgeService: "checkout-edge"
+  kafka:
+    topics:
+      - "order-events"
+      - "payment-callbacks"
+  aws:
+    rds:
+      - "checkout-db-prod"
+      - "checkout-db-replica"
+    elasticCache:
+      - "checkout-redis-prod"
+    sqs:
+      - "checkout-retry-queue"
+      - "checkout-dlq"
+    asg:
+      - "checkout-workers-asg"
+  kubernetes:
+    namespace: checkout
+    containers:
+      - checkout-api
+      - checkout-worker
+      - checkout-consumer
+    clusters:
+      - prod-green-eks
+      - prod-white-eks

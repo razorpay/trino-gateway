@@ -1,0 +1,20 @@
+{
+  "name": "payment-server-example",
+  "version": "1.0.0",
+  "description": "Example payment server for AI integration testing",
+  "main": "payment-server.js",
+  "scripts": {
+    "start": "node payment-server.js"
+  },
+  "keywords": [
+    "payment",
+    "integration-testing",
+    "api",
+    "razorpay"
+  ],
+  "author": "Razorpay",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.0"
+  }
+}

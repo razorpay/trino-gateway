@@ -1,0 +1,36 @@
+{%- if application.language == "GOLANG" and application.utils.hasOutboxWorkers %}
+  - name: Outbox Job
+    interval: 5m
+    rules:
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] High Outbox SLA"
+        expr: histogram_quantile(0.99, sum(rate(outbox_job_process_duration_seconds_bucket{kubernetes_namespace="{{ infra.kubernetes.namespace }}"}[5m])) by (le, job_name)) > 20
+        for: 5m
+        labels:
+          severity: critical
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          live: true
+        annotations:
+          identifier: Job = "{{- '{{' -}} $labels.job_name {{- '}}' -}}", LE = "{{- '{{' -}} $labels.le {{- '}}' -}}"
+          description: "{{ team.slack.handle }} outbox SLA > 20 seconds for 5 mins. Value: {{- '{{' -}} $value {{- '}}' -}}"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "8010") }}
+
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] Age of Oldest Pending Job alert"
+        expr: max(outbox_age_of_oldest_pending_job_seconds{kubernetes_namespace="{{ infra.kubernetes.namespace }}"}) > 10
+        for: 10m
+        labels:
+          severity: warning
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          live: true
+        annotations:
+          identifier: product = "{{- '{{' -}} $labels.product {{- '}}' -}}", LE = "{{- '{{' -}} $labels.le {{- '}}' -}}"
+          description: "{{ team.slack.handle }} Age of oldest pending job > 10sec. Value: {{- '{{' -}} $value {{- '}}' -}}"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "8008") }}
+{%- endif %}

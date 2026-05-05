@@ -1,0 +1,83 @@
+{%- if infra.aws.asg -%}
+  #
+  # Node level alerts
+  #
+  - name: Node usage
+    rules:
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] Node CPU usage is > 75%"
+        expr: max(
+                  100 - (
+                      avg by (instance,asg_group) (irate(node_cpu_seconds_total{job="nodeexporter",mode="idle", asg_group=~"{{ infra.aws.asg | join('|') }}"}[5m])) * 100
+                  )
+              ) > 75
+        for: 1m
+        labels:
+          severity: critical
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          live: true
+        annotations:
+          identifier: Instance = "{{ '{{' }} $labels.instance {{ '}}' }}", cluster = "{{ '{{' }} $labels.cluster {{ '}}' }}"
+          description: "{{ team.slack.handle }} CPU usage for node is greater than 75%\n  VALUE = {{ '{{' }}  $value {{ '}}' }}\n  LABELS = {{ '{{' }}  $labels {{ '}}' }}\n"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "12013") }}
+
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] High node memory usage > 75%"
+        expr: (
+                100-
+                (
+                    node_memory_MemAvailable_bytes{asg_group=~"{{ infra.aws.asg | join('|') }}"}/node_memory_MemTotal_bytes{asg_group=~"{{ infra.aws.asg | join('|') }}"}*100
+                )
+              ) > 75
+        for: 1m
+        labels:
+          severity: critical
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          live: true
+        annotations:
+          identifier: Instance = "{{ '{{' }} $labels.instance {{ '}}' }}", cluster = "{{ '{{' }} $labels.cluster {{ '}}' }}"
+          description: "{{ team.slack.handle }} Node memory usage > 75. \n  VALUE = {{ '{{' }}  $value {{ '}}' }}\n  LABELS = {{ '{{' }}  $labels {{ '}}' }}\n"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "12014") }}
+{%- endif %}
+
+{% if infra.kubernetes.clusters %}
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] Min node count per cluster < 2"
+        expr: sum(cluster_autoscaler_node_groups_count{cluster=~"{{ infra.kubernetes.clusters | join('|') }}", node_group_type="autoscaled"}) by (cluster) < 2
+        for: 1m
+        labels:
+          severity: critical
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          live: true
+        annotations:
+          summary: "Insufficient nodes per cluster"
+          identifier: Instance = cluster = "{{ '{{' }} $labels.cluster {{ '}}' }}"
+          description: "{{ team.slack.handle }} Min node could per cluster is below threshold. \n  VALUE = {{ '{{' }}  $value {{ '}}' }}\n  LABELS = {{ '{{' }}  $labels {{ '}}' }}\n"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "12014") }}
+
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] Max node count per cluster > 5"
+        expr: sum(cluster_autoscaler_node_groups_count{cluster=~"{{ infra.kubernetes.clusters | join('|') }}", node_group_type="autoscaled"}) by (cluster) > 5
+        for: 1m
+        labels:
+          severity: critical
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          live: true
+        annotations:
+          summary: "Node count reached the max limit set. Might not be able to auto scale further"
+          identifier: Instance = cluster = "{{ '{{' }} $labels.cluster {{ '}}' }}"
+          description: "{{ team.slack.handle }} Max node count per cluster is above threshold. \n  VALUE = {{ '{{' }}  $value {{ '}}' }}\n  LABELS = {{ '{{' }}  $labels {{ '}}' }}\n"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "12015") }}
+{%- endif -%}

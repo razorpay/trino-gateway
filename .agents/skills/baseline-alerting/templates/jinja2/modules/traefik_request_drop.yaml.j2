@@ -1,0 +1,27 @@
+{%- if infra.traefik.services %}
+  #
+  # Request drop between downstream (traefik and edge) and application
+  #
+  - name: Traefik
+    interval: 1m
+    rules:
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] Some requests are being dropped at traefik (in transit)"
+        expr: (
+                sum(rate(traefik_service_requests_total{service=~"{{ infra.traefik.services | join('|') }}.*", code!="429"}[4m]))
+                -
+                sum(rate({{ metrics.prefix }}http_requests_total{kubernetes_namespace="{{ infra.kubernetes.namespace }}"}[4m]))
+              ) > 0
+        for: 1m
+        labels:
+          severity: critical
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          live: true
+        annotations:
+          identifier: Service = "{{ '{{' }} $labels.kubernetes_namespace {{ '}}' }}",  Cluster = "{{ '{{' }} $labels.cluster {{ '}}' }}"
+          description: "{{ team.slack.handle }} One or more request were dropped in transit between traefik and application.\n  VALUE = {{ '{{' }}  $value {{ '}}' }}\n  LABELS = {{ '{{' }}  $labels {{ '}}' }}\n"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "9001") }}
+{%- endif %}

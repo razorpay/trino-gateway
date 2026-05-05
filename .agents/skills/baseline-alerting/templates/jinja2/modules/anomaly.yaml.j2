@@ -1,0 +1,51 @@
+{%- if metrics.anomalyOffsets -%}
+{%- for offset in metrics.anomalyOffsets %}
+  #
+  # Anomaly alerts offset: {{ offset }}
+  #
+  - name: "Anomaly {{ offset }}"
+    interval: 1m
+    rules:
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] RPS drop is more than 50% compared to last week"
+        expr: (
+                sum(rate({{ metrics.prefix }}http_requests_total{kubernetes_namespace="{{ infra.kubernetes.namespace }}"}[4m]))
+                /
+                sum(rate({{ metrics.prefix }}http_requests_total{kubernetes_namespace="{{ infra.kubernetes.namespace }}"}[4m] offset {{ offset }}))
+              ) < 0.5
+        for: 1m
+        labels:
+          severity: warning
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          offset: "{{ offset }}"
+          live: true
+        annotations:
+          identifier: Service = "{{ '{{' }} $labels.kubernetes_namespace {{ '}}' }}",  Cluster = "{{ '{{' }} $labels.cluster {{ '}}' }}"
+          description: "{{ team.slack.handle }} RPS drop by 50% compared to last week. Value: {{ '{{' }}  $value {{ '}}' }}"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "9000") }}
+
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] Latency increase by 200ms compared with last week"
+        expr: (
+                histogram_quantile(0.90, sum(rate({{ metrics.prefix }}http_durations_ms_histogram_bucket{kubernetes_namespace="{{ infra.kubernetes.namespace }}"}[4m]))by (le))
+                -
+                histogram_quantile(0.90, sum(rate({{ metrics.prefix }}http_durations_ms_histogram_bucket{kubernetes_namespace="{{ infra.kubernetes.namespace }}"}[4m] offset {{ offset }})) by (le) )
+              ) > 2
+        for: 1m
+        labels:
+          severity: warning
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          offset: "{{ offset }}"
+          live: true
+        annotations:
+          identifier: Service = "{{ '{{' }} $labels.kubernetes_namespace {{ '}}' }}"
+          description: "{{ team.slack.handle }} Latency increase by 200ms compared with last week. Value: {{ '{{' }}  $value {{ '}}' }}"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "9007") }}
+{%- endfor -%}
+{%- endif -%}

@@ -1,0 +1,113 @@
+{%- if application.interface.rest %}
+  #
+  # latency SLA alerts
+  #
+  - name: REST Latency SLA
+    interval: 1m
+    rules:
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] SLA breach for P99 latency"
+        expr: histogram_quantile(0.99, sum by (le) (rate({{ metrics.prefix }}http_durations_ms_histogram_bucket{kubernetes_namespace="{{ infra.kubernetes.namespace }}"}[4m]))) > 100
+        for: 1m
+        labels:
+          severity: critical
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          interface: rest
+          live: true
+        annotations:
+          identifier: Service = "{{ '{{' }} $labels.kubernetes_namespace {{ '}}' }}",  le = "{{ '{{' }} $labels.le {{ '}}' }}"
+          description: "{{ team.slack.handle }} P99 latency is > 100ms.\n  VALUE = {{ '{{' }}  $value {{ '}}' }}\n  LABELS = {{ '{{' }}  $labels {{ '}}' }}\n"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "6006") }}
+
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] SLA breach for P95 latency"
+        expr: histogram_quantile(0.95, sum by (le) (rate({{ metrics.prefix }}http_durations_ms_histogram_bucket{kubernetes_namespace="{{ infra.kubernetes.namespace }}"}[4m]))) > 200
+        for: 1m
+        labels:
+          severity: critical
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          interface: rest
+          live: true
+        annotations:
+          identifier: Service = "{{ '{{' }} $labels.kubernetes_namespace {{ '}}' }}",  le = "{{ '{{' }} $labels.le {{ '}}' }}"
+          description: "{{ team.slack.handle }} P95 latency is > 200ms.\n  VALUE = {{ '{{' }}  $value {{ '}}' }}\n  LABELS = {{ '{{' }}  $labels {{ '}}' }}\n"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "6005") }}
+
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] SLA breach for P90 latency"
+        expr: histogram_quantile(0.90, sum by (le) (rate({{ metrics.prefix }}http_durations_ms_histogram_bucket{kubernetes_namespace="{{ infra.kubernetes.namespace }}"}[4m]))) > 300
+        for: 1m
+        labels:
+          severity: critical
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          interface: rest
+          live: true
+        annotations:
+          identifier: Service = "{{ '{{' }} $labels.kubernetes_namespace {{ '}}' }}",  le = "{{ '{{' }} $labels.le {{ '}}' }}"
+          description: "{{ team.slack.handle }} P90 latency is > 300ms. Value:\n  VALUE = {{ '{{' }}  $value {{ '}}' }}\n  LABELS = {{ '{{' }}  $labels {{ '}}' }}\n"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "6004") }}
+{%- endif %}
+{%- if application.interface.grpc %}
+  - name: GRPC Latency SLA
+    interval: 1m
+    rules:
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] SLA breach for P99 latency"
+        expr: histogram_quantile(0.99, sum(rate({{ metrics.prefix }}grpc_server_handling_seconds_bucket{kubernetes_namespace="{{ infra.kubernetes.namespace }}"}[4m])) by (le)) > 100
+        for: 1m
+        labels:
+          severity: critical
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          interface: grpc
+          live: true
+        annotations:
+          identifier: Service = "{{ '{{' }} $labels.kubernetes_namespace {{ '}}' }}" ,  le = "{{ '{{' }} $labels.le {{ '}}' }}"
+          description: "{{ team.slack.handle }} P99 latency is > 100ms.\n  VALUE = {{ '{{' }}  $value {{ '}}' }}\n  LABELS = {{ '{{' }}  $labels {{ '}}' }}\n"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "18006") }}
+
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] SLA breach for P95 latency"
+        expr: histogram_quantile(0.95, sum(rate({{ metrics.prefix }}grpc_server_handling_seconds_bucket{kubernetes_namespace="{{ infra.kubernetes.namespace }}"}[4m])) by (le)) > 200
+        for: 1m
+        labels:
+          severity: critical
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          interface: grpc
+          live: true
+        annotations:
+          identifier: Service = "{{ '{{' }} $labels.kubernetes_namespace {{ '}}' }}",  le = "{{ '{{' }} $labels.le {{ '}}' }}"
+          description: "{{ team.slack.handle }} P95 latency is > 200ms.\n  VALUE = {{ '{{' }}  $value {{ '}}' }}\n  LABELS = {{ '{{' }}  $labels {{ '}}' }}\n"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "18005") }}
+
+      - alert: "[{{ team.bu }}][{{ cmd.appName }}] SLA breach for P90 latency"
+        expr: histogram_quantile(0.90, sum(rate({{ metrics.prefix }}grpc_server_handling_seconds_bucket{kubernetes_namespace="{{ infra.kubernetes.namespace }}"}[4m])) by (le)) > 300
+        for: 1m
+        labels:
+          severity: critical
+          bu: {{ team.bu }}
+          pod: {{ team.pod }}
+          service: {{ cmd.appName }}
+          slack_channel: "{{ team.slack.channel }}"
+          interface: grpc
+          live: true
+        annotations:
+          identifier: Service = "{{ '{{' }} $labels.kubernetes_namespace {{ '}}' }}",  le = "{{ '{{' }} $labels.le {{ '}}' }}"
+          description: "{{ team.slack.handle }} P90 latency is > 300ms. Value:\n  VALUE = {{ '{{' }}  $value {{ '}}' }}\n  LABELS = {{ '{{' }}  $labels {{ '}}' }}\n"
+          Runbook: {{ team.runbook }}
+          vajra_link: {{ add_view_panel(team.dashboardLink, "18004") }}
+{%- endif %}
