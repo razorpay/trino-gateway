@@ -52,6 +52,15 @@ The proxy calls its own Twirp API via localhost for routing decisions — this i
 - Health check HTTP status code check in `monitor/trino.go` has a tautology bug (never rejects).
 - Config loads via TOML layering: `default.toml` → env-specific file. Env vars override with `TRINO-GATEWAY_*` prefix.
 
+## Deployment
+
+- **Docker image:** `razorpay/presto_gateway:<sha>` (note: historical name, not `trino-gateway`)
+- **Internal image:** `Dockerfile.razorpay` uses Razorpay golden image from `c.rzp.io`
+- **Health probe:** `build/docker/prod/probe.sh` — POST to HealthCheckAPI on port 8000
+- **Graceful shutdown:** 2s drain delay + 5s timeout (configurable via `shutdownDelay`/`shutdownTimeout`)
+- **Prod ports:** 8000 (API), 8002 (metrics), 8080-8091 (12 gateway proxy ports)
+- **No K8s manifests in this repo** — deployed via external kube-manifests repo
+
 ## Deeper Context
 
 - **Repo skill:** `.agents/skills/repo-skill/SKILL.md` — Full domain modules with decisions, constraints, flow maps
