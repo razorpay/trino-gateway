@@ -1,0 +1,4 @@
+.gitignore
+  8195b16d-5061-458c-8f4c-91bff638e0dc:2026-05-05T16:06:17.302Z 45-46
+---
+{"schema_version": "authorship/3.0.0", "base_commit_sha": "HEAD~1", "prompts": {"8195b16d-5061-458c-8f4c-91bff638e0dc:2026-05-05T16:06:17.302Z": {"agent_id": {"tool": "claude_code", "model": ""}, "human_author": "gaurav.singh@razorpay.com", "accepted_lines": 2, "overriden_lines": 0}}}
