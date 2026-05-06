@@ -54,3 +54,21 @@ jobs:
         continue-on-error: true
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run risk-assessment
+        uses: razorpay/agent-skills/actions/risk-assessment@master
+        continue-on-error: true
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run log-volume-optimizer
+        uses: razorpay/agent-skills/actions/log-volume-optimizer@master
+        continue-on-error: true
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run baseline-observability
+        uses: razorpay/agent-skills/actions/baseline-observability@master
+        continue-on-error: true
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
