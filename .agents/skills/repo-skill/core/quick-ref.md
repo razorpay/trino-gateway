@@ -5,7 +5,7 @@ sources:
   - build/docker/prod/Dockerfile
   - .github/workflows/ci.yml
   - README.md
-extracted_at: 2026-05-05
+extracted_at: 2026-05-06
 ---
 
 # Quick Reference - trino-gateway
