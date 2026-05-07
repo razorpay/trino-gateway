@@ -193,3 +193,32 @@ Metrics are registered in:
 | External auth provider (`ValidationProviderURL`) | Users not in the in-memory cache cannot authenticate on delegated-auth ports. Cached users continue to work until TTL expires. |
 | Trino backend cluster | Proxy returns 502 Bad Gateway. Gateway itself stays healthy. Monitoring marks backend unhealthy. |
 | Twirp API (localhost) from proxy | Proxy cannot route any requests -- policy evaluation, backend resolution all fail. Returns 400 or 502 to clients. |
+
+---
+
+## 6. K8s Exposure — How to Inspect
+
+The gateway exposes itself via Traefik IngressRoutes in the `trino-gateway` namespace. To see current state:
+
+```bash
+# List all IngressRoutes with their host matching rules
+kubectl get ingressroute -n trino-gateway -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.spec.routes[0].match}{"\n"}{end}'
+
+# List services with target ports (maps service → gateway container port)
+kubectl get svc -n trino-gateway -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.spec.ports[0].targetPort}{"\n"}{end}'
+
+# Admin API (Swagger UI)
+# https://trino-gateway-admin.de.razorpay.com/admin/swaggerui/
+```
+
+### Naming Conventions
+
+- `-int.de.razorpay.com` = internal (VPN access)
+- `.de.razorpay.com` without `-int` = concierge (external proxy access)
+- `router-{name}` in service name = gateway proxy port for that workload type
+- `trino-gateway-app` = Twirp management API (port 8000)
+
+### Not Routed Through Gateway
+
+- **Querybook** connects directly to Trino clusters
+- **Airflow** uses a gateway port (8082) but has no IngressRoute — only reachable cluster-internally
