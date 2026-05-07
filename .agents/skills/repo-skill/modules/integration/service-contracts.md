@@ -206,10 +206,17 @@ kubectl get ingressroute -n trino-gateway -o jsonpath='{range .items[*]}{.metada
 
 # List services with target ports (maps service → gateway container port)
 kubectl get svc -n trino-gateway -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.spec.ports[0].targetPort}{"\n"}{end}'
-
-# Admin API (Swagger UI)
-# https://trino-gateway-admin.de.razorpay.com/admin/swaggerui/
 ```
+
+### Admin API (Swagger UI)
+
+| Environment | URL |
+|-------------|-----|
+| Prod | `https://trino-gateway-admin.de.razorpay.com/admin/swaggerui/` |
+| Prod (dev config) | `https://trino-dev-gateway-admin.de.razorpay.com/admin/swaggerui/` |
+| Stage | Check IngressRoutes in stage cluster: `kubectl get ingressroute -n trino-gateway --context <stage-context>` |
+
+The admin hostname pattern is `trino-{env}-gateway-admin.de.razorpay.com`. Exact hostnames vary per cluster — always verify from IngressRoutes.
 
 ### Naming Conventions
 
@@ -217,8 +224,3 @@ kubectl get svc -n trino-gateway -o jsonpath='{range .items[*]}{.metadata.name}{
 - `.de.razorpay.com` without `-int` = concierge (external proxy access)
 - `router-{name}` in service name = gateway proxy port for that workload type
 - `trino-gateway-app` = Twirp management API (port 8000)
-
-### Not Routed Through Gateway
-
-- **Querybook** connects directly to Trino clusters
-- **Airflow** uses a gateway port (8082) but has no IngressRoute — only reachable cluster-internally
