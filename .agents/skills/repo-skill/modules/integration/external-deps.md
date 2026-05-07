@@ -218,3 +218,49 @@ What trino-gateway calls, how it connects, and what happens when things break.
 | Auth validation provider (slow) | Runtime | Proxy requests hang indefinitely (no timeout) |
 | Prometheus | Runtime | No impact on gateway operation |
 | Self loopback API | Runtime | Monitor cannot update backends; Router cannot resolve routes |
+
+---
+
+## 6. Production Routing Topology — How to Inspect
+
+The gateway runs as a single deployment with multiple named ports. Each port has a dedicated K8s Service and Traefik IngressRoute. Routing decisions are stored in the gateway's MySQL database, not in K8s config.
+
+### Querying Live State
+
+**Backends** (which Trino clusters are registered):
+```bash
+curl -s -X POST 'https://trino-gateway-admin.de.razorpay.com/twirp/razorpay.gateway.BackendApi/ListAllBackends' \
+  -H 'Content-Type: application/json' -d '{}'
+```
+
+**Groups** (which backends are in each routing group + strategy):
+```bash
+curl -s -X POST 'https://trino-gateway-admin.de.razorpay.com/twirp/razorpay.gateway.GroupApi/ListAllGroups' \
+  -H 'Content-Type: application/json' -d '{}'
+```
+
+**Policies** (which port routes to which group):
+```bash
+curl -s -X POST 'https://trino-gateway-admin.de.razorpay.com/twirp/razorpay.gateway.PolicyApi/ListAllPolicies' \
+  -H 'Content-Type: application/json' -d '{}'
+```
+
+**K8s IngressRoutes** (which hostnames map to which service/port):
+```bash
+kubectl get ingressroute -n trino-gateway
+kubectl get svc -n trino-gateway   # shows service → targetPort mapping
+```
+
+### Routing Chain
+
+The full chain is: **IngressRoute (hostname) → K8s Service → container port → Policy (port→group) → Group (strategy→backend) → Backend (Trino cluster hostname)**
+
+### Key Patterns
+
+- Each gateway port (8080-8091) has a dedicated K8s Service and IngressRoute — port assignments are fixed in prod config (`config/prod.toml`)
+- Backend hostnames use `-int.de.razorpay.com` (internal) for actual routing; `external_url` is for UI redirect rewriting only
+- Scheduler backends may use cluster-local DNS (`.svc.cluster.local`) instead of Traefik ingress
+- Looker clusters use blue/green pattern — multiple backends registered but only one enabled at a time
+- `concierge` suffix in IngressRoute names = external access via concierge proxy
+- Querybook connects directly to Trino clusters — NOT routed through the gateway
+- Auth delegation is per-policy — check the `is_auth_delegated` field in policy response
