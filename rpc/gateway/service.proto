@@ -247,8 +247,6 @@ service PolicyApi {
     rpc EvaluateAuthDelegationForClient(EvaluateAuthDelegationRequest) returns (EvaluateAuthDelegationResponse);
 
     rpc EvaluateRequestSourceForClient(EvaluateRequestSourceRequest) returns (EvaluateRequestSourceResponse);
-
-    rpc EvaluateEmailAccessForClient(EvaluateEmailAccessRequest) returns (EvaluateEmailAccessResponse);
 }
 
 message Policy {
@@ -269,8 +267,6 @@ message Policy {
     bool is_enabled = 5;
     bool is_auth_delegated = 6;
     string set_request_source = 7;
-    bool is_email_access_restricted = 8;
-    repeated string allowed_user_emails = 9;
 }
 
 message PolicyGetRequest {
@@ -322,16 +318,6 @@ message EvaluateRequestSourceRequest {
 
 message EvaluateRequestSourceResponse {
     string set_request_source = 1;
-}
-
-message EvaluateEmailAccessRequest {
-    int32 incoming_port = 1; // required
-    string user_email = 2; // required when email access restriction is enabled
-}
-
-message EvaluateEmailAccessResponse {
-    bool is_allowed = 1;
-    bool is_email_access_restricted = 2;
 }
 
 service QueryApi {

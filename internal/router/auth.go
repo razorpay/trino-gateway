@@ -128,41 +128,6 @@ func (r *RouterServer) isAuthDelegated(ctx *context.Context) (bool, error) {
 	return res.GetIsAuthDelegated(), nil
 }
 
-func (r *RouterServer) enforceEmailAccess(ctx *context.Context, w http.ResponseWriter, username string) bool {
-	res, err := r.gatewayApiClient.Policy.EvaluateEmailAccessForClient(*ctx, &gatewayv1.EvaluateEmailAccessRequest{
-		IncomingPort: int32(r.port),
-		UserEmail:    username,
-	})
-	if err != nil {
-		provider.Logger(*ctx).WithError(err).Errorw(
-			fmt.Sprint(LOG_TAG, "Failed to evaluate email access policy."),
-			map[string]interface{}{
-				"port":     r.port,
-				"username": username,
-			})
-		http.Error(w, "Unable to authorize the user", http.StatusForbidden)
-		return false
-	}
-	if res.GetIsEmailAccessRestricted() && !res.GetIsAllowed() {
-		provider.Logger(*ctx).Debugw(
-			fmt.Sprint(LOG_TAG, "User is not authorized for gateway endpoint"),
-			map[string]interface{}{
-				"port":     r.port,
-				"username": username,
-			})
-		http.Error(w, "User not authorized for this gateway endpoint", http.StatusForbidden)
-		return false
-	}
-	return true
-}
-
-func requestUsername(req *http.Request) string {
-	if username, _, ok := req.BasicAuth(); ok {
-		return username
-	}
-	return trinoheaders.Get(trinoheaders.User, req)
-}
-
 func (r *RouterServer) AuthHandler(ctx *context.Context, h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		if isAuth, _ := r.isAuthDelegated(ctx); isAuth {
@@ -209,9 +174,6 @@ func (r *RouterServer) AuthHandler(ctx *context.Context, h http.Handler) http.Ha
 				http.Error(w, "User not authenticated", http.StatusUnauthorized)
 				return
 			}
-			if !r.enforceEmailAccess(ctx, w, username) {
-				return
-			}
 			h.ServeHTTP(w, req)
 		} else {
 			// whacky stuff
@@ -255,9 +217,6 @@ func (r *RouterServer) AuthHandler(ctx *context.Context, h http.Handler) http.Ha
 						return
 					}
 				}
-			}
-			if !r.enforceEmailAccess(ctx, w, requestUsername(req)) {
-				return
 			}
 			h.ServeHTTP(w, req)
 		}

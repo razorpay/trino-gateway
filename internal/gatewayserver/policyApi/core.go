@@ -3,7 +3,6 @@ package policyapi
 import (
 	"context"
 	"strconv"
-	"strings"
 
 	"github.com/fatih/structs"
 	"github.com/razorpay/trino-gateway/internal/boot"
@@ -28,7 +27,6 @@ type ICore interface {
 	EvaluateGroupsForClient(ctx context.Context, c *EvaluateClientParams) ([]string, error)
 	EvaluateAuthDelegation(ctx context.Context, p int32) (bool, error)
 	EvaluateRequestSource(ctx context.Context, p int32) (string, error)
-	EvaluateEmailAccess(ctx context.Context, p int32, userEmail string) (bool, bool, error)
 	// EvaluatePolicy(ctx context.Context, group string) (string, error)
 	// FindPolicyForQuery(ctx context.Context, q string) (string, error)
 }
@@ -39,29 +37,25 @@ func NewCore(policy repo.IPolicyRepo) *Core {
 
 // CreateParams has attributes that are required for policy.Create()
 type PolicyCreateParams struct {
-	ID                      string
-	RuleType                string
-	RuleValue               string
-	Group                   string
-	FallbackGroup           string
-	IsEnabled               bool
-	IsAuthDelegated         bool
-	SetRequestSource        string
-	IsEmailAccessRestricted bool
-	AllowedUserEmails       []string
+	ID               string
+	RuleType         string
+	RuleValue        string
+	Group            string
+	FallbackGroup    string
+	IsEnabled        bool
+	IsAuthDelegated  bool
+	SetRequestSource string
 }
 
 func (c *Core) CreateOrUpdatePolicy(ctx context.Context, params *PolicyCreateParams) error {
 	policy := models.Policy{
-		RuleType:                params.RuleType,
-		RuleValue:               params.RuleValue,
-		GroupId:                 params.Group,
-		FallbackGroupId:         &params.FallbackGroup,
-		IsEnabled:               &params.IsEnabled,
-		IsAuthDelegated:         &params.IsAuthDelegated,
-		SetRequestSource:        &params.SetRequestSource,
-		IsEmailAccessRestricted: &params.IsEmailAccessRestricted,
-		AllowedUserEmails:       stringPtr(joinUserEmails(params.AllowedUserEmails)),
+		RuleType:         params.RuleType,
+		RuleValue:        params.RuleValue,
+		GroupId:          params.Group,
+		FallbackGroupId:  &params.FallbackGroup,
+		IsEnabled:        &params.IsEnabled,
+		IsAuthDelegated:  &params.IsAuthDelegated,
+		SetRequestSource: &params.SetRequestSource,
 	}
 	policy.ID = params.ID
 
@@ -107,11 +101,10 @@ type FindManyParams struct {
 	// To    int32
 
 	// custom
-	IsEnabled                 bool   `json:"is_enabled"`
-	RuleType                  string `json:"rule_type"`
-	RuleValue                 string `json:"rule_value"`
-	IsAuthDelegated           bool   `json:"is_auth_delegated,omitempty"`
-	IsEmailAccessRestricted bool   `json:"is_email_access_restricted,omitempty"`
+	IsEnabled       bool   `json:"is_enabled"`
+	RuleType        string `json:"rule_type"`
+	RuleValue       string `json:"rule_value"`
+	IsAuthDelegated bool   `json:"is_auth_delegated,omitempty"`
 }
 
 func (p *FindManyParams) GetIsEnabled() bool {
@@ -269,81 +262,6 @@ func (c *Core) EvaluateRequestSource(ctx context.Context, port int32) (string, e
 		return *res[0].SetRequestSource, nil
 	}
 	return "", nil
-}
-
-func (c *Core) EvaluateEmailAccess(ctx context.Context, port int32, userEmail string) (bool, bool, error) {
-	restrictedPolicies, err := c.FindMany(
-		ctx,
-		&FindManyParams{
-			IsEnabled:               true,
-			RuleType:                "listening_port",
-			RuleValue:               strconv.Itoa(int(port)),
-			IsEmailAccessRestricted: true,
-		})
-	if err != nil {
-		return false, false, err
-	}
-
-	provider.Logger(ctx).Debugw("Evaluate Email Access For Port", map[string]interface{}{
-		"listeningPort": port,
-		"userEmail":     userEmail,
-		"matchingRules": restrictedPolicies,
-	})
-	if len(restrictedPolicies) == 0 {
-		return true, false, nil
-	}
-
-	for _, policy := range restrictedPolicies {
-		if isUserEmailAllowed(userEmail, parseAllowedUserEmails(policy.AllowedUserEmails)) {
-			return true, true, nil
-		}
-	}
-	return false, true, nil
-}
-
-func stringPtr(s string) *string {
-	return &s
-}
-
-func joinUserEmails(emails []string) string {
-	normalized := make([]string, 0, len(emails))
-	for _, email := range emails {
-		if e := normalizeUserEmail(email); e != "" {
-			normalized = append(normalized, e)
-		}
-	}
-	return strings.Join(normalized, ",")
-}
-
-func parseAllowedUserEmails(emails *string) []string {
-	if emails == nil || *emails == "" {
-		return nil
-	}
-	parts := strings.Split(*emails, ",")
-	normalized := make([]string, 0, len(parts))
-	for _, email := range parts {
-		if e := normalizeUserEmail(email); e != "" {
-			normalized = append(normalized, e)
-		}
-	}
-	return normalized
-}
-
-func isUserEmailAllowed(userEmail string, allowedUserEmails []string) bool {
-	normalizedUserEmail := normalizeUserEmail(userEmail)
-	if normalizedUserEmail == "" {
-		return false
-	}
-	for _, allowedUserEmail := range allowedUserEmails {
-		if normalizedUserEmail == normalizeUserEmail(allowedUserEmail) {
-			return true
-		}
-	}
-	return false
-}
-
-func normalizeUserEmail(email string) string {
-	return strings.ToLower(strings.TrimSpace(email))
 }
 
 // Implementing "set" collection methods here, :)

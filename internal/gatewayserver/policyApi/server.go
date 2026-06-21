@@ -32,16 +32,14 @@ func (s *Server) CreateOrUpdatePolicy(ctx context.Context, req *gatewayv1.Policy
 	})
 
 	createParams := PolicyCreateParams{
-		ID:                      req.GetId(),
-		RuleType:                req.GetRule().GetType().Enum().String(),
-		RuleValue:               req.GetRule().GetValue(),
-		Group:                   req.GetGroup(),
-		FallbackGroup:           req.GetFallbackGroup(),
-		IsEnabled:               req.GetIsEnabled(),
-		IsAuthDelegated:         req.GetIsAuthDelegated(),
-		SetRequestSource:        req.GetSetRequestSource(),
-		IsEmailAccessRestricted: req.GetIsEmailAccessRestricted(),
-		AllowedUserEmails:       req.GetAllowedUserEmails(),
+		ID:               req.GetId(),
+		RuleType:         req.GetRule().GetType().Enum().String(),
+		RuleValue:        req.GetRule().GetValue(),
+		Group:            req.GetGroup(),
+		FallbackGroup:    req.GetFallbackGroup(),
+		IsEnabled:        req.GetIsEnabled(),
+		IsAuthDelegated:  req.GetIsAuthDelegated(),
+		SetRequestSource: req.GetSetRequestSource(),
 	}
 
 	err := s.core.CreateOrUpdatePolicy(ctx, &createParams)
@@ -146,15 +144,13 @@ func toPolicyResponseProto(policy *models.Policy) (*gatewayv1.Policy, error) {
 		Value: policy.RuleValue,
 	}
 	response := gatewayv1.Policy{
-		Id:                      policy.ID,
-		Rule:                    &rule,
-		Group:                   policy.GroupId,
-		FallbackGroup:           stringValue(policy.FallbackGroupId),
-		IsEnabled:               boolValue(policy.IsEnabled),
-		IsAuthDelegated:         boolValue(policy.IsAuthDelegated),
-		SetRequestSource:        stringValue(policy.SetRequestSource),
-		IsEmailAccessRestricted: boolValue(policy.IsEmailAccessRestricted),
-		AllowedUserEmails:       parseAllowedUserEmails(policy.AllowedUserEmails),
+		Id:               policy.ID,
+		Rule:             &rule,
+		Group:            policy.GroupId,
+		FallbackGroup:    *policy.FallbackGroupId,
+		IsEnabled:        *policy.IsEnabled,
+		IsAuthDelegated:  *policy.IsAuthDelegated,
+		SetRequestSource: *policy.SetRequestSource,
 	}
 
 	return &response, nil
@@ -224,43 +220,4 @@ func (s *Server) EvaluateRequestSourceForClient(ctx context.Context, req *gatewa
 		return nil, err
 	}
 	return &gatewayv1.EvaluateRequestSourceResponse{SetRequestSource: result}, nil
-}
-
-func (s *Server) EvaluateEmailAccessForClient(ctx context.Context, req *gatewayv1.EvaluateEmailAccessRequest) (*gatewayv1.EvaluateEmailAccessResponse, error) {
-	provider.Logger(ctx).Debugw("EvaluateEmailAccess", map[string]interface{}{
-		"request": req.String(),
-	})
-
-	if req.GetIncomingPort() == 0 {
-		err := errors.New("Invalid port defined in `incoming_port`.")
-		provider.Logger(ctx).WithError(err).Error(err.Error())
-		return &gatewayv1.EvaluateEmailAccessResponse{IsAllowed: false, IsEmailAccessRestricted: false}, nil
-	}
-
-	isAllowed, isRestricted, err := s.core.EvaluateEmailAccess(
-		ctx,
-		req.GetIncomingPort(),
-		req.GetUserEmail(),
-	)
-	if err != nil {
-		return nil, err
-	}
-	return &gatewayv1.EvaluateEmailAccessResponse{
-		IsAllowed:                isAllowed,
-		IsEmailAccessRestricted: isRestricted,
-	}, nil
-}
-
-func stringValue(s *string) string {
-	if s == nil {
-		return ""
-	}
-	return *s
-}
-
-func boolValue(b *bool) bool {
-	if b == nil {
-		return false
-	}
-	return *b
 }
