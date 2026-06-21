@@ -56,3 +56,21 @@ func Test_setIntersection(t *testing.T) {
 	// nested stuff
 	assert.Equal(t, s13, setIntersection(setIntersection(setIntersection(s1, s_nil), s_nil), s3))
 }
+
+func TestAllowedUserEmails(t *testing.T) {
+	rawEmails := []string{
+		" User.One@Razorpay.com ",
+		"",
+		"user.two@razorpay.com",
+	}
+
+	joined := joinUserEmails(rawEmails)
+	assert.Equal(t, "user.one@razorpay.com,user.two@razorpay.com", joined)
+
+	parsed := parseAllowedUserEmails(&joined)
+	assert.Equal(t, []string{"user.one@razorpay.com", "user.two@razorpay.com"}, parsed)
+	assert.True(t, isUserEmailAllowed("USER.ONE@razorpay.com", parsed))
+	assert.True(t, isUserEmailAllowed(" user.two@razorpay.com ", parsed))
+	assert.False(t, isUserEmailAllowed("other@razorpay.com", parsed))
+	assert.False(t, isUserEmailAllowed("", parsed))
+}

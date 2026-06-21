@@ -5,13 +5,15 @@ import "github.com/razorpay/trino-gateway/pkg/spine"
 // policy model struct definition
 type Policy struct {
 	spine.Model
-	RuleType         string  `json:"rule_type"`
-	RuleValue        string  `json:"rule_value"`
-	GroupId          string  `json:"group_id"`
-	FallbackGroupId  *string `json:"fallback_group_id"`
-	IsEnabled        *bool   `json:"is_enabled" sql:"DEFAULT:true"`
-	IsAuthDelegated  *bool   `json:"is_auth_delegated" sql:"DEFAULT:false"`
-	SetRequestSource *string `json:"set_request_source"`
+	RuleType                string  `json:"rule_type"`
+	RuleValue               string  `json:"rule_value"`
+	GroupId                 string  `json:"group_id"`
+	FallbackGroupId         *string `json:"fallback_group_id"`
+	IsEnabled               *bool   `json:"is_enabled" sql:"DEFAULT:true"`
+	IsAuthDelegated         *bool   `json:"is_auth_delegated" sql:"DEFAULT:false"`
+	SetRequestSource        *string `json:"set_request_source"`
+	IsEmailAccessRestricted *bool   `json:"is_email_access_restricted" sql:"DEFAULT:false"`
+	AllowedUserEmails       *string `json:"allowed_user_emails"`
 }
 
 func (u *Policy) TableName() string {
