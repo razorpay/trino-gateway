@@ -174,6 +174,9 @@ func (r *RouterServer) ProcessRequest(ctx *context.Context, req *http.Request) (
 			return nil, err
 		}
 		bId := findBackendIdResp.GetBackendId()
+		if err := authorizeFinanceBackendAccess(ctx, trinoheaders.Get(trinoheaders.User, req), bId, findBackendIdResp.GetGroupId()); err != nil {
+			return nil, err
+		}
 		err = r.prepareReqForRouting(ctx, req, bId, nt)
 		if err != nil {
 			return nil, err
@@ -194,6 +197,9 @@ func (r *RouterServer) ProcessRequest(ctx *context.Context, req *http.Request) (
 			}
 			nt.Query.BackendId = findBackendIdResp.GetBackendId()
 			nt.Query.GroupId = findBackendIdResp.GetGroupId()
+			if err := authorizeFinanceBackendAccess(ctx, nt.Query.GetUsername(), nt.Query.GetBackendId(), nt.Query.GetGroupId()); err != nil {
+				return nil, err
+			}
 			err = r.prepareReqForRouting(ctx, req, nt.Query.GetBackendId(), nt)
 			if err != nil {
 				return nil, err
@@ -205,7 +211,13 @@ func (r *RouterServer) ProcessRequest(ctx *context.Context, req *http.Request) (
 		provider.Logger(*ctx).Debug(fmt.Sprint(LOG_TAG, "invoking routing backend evaluation"))
 
 		bId, gId, err := r.evaluateRoutingBackend(ctx, *nt)
-		r.prepareReqForRouting(ctx, req, bId, nt)
+		if err != nil {
+			return nil, err
+		}
+		if err := authorizeFinanceBackendAccess(ctx, nt.Query.GetUsername(), bId, gId); err != nil {
+			return nil, err
+		}
+		err = r.prepareReqForRouting(ctx, req, bId, nt)
 		if err != nil {
 			return nil, err
 		}
@@ -226,6 +238,9 @@ func (r *RouterServer) ProcessRequest(ctx *context.Context, req *http.Request) (
 		provider.Logger(*ctx).Debug(fmt.Sprint(LOG_TAG, "preparing payload for query Api request"))
 		nt.Query.BackendId = findBackendIdResp.GetBackendId()
 		nt.Query.GroupId = findBackendIdResp.GetGroupId()
+		if err := authorizeFinanceBackendAccess(ctx, nt.Query.GetUsername(), nt.Query.GetBackendId(), nt.Query.GetGroupId()); err != nil {
+			return nil, err
+		}
 		err = r.prepareReqForRouting(ctx, req, nt.Query.GetBackendId(), nt)
 		if err != nil {
 			provider.Logger(*ctx).WithError(err).
