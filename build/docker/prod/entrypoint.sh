@@ -37,6 +37,7 @@ db_migrations() {
 }
 
 initialize
+check_db_connection
 # run db migrations
 db_migrations
 
