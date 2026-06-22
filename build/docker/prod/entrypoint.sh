@@ -13,7 +13,7 @@ check_db_connection() {
     echo "Wait 60 seconds for connection to MySQL"
     while [[ ${counter} -lt 60 ]]; do
         {
-            echo "Connecting to MySQL" && go run ./cmd/migration/main.go status &&
+            echo "Connecting to MySQL" && go run ./cmd/migration/main.go version &&
             connected=1
 
         } || {
