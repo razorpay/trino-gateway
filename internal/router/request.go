@@ -330,8 +330,8 @@ func (r *RouterServer) prepareReqForRouting(ctx *context.Context, req *http.Requ
 	if s := sourceHeader.GetSetRequestSource(); s != "" {
 		req.Header.Set("X-Trino-Source", s)
 	}
-	// Use external_url for X-Forwarded-Host so Trino builds nextUri with a resolvable hostname
-	req.Header.Set("X-Forwarded-Host", backend.GetExternalUrl())
+	// TODO - validate and refine parsing of X-Forwarded headers
+	req.Header.Set("X-Forwarded-Host", host)
 	provider.Logger(*ctx).Infow(
 		fmt.Sprint(LOG_TAG, "Request modified, ready to be forwarded"),
 		map[string]interface{}{
