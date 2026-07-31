@@ -1,6 +1,6 @@
 module github.com/razorpay/trino-gateway
 
-go 1.22.10
+go 1.25
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2

@@ -1,4 +1,4 @@
-FROM golang:1.22.3-alpine3.20
+FROM c.rzp.io/razorpay/rzp-docker-image-inventory-multi-arch:rzp-golden-image-base-golang-1.25-alpine3.22
 
 WORKDIR /app
 
