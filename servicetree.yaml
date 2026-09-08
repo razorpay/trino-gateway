@@ -1,0 +1,37 @@
+service: trino-gateway  # required, canonical slug — immutable once registered
+displayName: "Trino Gateway"  # human-readable name — README title "Trino-Gateway" rendered without the hyphen per Title Case conventions
+description: "Load balancer / routing proxy for Razorpay's Trino query-engine clusters — a stateless Go (twirp) gateway that health-checks Trino clusters, routes queries across them and synchronizes routing state through a relational database."  # README: "Trino-Gateway is a load balancer / routing proxy / gateway primarily for Trino Query engine, written in Go and uses twirp framework... Horizontally scalable - each instance is stateless, and a relational database is used for synchronization. Cluster Monitoring - Periodic Trino Cluster healthchecks"; tree: cmd/, internal/, pkg/, rpc/, build/docker/prod/Dockerfile.razorpay
+type: service  # a Go HTTP/twirp server (cmd/, rpc/, prod Dockerfile including a Dockerfile.razorpay) — a deployed routing proxy; no Spinnaker/Netra record in the harvest, but the deploy artifacts are in-repo
+tier: T2  # sits in front of the data org's Trino clusters — its outage degrades analytics/query access for internal users (above T3 tooling), but it is not merchant-facing and queries can be pointed at clusters directly in a pinch
+lifecycle: live  # mature repo (499 files, risk-assessment skill present, prod Dockerfile) actively maintained — pushed 2026-08-03; the absence of a Spinnaker record suggests a non-Spinnaker deploy path, consistent with data-platform infra
+
+domain: data-platform/data-engineering  # l1 family data-platform from miss_seed (BU Data Org, team Platform Engineering); area data-engineering — Trino gateway is query-platform infrastructure, matching the data-platform patches already filed under data-engineering
+
+owner:
+  team:  # required, owning team slug — TO FILL: this repo has no CODEOWNERS file, .github/repo_owners.json carries no team slug, and the GitHub repository-teams API is not readable with the current token; ask the POD lead for the owning GitHub team
+  em:  # name | @slack | email — TO FILL: DevRev runnable owner not found in SuccessFactors
+  org_group:  # SuccessFactors group of the EM — TO FILL: the declared owner has no SuccessFactors record, so the org tree cannot be resolved; ask the POD lead
+  org_sub_group:  # SuccessFactors sub-group of the EM — TO FILL: the declared owner has no SuccessFactors record; ask the POD lead
+  org_pod:  # SuccessFactors pod of the EM — TO FILL: the declared owner has no SuccessFactors record; ask the POD lead
+  pm:  # TO FILL: platform infrastructure owned by data engineering — no PM expected; confirm with the Platform Engineering POD lead
+  overrides: []  # optional, region-scoped owner overrides — TO FILL only if some region is owned by a different team; each entry is a "region" code plus the owning "team" slug
+
+links:
+  repo: "https://github.com/razorpay/trino-gateway"  # canonical GitHub repo URL
+  alerts_repo:  # this service's alert rules in razorpay/alert-rules — TO FILL: no matching ruleset found; add one in razorpay/alert-rules, then link the file here
+  slos:  # SLO definitions — TO FILL: no slo.yaml at this repo root and no sloth ruleset for it under razorpay/alert-rules/slo/prod (the two places SLOs are defined today); add one there and link it here
+  slack_channel: "#data_platform_support"  # the Data Platform team's support channel — the most-used channel across existing data-platform patches in this registry; the draft harvested no candidates for this repo itself
+  zenduty_policy:  # Zenduty policy/service name used for paging — TO FILL: the service-to-policy mapping is not in DevRev or alert-rules for this service; it lives in the external Zenduty policies sheet
+  escalation_l1:  # service EM — TO FILL: no owner could be resolved for this service
+  escalation_l2:  # EM's manager — TO FILL: the EM has no SuccessFactors record, so no manager chain is available
+  escalation_l3:  # manager's manager — TO FILL: the EM has no SuccessFactors record, so no manager chain is available
+  oncall_handle:  # Slack/PagerDuty oncall handle or usergroup — TO FILL: not set on the DevRev runnable
+  runbook:  # link to the incident runbook — TO FILL: no runbook directory for this service in razorpay/rzp-oncall-agent; add one or link the Google Doc / alpha.razorpay.com page
+  api_docs: "https://github.com/razorpay/trino-gateway/tree/master/proto"  # repo tree: gRPC .proto definitions under proto/
+  dashboard:  # primary dashboard — TO FILL: Grafana (vajra) / Coralogix dashboard URL for this service (see per-region links below)
+  logs_and_traces: "https://razorpay-prod.app.coralogix.in/#/query-new/archive-logs"  # org-standard prod Coralogix — filter subsystem "trino-gateway"
+  strategy_okr:  # TO FILL: link the FY strategy doc for the owning group.
+  risk_assessment: "https://github.com/razorpay/trino-gateway/blob/master/.agents/skills/risk-assessment/SKILL.md"  # per-repo risk assessment template (repo tree)
+  regions:  # per-region links — TO FILL: no prod region deployment found for this service in spinacode or alert-rules; add a block per geography once it ships
+
+dependencies: []  # optional, declared service dependencies — TO FILL: shape: - service: <slug> for internal deps, - vendor: <name> for external (gateways, banks)
