@@ -84,6 +84,15 @@ func (r *RouterServer) ProcessResponse(
 					"reject":      d.Reject != nil,
 					"fingerprint": d.Explain.Fingerprint,
 				})
+			} else if nt.smartUnavailable {
+				// Keep router failures in the dataset so shadow accuracy is not
+				// measured only on the queries the router answered.
+				provider.Logger(*ctx).Infow(fmt.Sprint(LOG_TAG, "smart router prediction"), map[string]interface{}{
+					"query_id":   req.Id,
+					"backend_id": req.BackendId,
+					"group_id":   req.GroupId,
+					"source":     "unavailable",
+				})
 			}
 
 			_, err = r.gatewayApiClient.Query.CreateOrUpdateQuery(*ctx, req)

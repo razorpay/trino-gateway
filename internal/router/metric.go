@@ -7,14 +7,15 @@ import (
 )
 
 type Metrics struct {
-	requestsReceivedTotal    *prometheus.CounterVec
-	requestsRoutedTotal      *prometheus.CounterVec
-	requestPreRoutingDelays  *prometheus.HistogramVec
-	requestPostRoutingDelays *prometheus.HistogramVec
-	responsesSentTotal       *prometheus.CounterVec
-	responseDurations        *prometheus.HistogramVec
-	smartRouterDecisions     *prometheus.CounterVec
-	smartRouterErrors        prometheus.Counter
+	requestsReceivedTotal     *prometheus.CounterVec
+	requestsRoutedTotal       *prometheus.CounterVec
+	requestPreRoutingDelays   *prometheus.HistogramVec
+	requestPostRoutingDelays  *prometheus.HistogramVec
+	responsesSentTotal        *prometheus.CounterVec
+	responseDurations         *prometheus.HistogramVec
+	smartRouterDecisions      *prometheus.CounterVec
+	smartRouterErrors         prometheus.Counter
+	smartRouterInvalidBackend prometheus.Counter
 }
 
 var metrics *Metrics
@@ -50,6 +51,14 @@ func initMetrics() {
 		prometheus.CounterOpts{
 			Name: "trino_gateway_router_smart_errors_total",
 			Help: "Smart router calls that failed or timed out; the strategy backend was kept.",
+		},
+		[]string{"env"},
+	).WithLabelValues(env)
+
+	metrics.smartRouterInvalidBackend = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "trino_gateway_router_smart_invalid_backend_total",
+			Help: "Enforce-mode decisions naming a backend outside the group or tiers, or not enabled and healthy; the strategy backend was kept.",
 		},
 		[]string{"env"},
 	).WithLabelValues(env)

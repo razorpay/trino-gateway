@@ -69,6 +69,9 @@ type QueryRequest struct {
 	// smart is the router's decision for this query, nil when the router is
 	// disabled or unreachable. Logged with the query id once Trino answers.
 	smart *smart.Decision
+	// smartUnavailable records that the router failed, so the prediction log
+	// still has a row for this query.
+	smartUnavailable bool
 }
 
 func (QueryRequest) isClientRequest() {}

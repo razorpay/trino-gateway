@@ -50,10 +50,9 @@
     url                   = "http://localhost:8090"
     timeoutMs             = 50
     mode                  = "shadow"
-    [router.tiers.adhoc]
-        S = ["trino-srm"]
-        M = ["trino-dev"]
-        L = ["trino-adhoc"]
+    # tiers are set per environment ([router.tiers.<group>] S/M/L = [backend ids]);
+    # group ids are matched case-insensitively. Groups without tiers still get a
+    # shadow prediction but enforce mode cannot move their queries.
 
 [monitor]
     interval              = "10m"

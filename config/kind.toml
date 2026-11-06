@@ -1,0 +1,18 @@
+# Local kind testing (trino_router/deploy/kind): prod-dev plus tiers for the adhoc
+# group backed by the real trino-srm / trino-dev / trino-adhoc coordinators.
+[app]
+    logLevel              = "info"
+[monitor]
+    interval              = "20s"
+    healthCheckSql        = "SHOW SCHEMAS FROM hive"
+[gateway]
+    ports                 = [8080, 8081, 8082, 8083, 8084, 8085, 8086, 8087, 8088, 8089, 8090, 8091, 8092, 8093, 8094, 8095]
+[router]
+    enabled               = false
+    url                   = "http://trino-router:8099"
+    timeoutMs             = 50
+    mode                  = "shadow"
+    [router.tiers.adhoc]
+        S = ["trino-srm"]
+        M = ["trino-dev"]
+        L = ["trino-adhoc"]

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"slices"
 	"strings"
 
 	"github.com/razorpay/trino-gateway/internal/provider"
@@ -209,9 +210,12 @@ func (r *RouterServer) ProcessRequest(ctx *context.Context, req *http.Request) (
 
 		bId, gId, err := r.evaluateRoutingBackend(ctx, *nt)
 		if err == nil {
-			bId, err = r.consultSmartRouter(ctx, nt, gId, bId)
+			bId, err = r.consultSmartRouter(ctx, req.Context(), nt, gId, bId)
 		}
-		r.prepareReqForRouting(ctx, req, bId, nt)
+		var rejected *smart.RejectedError
+		if !errors.As(err, &rejected) {
+			r.prepareReqForRouting(ctx, req, bId, nt)
+		}
 		if err != nil {
 			return nil, err
 		}
@@ -290,7 +294,9 @@ func (r *RouterServer) evaluateRoutingBackend(ctx *context.Context, clientReq Qu
 // consultSmartRouter asks the smart router which backend inside the resolved
 // group should run this query. Any router failure keeps the backend the
 // gateway's own strategy chose, so the router is never on the failure path.
-func (r *RouterServer) consultSmartRouter(ctx *context.Context, nt *QueryRequest, groupId, backendId string) (string, error) {
+// reqCtx is the client request's context, so a cancelled submission stops the
+// router call too.
+func (r *RouterServer) consultSmartRouter(ctx *context.Context, reqCtx context.Context, nt *QueryRequest, groupId, backendId string) (string, error) {
 	if r.smart == nil {
 		return backendId, nil
 	}
@@ -303,18 +309,30 @@ func (r *RouterServer) consultSmartRouter(ctx *context.Context, nt *QueryRequest
 		Tiers:              smart.TiersFor(r.smartTiers, groupId, backendId),
 		PreparedStatements: smart.ParsePreparedStatements(nt.headerPreparedStatements),
 	}
-	if nt.headerClientTags != "" {
-		rq.ClientTags = strings.Split(nt.headerClientTags, ",")
+	for _, t := range strings.Split(nt.headerClientTags, ",") {
+		if t = strings.TrimSpace(t); t != "" {
+			rq.ClientTags = append(rq.ClientTags, t)
+		}
 	}
-	d, err := r.smart.Route(*ctx, rq)
+	d, err := r.smart.Route(reqCtx, rq)
 	if err != nil {
 		metrics.smartRouterErrors.Inc()
-		provider.Logger(*ctx).WithError(err).Warn(fmt.Sprint(LOG_TAG, "smart router unavailable, keeping strategy backend"))
+		nt.smartUnavailable = true
+		if r.smartWarn.allow() {
+			provider.Logger(*ctx).WithError(err).Warn(fmt.Sprint(LOG_TAG, "smart router unavailable, keeping strategy backend (logged at most every 10s)"))
+		}
 		return backendId, nil
 	}
 	nt.smart = d
 	chosen, err := smart.Apply(r.smartMode, d, backendId)
-	metrics.smartRouterDecisions.WithLabelValues(r.smartMode, d.Explain.Source, d.Tier, fmt.Sprint(d.Reject != nil)).Inc()
+	if err == nil && chosen != backendId && !r.smartBackendUsable(ctx, groupId, chosen, rq.Tiers) {
+		metrics.smartRouterInvalidBackend.Inc()
+		provider.Logger(*ctx).Warnw(fmt.Sprint(LOG_TAG, "smart router chose an unusable backend, keeping strategy backend"),
+			map[string]interface{}{"group": groupId, "smart_backend": chosen, "strategy_backend": backendId})
+		chosen = backendId
+	}
+	metrics.smartRouterDecisions.WithLabelValues(r.smartMode, smart.Label(d.Explain.Source, smart.SourceLabels),
+		smart.Label(d.Tier, smart.TierLabels), fmt.Sprint(d.Reject != nil)).Inc()
 	provider.Logger(*ctx).Debugw(fmt.Sprint(LOG_TAG, "smart router decision"), map[string]interface{}{
 		"mode":             r.smartMode,
 		"group":            groupId,
@@ -328,6 +346,22 @@ func (r *RouterServer) consultSmartRouter(ctx *context.Context, nt *QueryRequest
 		"reason":           d.Explain.Reason,
 	})
 	return chosen, err
+}
+
+// smartBackendUsable checks a backend the router picked before enforce mode
+// sends a query there: it must be in the tiers the gateway offered, belong to
+// the policy-resolved group, and be enabled and healthy right now.
+func (r *RouterServer) smartBackendUsable(ctx *context.Context, groupId, backend string, tiers map[string][]string) bool {
+	g, err := r.gatewayApiClient.Group.GetGroup(*ctx, &gatewayv1.GroupGetRequest{Id: groupId})
+	if err != nil || !slices.Contains(g.GetGroup().GetBackends(), backend) {
+		return false
+	}
+	b, err := r.gatewayApiClient.Backend.GetBackend(*ctx, &gatewayv1.BackendGetRequest{Id: backend})
+	if err != nil {
+		return false
+	}
+	active := map[string]bool{backend: b.GetBackend().GetIsEnabled() && b.GetBackend().GetIsHealthy()}
+	return smart.ValidBackend(backend, tiers, active)
 }
 
 // modifies http.req for preparing it for routing
@@ -364,7 +398,16 @@ func (r *RouterServer) prepareReqForRouting(ctx *context.Context, req *http.Requ
 		cr.Query.ServerHost = fmt.
 			Sprintf("%s://%s", backend.GetScheme().Enum().String(), backend.GetExternalUrl())
 		if r.smartMode == smart.ModeEnforce && cr.smart != nil && len(cr.smart.Session) > 0 {
-			req.Header.Set("X-Trino-Session", smart.SessionHeader(req.Header.Get("X-Trino-Session"), cr.smart))
+			// Add lines rather than rewrite: clients send one line per property,
+			// under the prefix (Trino or Presto) they use for every header.
+			header := "X-Trino-Session"
+			if req.Header.Get("X-Presto-User") != "" && req.Header.Get("X-Trino-User") == "" {
+				header = "X-Presto-Session"
+			}
+			existing := append(req.Header.Values("X-Trino-Session"), req.Header.Values("X-Presto-Session")...)
+			for _, line := range smart.SessionLines(existing, cr.smart) {
+				req.Header.Add(header, line)
+			}
 		}
 	default:
 		return fmt.Errorf("unexpected type %T", cr)

@@ -93,26 +93,6 @@ func TestClient_ServerErrorIsAnError(t *testing.T) {
 	}
 }
 
-func TestSessionHeader_MergesDecisionIntoExistingHeader(t *testing.T) {
-	d := &Decision{Session: map[string]string{"query_max_execution_time": "5m", "query_max_memory": "1GB"}}
-	got := SessionHeader("join_distribution_type=BROADCAST", d)
-	want := "join_distribution_type=BROADCAST,query_max_execution_time=5m,query_max_memory=1GB"
-	if got != want {
-		t.Errorf("got %q want %q", got, want)
-	}
-	if got := SessionHeader("", &Decision{}); got != "" {
-		t.Errorf("empty decision should leave header empty, got %q", got)
-	}
-}
-
-func TestSessionHeader_ClientValueWins(t *testing.T) {
-	d := &Decision{Session: map[string]string{"query_max_execution_time": "5m"}}
-	got := SessionHeader("query_max_execution_time=1h", d)
-	if got != "query_max_execution_time=1h" {
-		t.Errorf("got %q", got)
-	}
-}
-
 func TestApply_ShadowKeepsCurrentBackend(t *testing.T) {
 	d := &Decision{Backend: "trino-srm", Tier: "S"}
 	got, err := Apply(ModeShadow, d, "trino-adhoc")
@@ -198,5 +178,71 @@ func TestClient_WarmCallsHealthzAndReusesConnection(t *testing.T) {
 func TestClient_WarmReportsUnreachableRouter(t *testing.T) {
 	if err := NewClient("http://127.0.0.1:1", 100*time.Millisecond).Warm(context.Background()); err == nil {
 		t.Fatal("expected error")
+	}
+}
+
+func TestSessionLines_KeepsEveryClientLineAndEscapesValues(t *testing.T) {
+	// Trino's Java client sends one header line per property.
+	existing := []string{"join_distribution_type=BROADCAST", "query_max_execution_time=1h,task_concurrency=8"}
+	d := &Decision{Session: map[string]string{"query_max_execution_time": "5m", "query_max_memory": "1GB", "odd": "a b,c"}}
+	got := SessionLines(existing, d)
+	want := []string{"odd=a+b%2Cc", "query_max_memory=1GB"}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("got %v want %v", got, want)
+	}
+}
+
+func TestSessionLines_NothingToAdd(t *testing.T) {
+	if got := SessionLines(nil, &Decision{}); len(got) != 0 {
+		t.Errorf("got %v", got)
+	}
+}
+
+func TestParsePreparedStatements_DecodesNames(t *testing.T) {
+	got := ParsePreparedStatements([]string{"my%20stmt=SELECT%201"})
+	if got["my stmt"] != "SELECT 1" {
+		t.Errorf("got %v", got)
+	}
+}
+
+func TestTiersFor_GroupIdIsCaseInsensitive(t *testing.T) {
+	// viper lowercases config map keys; group ids in the database may not be.
+	cfg := map[string]map[string][]string{"adhoc": {"S": {"trino-srm"}}}
+	if got := TiersFor(cfg, "AdHoc", "x"); got["S"][0] != "trino-srm" {
+		t.Errorf("got %v", got)
+	}
+}
+
+func TestValidBackend_MustBeInATierAndActive(t *testing.T) {
+	tiers := map[string][]string{"S": {"trino-srm"}, "L": {"trino-adhoc"}}
+	active := map[string]bool{"trino-srm": true, "trino-adhoc": false}
+	if !ValidBackend("trino-srm", tiers, active) {
+		t.Error("in-tier active backend rejected")
+	}
+	if ValidBackend("trino-adhoc", tiers, active) {
+		t.Error("inactive backend accepted")
+	}
+	if ValidBackend("trino-finance", tiers, map[string]bool{"trino-finance": true}) {
+		t.Error("backend outside the tiers accepted")
+	}
+}
+
+func TestNewClient_ZeroTimeoutIsClampedToDefault(t *testing.T) {
+	if c := NewClient("http://x", 0); c.http.Timeout != DefaultTimeout {
+		t.Errorf("timeout %v", c.http.Timeout)
+	}
+}
+
+func TestNewClient_SharesAPooledTransport(t *testing.T) {
+	a, b := NewClient("http://x", time.Second), NewClient("http://y", time.Second)
+	ta, ok := a.http.Transport.(*http.Transport)
+	if !ok || ta != b.http.Transport || ta.MaxIdleConnsPerHost < 32 {
+		t.Errorf("transport not shared or pool too small: %#v", a.http.Transport)
+	}
+}
+
+func TestLabel_MapsUnknownValuesToOther(t *testing.T) {
+	if Label("history", SourceLabels) != "history" || Label("weird", SourceLabels) != "other" {
+		t.Error("label allowlist")
 	}
 }

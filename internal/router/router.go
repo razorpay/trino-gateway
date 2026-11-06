@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httputil"
+	"sync/atomic"
 	"time"
 
 	"github.com/razorpay/trino-gateway/internal/boot"
@@ -33,6 +34,20 @@ type RouterServer struct {
 	smart            *smart.Client                  // nil when the smart router is disabled
 	smartMode        string                         // smart.ModeShadow or smart.ModeEnforce
 	smartTiers       map[string]map[string][]string // group -> tier -> backend ids
+	smartWarn        *logLimiter
+}
+
+// logLimiter lets one log line through per interval, so a router outage does
+// not log a warning for every query.
+type logLimiter struct {
+	every time.Duration
+	last  atomic.Int64
+}
+
+func (l *logLimiter) allow() bool {
+	now := time.Now().UnixNano()
+	last := l.last.Load()
+	return now-last >= int64(l.every) && l.last.CompareAndSwap(last, now)
 }
 
 type key int
@@ -73,6 +88,7 @@ func Server(ctx *context.Context, port int, apiClient *GatewayApiClient, routerH
 	if rc := boot.Config.Router; rc.Enabled {
 		routerServer.smart = smart.NewClient(rc.URL, time.Duration(rc.TimeoutMs)*time.Millisecond)
 		routerServer.smartMode = rc.Mode
+		routerServer.smartWarn = &logLimiter{every: 10 * time.Second}
 		routerServer.smartTiers = smart.NormalizeTiers(rc.Tiers)
 		go func(c *smart.Client) {
 			if err := c.Warm(*ctx); err != nil {

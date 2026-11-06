@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/razorpay/trino-gateway/internal/router/smart"
 )
@@ -27,5 +28,15 @@ func TestHandlePreRoutingError_GenericForOtherErrors(t *testing.T) {
 	status, msg := (&RouterServer{}).handlePreRoutingError(&ctx, errors.New("boom"))
 	if status != http.StatusBadRequest || msg != "Gateway couldn't process this request" {
 		t.Errorf("status=%d msg=%q", status, msg)
+	}
+}
+
+func TestLogLimiter_AllowsOncePerInterval(t *testing.T) {
+	l := &logLimiter{every: time.Hour}
+	if !l.allow() {
+		t.Fatal("first call should be allowed")
+	}
+	if l.allow() {
+		t.Error("second call within the interval should be suppressed")
 	}
 }

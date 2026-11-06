@@ -88,12 +88,31 @@ type Client struct {
 	http *http.Client
 }
 
+// DefaultTimeout applies when the configured timeout is zero or negative;
+// http.Client treats 0 as "no timeout", which could stall query submission.
+const DefaultTimeout = 50 * time.Millisecond
+
+// transport is shared by every Client (one per gateway listener port) and kept
+// apart from the reverse proxy's DefaultTransport. DefaultTransport keeps only
+// 2 idle connections per host, so concurrent submissions would keep redialling
+// the router inside the routing timeout.
+var transport = func() *http.Transport {
+	t := http.DefaultTransport.(*http.Transport).Clone()
+	t.MaxIdleConns = 256
+	t.MaxIdleConnsPerHost = 64
+	t.IdleConnTimeout = 5 * time.Minute
+	return t
+}()
+
 func NewClient(baseURL string, timeout time.Duration) *Client {
+	if timeout <= 0 {
+		timeout = DefaultTimeout
+	}
 	base := strings.TrimRight(baseURL, "/")
 	return &Client{
 		base: base,
 		url:  base + "/v1/route",
-		http: &http.Client{Timeout: timeout},
+		http: &http.Client{Timeout: timeout, Transport: transport},
 	}
 }
 
@@ -154,12 +173,14 @@ func ParsePreparedStatements(headers []string) map[string]string {
 	out := map[string]string{}
 	for _, h := range headers {
 		for _, entry := range strings.Split(h, ",") {
-			name, enc, ok := strings.Cut(strings.TrimSpace(entry), "=")
+			encName, enc, ok := strings.Cut(strings.TrimSpace(entry), "=")
 			if !ok {
 				continue
 			}
-			sql, err := url.QueryUnescape(enc)
-			if err != nil {
+			// Trino URL-encodes both the statement name and its SQL.
+			name, err1 := url.QueryUnescape(encName)
+			sql, err2 := url.QueryUnescape(enc)
+			if err1 != nil || err2 != nil {
 				continue
 			}
 			out[name] = sql
@@ -187,26 +208,24 @@ func NormalizeTiers(tiers map[string]map[string][]string) map[string]map[string]
 // prediction for every query, while enforce mode can only re-pick the same
 // backend for unconfigured groups.
 func TiersFor(cfg map[string]map[string][]string, group, strategyBackend string) map[string][]string {
-	if tiers, ok := cfg[group]; ok && len(tiers) > 0 {
+	if tiers, ok := cfg[strings.ToLower(group)]; ok && len(tiers) > 0 {
 		return tiers
 	}
 	return map[string][]string{"M": {strategyBackend}}
 }
 
-// SessionHeader merges the decision's session properties into an existing
-// X-Trino-Session value. A property the client already set is kept, so a
-// user's explicit limit is never tightened silently.
-func SessionHeader(existing string, d *Decision) string {
+// SessionLines returns the X-Trino-Session lines to add for the decision's
+// session properties: one "name=url-encoded-value" line per property the
+// client has not already set in any of its existing lines (Trino's Java client
+// sends one line per property). A user's explicit value is never overridden.
+func SessionLines(existing []string, d *Decision) []string {
 	have := map[string]bool{}
-	parts := []string{}
-	for _, kv := range strings.Split(existing, ",") {
-		kv = strings.TrimSpace(kv)
-		if kv == "" {
-			continue
+	for _, line := range existing {
+		for _, kv := range strings.Split(line, ",") {
+			if k, _, _ := strings.Cut(strings.TrimSpace(kv), "="); k != "" {
+				have[k] = true
+			}
 		}
-		k, _, _ := strings.Cut(kv, "=")
-		have[k] = true
-		parts = append(parts, kv)
 	}
 	keys := make([]string, 0, len(d.Session))
 	for k := range d.Session {
@@ -215,8 +234,41 @@ func SessionHeader(existing string, d *Decision) string {
 		}
 	}
 	sort.Strings(keys)
+	out := make([]string, 0, len(keys))
 	for _, k := range keys {
-		parts = append(parts, k+"="+d.Session[k])
+		out = append(out, k+"="+url.QueryEscape(d.Session[k]))
 	}
-	return strings.Join(parts, ",")
+	return out
+}
+
+// ValidBackend reports whether the router's backend may be used: it must be
+// one of the tiers the gateway sent and active (enabled and healthy) right now.
+func ValidBackend(backend string, tiers map[string][]string, active map[string]bool) bool {
+	if !active[backend] {
+		return false
+	}
+	for _, bs := range tiers {
+		for _, b := range bs {
+			if b == backend {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+var (
+	SourceLabels = []string{"metadata", "history", "model", "default"}
+	TierLabels   = []string{"S", "M", "L", ""}
+)
+
+// Label maps a router-supplied value onto a fixed set for metric labels, so a
+// misbehaving router cannot blow up label cardinality.
+func Label(v string, allowed []string) string {
+	for _, a := range allowed {
+		if v == a {
+			return v
+		}
+	}
+	return "other"
 }
