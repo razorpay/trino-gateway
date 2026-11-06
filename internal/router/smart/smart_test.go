@@ -150,3 +150,13 @@ func TestApply_EnforceWithoutBackendKeepsCurrent(t *testing.T) {
 		t.Errorf("got %q err=%v", got, err)
 	}
 }
+
+func TestNormalizeTiers_UppercasesTierKeys(t *testing.T) {
+	// viper lowercases every TOML key, so tiers.adhoc.S arrives as "s".
+	in := map[string]map[string][]string{"adhoc": {"s": {"trino-srm"}, "M": {"trino-dev"}, "l": {"trino-adhoc"}}}
+	got := NormalizeTiers(in)
+	want := map[string]map[string][]string{"adhoc": {"S": {"trino-srm"}, "M": {"trino-dev"}, "L": {"trino-adhoc"}}}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("got %v", got)
+	}
+}

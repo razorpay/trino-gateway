@@ -73,7 +73,7 @@ func Server(ctx *context.Context, port int, apiClient *GatewayApiClient, routerH
 	if rc := boot.Config.Router; rc.Enabled {
 		routerServer.smart = smart.NewClient(rc.URL, time.Duration(rc.TimeoutMs)*time.Millisecond)
 		routerServer.smartMode = rc.Mode
-		routerServer.smartTiers = rc.Tiers
+		routerServer.smartTiers = smart.NormalizeTiers(rc.Tiers)
 		provider.Logger(*ctx).Infow(fmt.Sprint(LOG_TAG, "smart router enabled"), map[string]interface{}{
 			"url": rc.URL, "mode": rc.Mode, "timeout_ms": rc.TimeoutMs, "groups": len(rc.Tiers),
 		})

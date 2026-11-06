@@ -143,6 +143,20 @@ func ParsePreparedStatements(headers []string) map[string]string {
 	return out
 }
 
+// NormalizeTiers upper-cases tier names (S, M, L). viper lowercases every
+// TOML key, so tiers.adhoc.S reaches the gateway as "s".
+func NormalizeTiers(tiers map[string]map[string][]string) map[string]map[string][]string {
+	out := make(map[string]map[string][]string, len(tiers))
+	for group, byTier := range tiers {
+		m := make(map[string][]string, len(byTier))
+		for tier, backends := range byTier {
+			m[strings.ToUpper(tier)] = backends
+		}
+		out[group] = m
+	}
+	return out
+}
+
 // SessionHeader merges the decision's session properties into an existing
 // X-Trino-Session value. A property the client already set is kept, so a
 // user's explicit limit is never tightened silently.
