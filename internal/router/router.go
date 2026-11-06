@@ -213,6 +213,10 @@ func (r *RouterServer) handleClientRequestRoutingError(ctx *context.Context, req
 }
 
 func (r *RouterServer) handlePreRoutingError(ctx *context.Context, err error) (status int, msg string) {
+	var rej *smart.RejectedError
+	if errors.As(err, &rej) {
+		return http.StatusBadRequest, fmt.Sprintf("Query rejected by the gateway: %s To run it anyway, %s.", rej.Reject.Reason, rej.Reject.Override)
+	}
 	return http.StatusBadRequest, "Gateway couldn't process this request"
 }
 
