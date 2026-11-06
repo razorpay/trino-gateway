@@ -10,6 +10,18 @@ type Config struct {
 	Db      db.Config
 	Gateway Gateway
 	Monitor Monitor
+	Router  Router
+}
+
+// Router configures the smart router sidecar. Mode "shadow" logs the
+// router's decision and routes as before; "enforce" follows it. Tiers maps a
+// routing group to its S/M/L backends, e.g. tiers.adhoc.S = ["trino-srm"].
+type Router struct {
+	Enabled   bool
+	URL       string
+	TimeoutMs int
+	Mode      string
+	Tiers     map[string]map[string][]string
 }
 
 // App contains application-specific config values

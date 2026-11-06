@@ -3,6 +3,7 @@ package router
 import (
 	"fmt"
 
+	"github.com/razorpay/trino-gateway/internal/router/smart"
 	gatewayv1 "github.com/razorpay/trino-gateway/rpc/gateway"
 )
 
@@ -59,10 +60,15 @@ type QueryRequest struct {
 	ClientRequest
 	headerConnectionProperties string
 	headerClientTags           string
+	headerSource               string
+	headerPreparedStatements   []string
 	incomingPort               int32
 	transactionId              string
 	clientHost                 string
 	Query                      *gatewayv1.Query
+	// smart is the router's decision for this query, nil when the router is
+	// disabled or unreachable. Logged with the query id once Trino answers.
+	smart *smart.Decision
 }
 
 func (QueryRequest) isClientRequest() {}

@@ -13,6 +13,8 @@ type Metrics struct {
 	requestPostRoutingDelays *prometheus.HistogramVec
 	responsesSentTotal       *prometheus.CounterVec
 	responseDurations        *prometheus.HistogramVec
+	smartRouterDecisions     *prometheus.CounterVec
+	smartRouterErrors        prometheus.Counter
 }
 
 var metrics *Metrics
@@ -35,6 +37,22 @@ func initMetrics() {
 		},
 		[]string{"env", "method", "port", "group", "backend"},
 	).MustCurryWith(prometheus.Labels{"env": env})
+
+	metrics.smartRouterDecisions = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "trino_gateway_router_smart_decisions_total",
+			Help: "Decisions returned by the smart router, by mode, decision source, tier and reject.",
+		},
+		[]string{"env", "mode", "source", "tier", "reject"},
+	).MustCurryWith(prometheus.Labels{"env": env})
+
+	metrics.smartRouterErrors = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "trino_gateway_router_smart_errors_total",
+			Help: "Smart router calls that failed or timed out; the strategy backend was kept.",
+		},
+		[]string{"env"},
+	).WithLabelValues(env)
 
 	metrics.requestPreRoutingDelays = promauto.NewHistogramVec(
 		prometheus.HistogramOpts{

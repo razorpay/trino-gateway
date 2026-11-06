@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/razorpay/trino-gateway/internal/provider"
+	"github.com/razorpay/trino-gateway/internal/router/smart"
 	"github.com/razorpay/trino-gateway/internal/router/trinoheaders"
 	"github.com/razorpay/trino-gateway/internal/utils"
 	gatewayv1 "github.com/razorpay/trino-gateway/rpc/gateway"
@@ -115,6 +116,8 @@ func (r *RouterServer) ParseClientRequest(ctx *context.Context, req *http.Reques
 			incomingPort:               int32(r.port),
 			headerConnectionProperties: trinoheaders.Get(trinoheaders.ConnectionProperties, req),
 			headerClientTags:           trinoheaders.Get(trinoheaders.ClientTags, req),
+			headerSource:               trinoheaders.Get(trinoheaders.Source, req),
+			headerPreparedStatements:   trinoheaders.GetAll(trinoheaders.PreparedStatement, req),
 			transactionId:              trinoheaders.Get(trinoheaders.TransactionId, req),
 			Query:                      query,
 			clientHost:                 req.Host,
@@ -205,6 +208,9 @@ func (r *RouterServer) ProcessRequest(ctx *context.Context, req *http.Request) (
 		provider.Logger(*ctx).Debug(fmt.Sprint(LOG_TAG, "invoking routing backend evaluation"))
 
 		bId, gId, err := r.evaluateRoutingBackend(ctx, *nt)
+		if err == nil {
+			bId, err = r.consultSmartRouter(ctx, nt, gId, bId)
+		}
 		r.prepareReqForRouting(ctx, req, bId, nt)
 		if err != nil {
 			return nil, err
@@ -281,6 +287,53 @@ func (r *RouterServer) evaluateRoutingBackend(ctx *context.Context, clientReq Qu
 	return backendId, groupId, nil
 }
 
+// consultSmartRouter asks the smart router which backend inside the resolved
+// group should run this query. Any router failure keeps the backend the
+// gateway's own strategy chose, so the router is never on the failure path.
+func (r *RouterServer) consultSmartRouter(ctx *context.Context, nt *QueryRequest, groupId, backendId string) (string, error) {
+	if r.smart == nil {
+		return backendId, nil
+	}
+	tiers, ok := r.smartTiers[groupId]
+	if !ok {
+		return backendId, nil
+	}
+	rq := smart.Request{
+		SQL:                nt.Query.GetText(),
+		User:               nt.Query.GetUsername(),
+		Source:             nt.headerSource,
+		Port:               int(nt.incomingPort),
+		Group:              groupId,
+		Tiers:              tiers,
+		PreparedStatements: smart.ParsePreparedStatements(nt.headerPreparedStatements),
+	}
+	if nt.headerClientTags != "" {
+		rq.ClientTags = strings.Split(nt.headerClientTags, ",")
+	}
+	d, err := r.smart.Route(*ctx, rq)
+	if err != nil {
+		metrics.smartRouterErrors.Inc()
+		provider.Logger(*ctx).WithError(err).Warn(fmt.Sprint(LOG_TAG, "smart router unavailable, keeping strategy backend"))
+		return backendId, nil
+	}
+	nt.smart = d
+	chosen, err := smart.Apply(r.smartMode, d, backendId)
+	metrics.smartRouterDecisions.WithLabelValues(r.smartMode, d.Explain.Source, d.Tier, fmt.Sprint(d.Reject != nil)).Inc()
+	provider.Logger(*ctx).Debugw(fmt.Sprint(LOG_TAG, "smart router decision"), map[string]interface{}{
+		"mode":             r.smartMode,
+		"group":            groupId,
+		"strategy_backend": backendId,
+		"smart_backend":    d.Backend,
+		"smart_tier":       d.Tier,
+		"source":           d.Explain.Source,
+		"confidence":       d.Explain.Confidence,
+		"fingerprint":      d.Explain.Fingerprint,
+		"reject":           d.Reject != nil,
+		"reason":           d.Explain.Reason,
+	})
+	return chosen, err
+}
+
 // modifies http.req for preparing it for routing
 func (r *RouterServer) prepareReqForRouting(ctx *context.Context, req *http.Request, backend_id string, cReq ClientRequest) error {
 	provider.Logger(*ctx).Debug(fmt.Sprint(LOG_TAG, "fetching details of resolved backend"))
@@ -314,6 +367,9 @@ func (r *RouterServer) prepareReqForRouting(ctx *context.Context, req *http.Requ
 		scheme = backend.GetScheme().Enum().String()
 		cr.Query.ServerHost = fmt.
 			Sprintf("%s://%s", backend.GetScheme().Enum().String(), backend.GetExternalUrl())
+		if r.smartMode == smart.ModeEnforce && cr.smart != nil && len(cr.smart.Session) > 0 {
+			req.Header.Set("X-Trino-Session", smart.SessionHeader(req.Header.Get("X-Trino-Session"), cr.smart))
+		}
 	default:
 		return fmt.Errorf("unexpected type %T", cr)
 	}

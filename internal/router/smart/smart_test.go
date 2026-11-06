@@ -1,0 +1,152 @@
+package smart
+
+import (
+	"context"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"reflect"
+	"testing"
+	"time"
+)
+
+func TestParsePreparedStatements_DecodesNameValuePairs(t *testing.T) {
+	// Trino sends one or more "name=url-encoded-sql" entries, comma separated
+	// within a header value and/or across repeated headers.
+	got := ParsePreparedStatements([]string{
+		"_trino_go=SELECT+id+FROM+t+WHERE+id+%3D+%3F,second=SELECT%201",
+		"third=select%20%27a%2Cb%27",
+	})
+	want := map[string]string{
+		"_trino_go": "SELECT id FROM t WHERE id = ?",
+		"second":    "SELECT 1",
+		"third":     "select 'a,b'",
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("got %v", got)
+	}
+}
+
+func TestParsePreparedStatements_SkipsMalformedEntries(t *testing.T) {
+	got := ParsePreparedStatements([]string{"noequals", "ok=SELECT%201", "bad=%zz"})
+	if len(got) != 1 || got["ok"] != "SELECT 1" {
+		t.Errorf("got %v", got)
+	}
+}
+
+func routerStub(t *testing.T, status int, body string, delay time.Duration) (*httptest.Server, *Request) {
+	t.Helper()
+	var seen Request
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewDecoder(r.Body).Decode(&seen)
+		time.Sleep(delay)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(status)
+		_, _ = w.Write([]byte(body))
+	}))
+	t.Cleanup(srv.Close)
+	return srv, &seen
+}
+
+const decisionJSON = `{"tier":"S","backend":"trino-srm","session":{"query_max_execution_time":"5m"},"watch":false,
+  "decision":{"source":"history","fingerprint":"select ?","confidence":0.95,"reason":"seen 12×"}}`
+
+func TestClient_RoutePostsRequestAndDecodesDecision(t *testing.T) {
+	srv, seen := routerStub(t, 200, decisionJSON, 0)
+	c := NewClient(srv.URL, 500*time.Millisecond)
+	d, err := c.Route(context.Background(), Request{SQL: "SELECT 1", User: "u", Group: "adhoc",
+		Tiers: map[string][]string{"S": {"trino-srm"}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if seen.SQL != "SELECT 1" || seen.Group != "adhoc" || seen.Tiers["S"][0] != "trino-srm" {
+		t.Errorf("router saw %+v", *seen)
+	}
+	if d.Backend != "trino-srm" || d.Tier != "S" || d.Session["query_max_execution_time"] != "5m" || d.Explain.Source != "history" {
+		t.Errorf("decision=%+v", d)
+	}
+}
+
+func TestClient_RejectIsADecisionNotAnError(t *testing.T) {
+	srv, _ := routerStub(t, 422, `{"reject":{"reason":"always fails","override":"force-run"},"decision":{"source":"history"}}`, 0)
+	d, err := NewClient(srv.URL, 500*time.Millisecond).Route(context.Background(), Request{SQL: "x"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if d.Reject == nil || d.Reject.Reason != "always fails" {
+		t.Errorf("decision=%+v", d)
+	}
+}
+
+func TestClient_TimeoutIsAnError(t *testing.T) {
+	srv, _ := routerStub(t, 200, decisionJSON, 300*time.Millisecond)
+	_, err := NewClient(srv.URL, 50*time.Millisecond).Route(context.Background(), Request{SQL: "x"})
+	if err == nil {
+		t.Fatal("expected timeout error")
+	}
+}
+
+func TestClient_ServerErrorIsAnError(t *testing.T) {
+	srv, _ := routerStub(t, 503, "no backend", 0)
+	if _, err := NewClient(srv.URL, 500*time.Millisecond).Route(context.Background(), Request{SQL: "x"}); err == nil {
+		t.Fatal("expected error")
+	}
+}
+
+func TestSessionHeader_MergesDecisionIntoExistingHeader(t *testing.T) {
+	d := &Decision{Session: map[string]string{"query_max_execution_time": "5m", "query_max_memory": "1GB"}}
+	got := SessionHeader("join_distribution_type=BROADCAST", d)
+	want := "join_distribution_type=BROADCAST,query_max_execution_time=5m,query_max_memory=1GB"
+	if got != want {
+		t.Errorf("got %q want %q", got, want)
+	}
+	if got := SessionHeader("", &Decision{}); got != "" {
+		t.Errorf("empty decision should leave header empty, got %q", got)
+	}
+}
+
+func TestSessionHeader_ClientValueWins(t *testing.T) {
+	d := &Decision{Session: map[string]string{"query_max_execution_time": "5m"}}
+	got := SessionHeader("query_max_execution_time=1h", d)
+	if got != "query_max_execution_time=1h" {
+		t.Errorf("got %q", got)
+	}
+}
+
+func TestApply_ShadowKeepsCurrentBackend(t *testing.T) {
+	d := &Decision{Backend: "trino-srm", Tier: "S"}
+	got, err := Apply(ModeShadow, d, "trino-adhoc")
+	if err != nil || got != "trino-adhoc" {
+		t.Errorf("got %q err=%v", got, err)
+	}
+}
+
+func TestApply_EnforceUsesDecisionBackend(t *testing.T) {
+	d := &Decision{Backend: "trino-srm", Tier: "S"}
+	got, err := Apply(ModeEnforce, d, "trino-adhoc")
+	if err != nil || got != "trino-srm" {
+		t.Errorf("got %q err=%v", got, err)
+	}
+}
+
+func TestApply_EnforceRejectIsAnError(t *testing.T) {
+	d := &Decision{Reject: &Reject{Reason: "always fails"}}
+	if _, err := Apply(ModeEnforce, d, "trino-adhoc"); err == nil {
+		t.Fatal("expected error")
+	}
+}
+
+func TestApply_ShadowRejectIsNotAnError(t *testing.T) {
+	d := &Decision{Reject: &Reject{Reason: "always fails"}}
+	got, err := Apply(ModeShadow, d, "trino-adhoc")
+	if err != nil || got != "trino-adhoc" {
+		t.Errorf("got %q err=%v", got, err)
+	}
+}
+
+func TestApply_EnforceWithoutBackendKeepsCurrent(t *testing.T) {
+	got, err := Apply(ModeEnforce, &Decision{}, "trino-adhoc")
+	if err != nil || got != "trino-adhoc" {
+		t.Errorf("got %q err=%v", got, err)
+	}
+}

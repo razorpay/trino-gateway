@@ -10,6 +10,7 @@ import (
 
 	"github.com/razorpay/trino-gateway/internal/boot"
 	"github.com/razorpay/trino-gateway/internal/provider"
+	"github.com/razorpay/trino-gateway/internal/router/smart"
 	"github.com/razorpay/trino-gateway/internal/utils"
 	gatewayv1 "github.com/razorpay/trino-gateway/rpc/gateway"
 )
@@ -29,6 +30,9 @@ type RouterServer struct {
 	port             int
 	routerHostname   string
 	authService      IAuthService
+	smart            *smart.Client                  // nil when the smart router is disabled
+	smartMode        string                         // smart.ModeShadow or smart.ModeEnforce
+	smartTiers       map[string]map[string][]string // group -> tier -> backend ids
 }
 
 type key int
@@ -65,6 +69,14 @@ func Server(ctx *context.Context, port int, apiClient *GatewayApiClient, routerH
 			ValidationProviderURL:   boot.Config.Auth.Router.DelegatedAuth.ValidationProviderURL,
 			ValidationProviderToken: boot.Config.Auth.Router.DelegatedAuth.ValidationProviderToken,
 		},
+	}
+	if rc := boot.Config.Router; rc.Enabled {
+		routerServer.smart = smart.NewClient(rc.URL, time.Duration(rc.TimeoutMs)*time.Millisecond)
+		routerServer.smartMode = rc.Mode
+		routerServer.smartTiers = rc.Tiers
+		provider.Logger(*ctx).Infow(fmt.Sprint(LOG_TAG, "smart router enabled"), map[string]interface{}{
+			"url": rc.URL, "mode": rc.Mode, "timeout_ms": rc.TimeoutMs, "groups": len(rc.Tiers),
+		})
 	}
 	reverseProxy := httputil.ReverseProxy{
 		Director:  func(req *http.Request) { routerServer.handleClientRequest(ctx, req) },

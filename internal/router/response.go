@@ -66,6 +66,26 @@ func (r *RouterServer) ProcessResponse(
 			req.Id = extractQueryIdFromServerResponse(ctx, body)
 			req.SubmittedAt = time.Now().Unix()
 
+			// Prediction log: joins the router's decision to the query id so
+			// shadow-mode accuracy can be measured against the outcome.
+			if d := nt.smart; d != nil {
+				provider.Logger(*ctx).Infow(fmt.Sprint(LOG_TAG, "smart router prediction"), map[string]interface{}{
+					"query_id":    req.Id,
+					"backend_id":  req.BackendId,
+					"group_id":    req.GroupId,
+					"smart_tier":  d.Tier,
+					"smart_bkend": d.Backend,
+					"source":      d.Explain.Source,
+					"cpu_class":   d.Explain.CPUClass,
+					"mem_class":   d.Explain.MemClass,
+					"bytes_class": d.Explain.BytesClass,
+					"confidence":  d.Explain.Confidence,
+					"watch":       d.Watch,
+					"reject":      d.Reject != nil,
+					"fingerprint": d.Explain.Fingerprint,
+				})
+			}
+
 			_, err = r.gatewayApiClient.Query.CreateOrUpdateQuery(*ctx, req)
 			if err != nil {
 				provider.Logger(
