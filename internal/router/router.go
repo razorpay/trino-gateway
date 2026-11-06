@@ -74,6 +74,11 @@ func Server(ctx *context.Context, port int, apiClient *GatewayApiClient, routerH
 		routerServer.smart = smart.NewClient(rc.URL, time.Duration(rc.TimeoutMs)*time.Millisecond)
 		routerServer.smartMode = rc.Mode
 		routerServer.smartTiers = smart.NormalizeTiers(rc.Tiers)
+		go func(c *smart.Client) {
+			if err := c.Warm(*ctx); err != nil {
+				provider.Logger(*ctx).WithError(err).Warn(fmt.Sprint(LOG_TAG, "smart router warm-up failed; first queries may fall back"))
+			}
+		}(routerServer.smart)
 		provider.Logger(*ctx).Infow(fmt.Sprint(LOG_TAG, "smart router enabled"), map[string]interface{}{
 			"url": rc.URL, "mode": rc.Mode, "timeout_ms": rc.TimeoutMs, "groups": len(rc.Tiers),
 		})

@@ -83,15 +83,40 @@ func Apply(mode string, d *Decision, current string) (string, error) {
 }
 
 type Client struct {
+	base string
 	url  string
 	http *http.Client
 }
 
 func NewClient(baseURL string, timeout time.Duration) *Client {
+	base := strings.TrimRight(baseURL, "/")
 	return &Client{
-		url:  strings.TrimRight(baseURL, "/") + "/v1/route",
+		base: base,
+		url:  base + "/v1/route",
 		http: &http.Client{Timeout: timeout},
 	}
+}
+
+// Warm opens a kept-alive connection to the router so the first query does
+// not pay for DNS (several search-domain lookups under ndots:5) and TCP setup
+// inside its routing timeout. It uses its own, longer deadline.
+func (c *Client) Warm(ctx context.Context) error {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.base+"/healthz", nil)
+	if err != nil {
+		return err
+	}
+	resp, err := (&http.Client{Transport: c.http.Transport}).Do(req)
+	if err != nil {
+		return err
+	}
+	_, _ = io.Copy(io.Discard, resp.Body)
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("router healthz returned %d", resp.StatusCode)
+	}
+	return nil
 }
 
 // Route asks the router for a decision. A 422 (reject) is a decision, not an

@@ -179,3 +179,24 @@ func TestTiersFor_UnknownGroupFallsBackToStrategyBackend(t *testing.T) {
 		t.Errorf("got %v", got)
 	}
 }
+
+func TestClient_WarmCallsHealthzAndReusesConnection(t *testing.T) {
+	var paths []string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		paths = append(paths, r.URL.Path)
+		w.WriteHeader(http.StatusOK)
+	}))
+	t.Cleanup(srv.Close)
+	if err := NewClient(srv.URL, time.Second).Warm(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if len(paths) != 1 || paths[0] != "/healthz" {
+		t.Errorf("paths=%v", paths)
+	}
+}
+
+func TestClient_WarmReportsUnreachableRouter(t *testing.T) {
+	if err := NewClient("http://127.0.0.1:1", 100*time.Millisecond).Warm(context.Background()); err == nil {
+		t.Fatal("expected error")
+	}
+}
