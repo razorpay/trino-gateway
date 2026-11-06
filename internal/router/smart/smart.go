@@ -157,6 +157,17 @@ func NormalizeTiers(tiers map[string]map[string][]string) map[string]map[string]
 	return out
 }
 
+// TiersFor returns the configured tiers of group, or a single M tier holding
+// the strategy's backend when the group has none. Shadow mode then gets a
+// prediction for every query, while enforce mode can only re-pick the same
+// backend for unconfigured groups.
+func TiersFor(cfg map[string]map[string][]string, group, strategyBackend string) map[string][]string {
+	if tiers, ok := cfg[group]; ok && len(tiers) > 0 {
+		return tiers
+	}
+	return map[string][]string{"M": {strategyBackend}}
+}
+
 // SessionHeader merges the decision's session properties into an existing
 // X-Trino-Session value. A property the client already set is kept, so a
 // user's explicit limit is never tightened silently.

@@ -160,3 +160,22 @@ func TestNormalizeTiers_UppercasesTierKeys(t *testing.T) {
 		t.Errorf("got %v", got)
 	}
 }
+
+func TestTiersFor_ConfiguredGroupUsesItsTiers(t *testing.T) {
+	cfg := map[string]map[string][]string{"adhoc": {"S": {"trino-srm"}, "L": {"trino-adhoc"}}}
+	got := TiersFor(cfg, "adhoc", "trino-adhoc")
+	if !reflect.DeepEqual(got, cfg["adhoc"]) {
+		t.Errorf("got %v", got)
+	}
+}
+
+func TestTiersFor_UnknownGroupFallsBackToStrategyBackend(t *testing.T) {
+	// Shadow mode must produce a prediction for every group, configured or
+	// not; with one tier holding the strategy's backend the router can only
+	// pick that backend, so enforce mode is a no-op for such groups.
+	got := TiersFor(nil, "looker", "trino-looker-b")
+	want := map[string][]string{"M": {"trino-looker-b"}}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("got %v", got)
+	}
+}

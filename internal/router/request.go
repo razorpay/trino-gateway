@@ -294,17 +294,13 @@ func (r *RouterServer) consultSmartRouter(ctx *context.Context, nt *QueryRequest
 	if r.smart == nil {
 		return backendId, nil
 	}
-	tiers, ok := r.smartTiers[groupId]
-	if !ok {
-		return backendId, nil
-	}
 	rq := smart.Request{
 		SQL:                nt.Query.GetText(),
 		User:               nt.Query.GetUsername(),
 		Source:             nt.headerSource,
 		Port:               int(nt.incomingPort),
 		Group:              groupId,
-		Tiers:              tiers,
+		Tiers:              smart.TiersFor(r.smartTiers, groupId, backendId),
 		PreparedStatements: smart.ParsePreparedStatements(nt.headerPreparedStatements),
 	}
 	if nt.headerClientTags != "" {
