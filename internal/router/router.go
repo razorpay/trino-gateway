@@ -142,6 +142,9 @@ func Server(ctx *context.Context, port int, apiClient *GatewayApiClient, routerH
 			} else {
 				status, msg = routerServer.handleServerError(ctx, err)
 			}
+			// The message can carry router-supplied text; never let it be
+			// sniffed as HTML.
+			resp.Header().Set("Content-Type", "text/plain; charset=utf-8")
 			resp.WriteHeader(status)
 			resp.Write([]byte(msg))
 		},

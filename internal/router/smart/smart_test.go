@@ -246,3 +246,19 @@ func TestLabel_MapsUnknownValuesToOther(t *testing.T) {
 		t.Error("label allowlist")
 	}
 }
+
+func TestSessionApplies_OnlyWhenTheQueryGoesToTheRoutersBackend(t *testing.T) {
+	d := &Decision{Backend: "trino-srm", Session: map[string]string{"query_max_execution_time": "5m"}}
+	if !SessionApplies(d, "trino-srm") {
+		t.Error("guardrails dropped for the router's own backend")
+	}
+	if SessionApplies(d, "trino-adhoc") {
+		t.Error("S-tier guardrails applied to a fallback backend")
+	}
+	if SessionApplies(&Decision{Session: map[string]string{"a": "b"}}, "trino-adhoc") {
+		t.Error("guardrails applied with no router backend")
+	}
+	if SessionApplies(nil, "x") {
+		t.Error("nil decision")
+	}
+}

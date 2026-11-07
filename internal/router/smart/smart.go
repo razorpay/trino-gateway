@@ -241,6 +241,14 @@ func SessionLines(existing []string, d *Decision) []string {
 	return out
 }
 
+// SessionApplies reports whether the decision's session guardrails belong on
+// a query sent to backend: only when it is the backend the router chose. The
+// limits are sized for that tier; on a fallback backend (router's choice
+// unusable) they could cut a query the bigger strategy backend would finish.
+func SessionApplies(d *Decision, backend string) bool {
+	return d != nil && d.Backend != "" && d.Backend == backend && len(d.Session) > 0
+}
+
 // ValidBackend reports whether the router's backend may be used: it must be
 // one of the tiers the gateway sent and active (enabled and healthy) right now.
 func ValidBackend(backend string, tiers map[string][]string, active map[string]bool) bool {

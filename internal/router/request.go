@@ -315,6 +315,9 @@ func (r *RouterServer) consultSmartRouter(ctx *context.Context, reqCtx context.C
 		}
 	}
 	d, err := r.smart.Route(reqCtx, rq)
+	if err != nil && reqCtx.Err() != nil {
+		return backendId, nil // the client went away; not a router failure
+	}
 	if err != nil {
 		metrics.smartRouterErrors.Inc()
 		nt.smartUnavailable = true
@@ -397,14 +400,15 @@ func (r *RouterServer) prepareReqForRouting(ctx *context.Context, req *http.Requ
 		scheme = backend.GetScheme().Enum().String()
 		cr.Query.ServerHost = fmt.
 			Sprintf("%s://%s", backend.GetScheme().Enum().String(), backend.GetExternalUrl())
-		if r.smartMode == smart.ModeEnforce && cr.smart != nil && len(cr.smart.Session) > 0 {
+		if r.smartMode == smart.ModeEnforce && smart.SessionApplies(cr.smart, backend_id) {
 			// Add lines rather than rewrite: clients send one line per property,
 			// under the prefix (Trino or Presto) they use for every header.
 			header := "X-Trino-Session"
 			if req.Header.Get("X-Presto-User") != "" && req.Header.Get("X-Trino-User") == "" {
 				header = "X-Presto-Session"
 			}
-			existing := append(req.Header.Values("X-Trino-Session"), req.Header.Values("X-Presto-Session")...)
+			// Copy before appending: Header.Values returns the header's own slice.
+			existing := append(slices.Clone(req.Header.Values("X-Trino-Session")), req.Header.Values("X-Presto-Session")...)
 			for _, line := range smart.SessionLines(existing, cr.smart) {
 				req.Header.Add(header, line)
 			}
