@@ -212,9 +212,10 @@ func (r *RouterServer) ProcessRequest(ctx *context.Context, req *http.Request) (
 		if err == nil {
 			bId, err = r.consultSmartRouter(ctx, req.Context(), nt, gId, bId)
 		}
-		var rejected *smart.RejectedError
-		if !errors.As(err, &rejected) {
-			r.prepareReqForRouting(ctx, req, bId, nt)
+		if err == nil {
+			// Previously this error was dropped (also on master): a failed
+			// backend lookup left the request with no target host.
+			err = r.prepareReqForRouting(ctx, req, bId, nt)
 		}
 		if err != nil {
 			return nil, err
