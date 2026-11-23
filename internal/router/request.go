@@ -20,7 +20,7 @@ func extractQueryId(ctx *context.Context, body string) string {
 
 		if regex.FindString(body) != "" {
 			provider.Logger(*ctx).Debugw(" kill_query procedure deteccted", map[string]interface{}{
-				"query": body,
+				"bodyBytes": len(body),
 			})
 			return true
 		}
@@ -33,8 +33,8 @@ func extractQueryId(ctx *context.Context, body string) string {
 		match := regex.FindStringSubmatch(body)
 		if len(match) != 3 {
 			provider.Logger(*ctx).Errorw("unable to extract queryId from kill_query procedure", map[string]interface{}{
-				"query":      body,
-				"regexMatch": match,
+				"bodyBytes":       len(body),
+				"regexMatchCount": len(match),
 			})
 
 			return ""
@@ -46,9 +46,9 @@ func extractQueryId(ctx *context.Context, body string) string {
 		}
 
 		provider.Logger(*ctx).Debugw("Extracted queryId from kill_query procedure", map[string]interface{}{
-			"query":      body,
-			"regexMatch": match,
-			"queryId":    qId,
+			"bodyBytes":       len(body),
+			"regexMatchCount": len(match),
+			"queryId":         qId,
 		})
 
 		return qId
@@ -68,7 +68,7 @@ func constructQueryFromReq(ctx *context.Context, req *http.Request) (string, err
 		}
 		provider.Logger(*ctx).Debugw(fmt.Sprint(LOG_TAG, "parsed body of client request"),
 			map[string]interface{}{
-				"body": body,
+				"bodyBytes": len(body),
 			})
 		preparedStmt := trinoheaders.Get(trinoheaders.PreparedStatement, req)
 		// TODO
@@ -147,10 +147,11 @@ func (r *RouterServer) ProcessRequest(ctx *context.Context, req *http.Request) (
 	provider.Logger(*ctx).Infow(
 		fmt.Sprint(LOG_TAG, "Request received"),
 		map[string]interface{}{
-			"request":       utils.StringifyHttpRequestOrResponse(ctx, req),
-			"request.Url":   req.URL,
-			"listeningPort": r.port,
-			"request.Query": req.URL.Query(),
+			"request":           utils.StringifyHttpRequestOrResponse(ctx, req),
+			"request.Url":       req.URL.Redacted(),
+			"listeningPort":     r.port,
+			"request.Query":     req.URL.Query(),
+			"request.bodyBytes": req.ContentLength,
 		})
 
 	if err := cReq.Validate(); err != nil {
@@ -335,7 +336,8 @@ func (r *RouterServer) prepareReqForRouting(ctx *context.Context, req *http.Requ
 	provider.Logger(*ctx).Infow(
 		fmt.Sprint(LOG_TAG, "Request modified, ready to be forwarded"),
 		map[string]interface{}{
-			"request": utils.StringifyHttpRequestOrResponse(ctx, req),
+			"request":           utils.StringifyHttpRequestOrResponse(ctx, req),
+			"request.bodyBytes": req.ContentLength,
 		})
 
 	return nil

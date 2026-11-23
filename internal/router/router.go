@@ -190,7 +190,7 @@ func (r *RouterServer) handleClientRequestRoutingError(ctx *context.Context, req
 	provider.Logger(*ctx).WithError(err).Errorw(
 		fmt.Sprint(LOG_TAG, "Request Processing failed"),
 		map[string]interface{}{
-			"req": req,
+			"request": utils.StringifyHttpRequestOrResponse(ctx, req),
 		})
 	req.URL.Host = "http://invalid:8080"
 }
