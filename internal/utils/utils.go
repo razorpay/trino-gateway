@@ -76,19 +76,51 @@ func GetHttpBodyEncoding[T *http.Request | *http.Response](ctx *context.Context,
 	return enc
 }
 
-func StringifyHttpRequestOrResponse[T *http.Request | *http.Response](ctx *context.Context, r T) string {
-	canDumpBody := GetHttpBodyEncoding(ctx, r) == ""
-	if !canDumpBody {
-		provider.Logger(*ctx).Debug(
-			"Encoded body in http payload, assuming binary data and skipping dump of body")
+// Headers which carry client credentials or session tokens, these must never be
+// written to logs in plaintext.
+var sensitiveLogHeaders = []string{
+	"Authorization",
+	"Proxy-Authorization",
+	"Cookie",
+	"Set-Cookie",
+	"X-Auth-Key",
+	"X-Auth-Token",
+	"X-Trino-Password",
+	"X-Presto-Password",
+	"X-Trino-Access-Token",
+	"X-Presto-Access-Token",
+}
+
+const redactedHeaderValue = "[REDACTED]"
+
+// redactHeaders replaces values of sensitive headers in place. Caller must pass
+// a header map it owns, i.e. a clone of the request/response header.
+func redactHeaders(header http.Header) {
+	for key := range header {
+		if SliceContains(sensitiveLogHeaders, http.CanonicalHeaderKey(key)) {
+			header[key] = []string{redactedHeaderValue}
+		}
 	}
+}
+
+// Bodies are never dumped - they carry customer SQL and query results. Only
+// headers, method, url & status line are dumped, with credentials redacted.
+func StringifyHttpRequestOrResponse[T *http.Request | *http.Response](ctx *context.Context, r T) string {
 	var res []byte
 	var err error
 	switch v := any(r).(type) {
 	case *http.Request:
-		res, err = httputil.DumpRequest(v, canDumpBody)
+		// Clone to avoid mutating the request being forwarded to the backend
+		safeReq := v.Clone(v.Context())
+		redactHeaders(safeReq.Header)
+		res, err = httputil.DumpRequest(safeReq, false)
 	case *http.Response:
-		res, err = httputil.DumpResponse(v, canDumpBody)
+		// Clone to avoid mutating the response being forwarded to the client
+		safeResp := new(http.Response)
+		*safeResp = *v
+		safeResp.Header = v.Header.Clone()
+		redactHeaders(safeResp.Header)
+		res, err = httputil.DumpResponse(safeResp, false)
 	}
 	if err != nil {
 		provider.Logger(*ctx).Errorw(

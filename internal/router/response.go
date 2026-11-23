@@ -43,7 +43,8 @@ func (r *RouterServer) ProcessResponse(
 		provider.Logger(*ctx).Errorw(
 			fmt.Sprint(LOG_TAG, "Routing unsuccessful"),
 			map[string]interface{}{
-				"serverResponse": utils.StringifyHttpRequestOrResponse(ctx, resp),
+				"serverResponse":           utils.StringifyHttpRequestOrResponse(ctx, resp),
+				"serverResponse.bodyBytes": resp.ContentLength,
 			})
 		return nil
 	}
@@ -78,7 +79,8 @@ func (r *RouterServer) ProcessResponse(
 		}()
 
 		provider.Logger(*ctx).Debugw("Server Response Processed", map[string]interface{}{
-			"resp": utils.StringifyHttpRequestOrResponse(ctx, resp),
+			"resp":           utils.StringifyHttpRequestOrResponse(ctx, resp),
+			"resp.bodyBytes": resp.ContentLength,
 		})
 
 		return nil
@@ -90,7 +92,7 @@ func (r *RouterServer) ProcessResponse(
 func extractQueryIdFromServerResponse(ctx *context.Context, body string) string {
 	provider.Logger(*ctx).Debugw(fmt.Sprint(LOG_TAG, "extracting queryId from server response"),
 		map[string]interface{}{
-			"body": body,
+			"bodyBytes": len(body),
 		})
 	var resp struct{ Id string }
 	json.Unmarshal([]byte(body), &resp)
